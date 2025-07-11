@@ -1,0 +1,88 @@
+/* dashboard.css */
+
+.dashboard-container {
+  padding: 24px;
+  min-height: calc(100vh - 136px); /* Adjust based on your AdminPage layout if applicable */
+  border-radius: 8px;
+}
+
+.dashboard-title {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #262626; /* Darker text for titles */
+  font-size: 2.2em;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* Space between icon and text */
+}
+
+.dashboard-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* More prominent shadow */
+  transition: all 0.3s ease;
+  overflow: hidden; /* Ensures content respects border-radius */
+}
+
+.dashboard-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Specific styling for Ant Design Statistic values */
+.ant-statistic-content {
+  font-size: 28px !important;
+  font-weight: 600;
+}
+
+.ant-statistic-title {
+  font-size: 16px !important;
+  color: #595959;
+}
+
+/* Chart specific card styling */
+.chart-card .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 24px;
+  font-size: 1.2em;
+  font-weight: 600;
+}
+
+.chart-card .ant-card-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center content in chart cards */
+}
+
+.dashboard-loading {
+  text-align: center;
+  padding: 50px;
+  font-size: 1.2em;
+  color: #8c8c8c;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 767px) {
+  .dashboard-container {
+    padding: 16px;
+  }
+
+  .dashboard-title {
+    font-size: 1.8em;
+    margin-bottom: 20px;
+  }
+
+  .ant-statistic-content {
+    font-size: 24px !important;
+  }
+
+  .ant-statistic-title {
+    font-size: 14px !important;
+  }
+
+  .chart-card .ant-card-body {
+    padding: 16px;
+  }
+}

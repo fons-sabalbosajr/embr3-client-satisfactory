@@ -1,0 +1,42 @@
+/* adminpage.css */
+
+/* Style for the logo container in the Sider */
+.admin-logo-container {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.admin-logo {
+  height: 32px;
+  width: 32px;
+  transition: all 0.3s;
+}
+
+/* Ensure dropdown link has a pointer and good alignment */
+.user-dropdown-link {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+/* Ensure the menu takes the full height available minus the logo and footer switch */
+.ant-menu {
+  border-right: 0 !important; /* Remove the default border */
+  background: transparent;
+}
+
+/* Style for the user dropdown link for better interaction */
+.user-dropdown-link {
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.user-dropdown-link:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+

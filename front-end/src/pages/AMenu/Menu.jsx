@@ -1,18 +1,42 @@
-import React from "react";
+import { useEffect } from "react";
 import { Button, Title, Text, Stack, Container } from "@mantine/core";
 import { useNavigate, useLocation } from "react-router-dom";
 import EMBLogo from "../../assets/emblogo.svg";
 import BPLogo from "../../assets/bplogo.svg";
+import CryptoJS from "crypto-js";
 import "./menu.css";
+
+const secretKey = import.meta.env.VITE_MENU_SECRET_KEY;
+
+function encrypt(value) {
+  return CryptoJS.AES.encrypt(value, secretKey).toString();
+}
+
+function decrypt(cipherText) {
+  try {
+    const bytes = CryptoJS.AES.decrypt(cipherText, secretKey);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  } catch (e) {
+    return null;
+  }
+}
 
 function Menu() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  // 🔍 Extract query param from URL
   const params = new URLSearchParams(location.search);
-  const showAdmin = params.get("admin") === "true";
+  const showAdmin = params.get("admin-auth") === "true";
 
+  const encryptedFlag = sessionStorage.getItem("menuFlag");
+  const visited = encryptedFlag ? decrypt(encryptedFlag) === "visited" : false;
+
+  useEffect(() => {
+    if (visited && !showAdmin) {
+      navigate("/client", { replace: true });
+    }
+  }, [visited, showAdmin, navigate]);
+
+  if (visited && !showAdmin) return null;
 
   return (
     <div className="menu-container">
@@ -64,7 +88,7 @@ function Menu() {
               size="md"
               radius="xl"
               className="survey-button-admin"
-              onClick={() => navigate("/admin")}
+              onClick={() => navigate("/admin-auth")}
             >
               Admin
             </Button>
@@ -73,7 +97,11 @@ function Menu() {
             size="md"
             radius="xl"
             className="survey-button"
-            onClick={() => navigate("/client")}
+            onClick={() => {
+              const encrypted = encrypt("visited");
+              sessionStorage.setItem("menuFlag", encrypted);
+              navigate("/client", { replace: true });
+            }}
           >
             Client
           </Button>

@@ -1,0 +1,9 @@
+/* Applies to all menu items */
+.custom-admin-menu .ant-menu-item,
+.custom-admin-menu .ant-menu-submenu-title {
+  font-size: 11px !important; /* adjust as needed */
+  font-weight: 500 !important;
+ font-family: "Poppins", sans-serif;
+  //padding: 0px 12px !important; /* optional: tweak spacing */
+  //color: rgb(255, 255, 255) !important;
+}

@@ -1,0 +1,65 @@
+Client Satisfactory New
+
+Datasets:
+
+1. Client Type:
+- Citizen
+- Business
+- Government (Employee or another agency)
+
+2. Date
+3. Sex/Gender
+4. Age
+12. Email address (optional):
+5. Region of Residence
+6. Service Availed
+- ECC Online
+- CNC Online
+- OPMS Online
+- HWMS Online
+- CMR Online
+- COC Online
+- ELR Online
+- Importation Clearance
+- PCB Online
+- PCL Online
+- PMPIN Online
+- CRS Online
+- SMR Online
+- PCO Online
+
+Citizen's Charter Questions:
+
+7. CC1. Which of the following best describes your awareness of a CC?
+- A. I know what a CC is and I saw this office's CC.
+- B. I know what a CC is but I did NOT see this office's CC.
+- C. I learned of the CC only when I saw this office's CC.
+- D. I do not know what a CC is and I did not see one in this office. (Answer 'N/A' on CC2 and CC3)
+
+8. CC2. If aware of CC (answered 1-3 in CC1), would you say that the CC of this office was ...?
+- A. Easy to See
+- B. Somewhat easy to See
+- C. Difficult to See
+- D. Not Visible at all
+- E. N/A
+
+9. CC3. If aware of CC (answered codes 1-3 in CC1), how much did the CC help you in your transaction?
+- A. Help very much
+- B. Somewhat helped
+- C. Did not help
+- D. N/A
+
+10. From Strongly Disagree to Strongly Agree (with N/A)
+- SQD0. I am satisfied with the service that I availed.
+- SQD1. I spent a reasonable amount of time for my transaction.
+- SQD2. The office followed the transaction's requirements and steps based on the information provided.
+- SQD3. The steps (including payment) I needed to do for my transaction were easy and simple.
+- SQD4. I easily found information about my transaction from the office of its website.
+- SQD5. I paid a reasonable amount of fees for my transaction.
+- SQD6. I feel the office was fair to everyone, or "walang palakasan", during my transaction.
+- SQD7. I was treated courteously by the staff, and (if asked for help) the staff was helpful.
+- SQD8. I got what I needed from the government office, or (If denied) denial of request was sufficiently explained to me
+
+11. Suggestion on how we can further improve our services (optional):
+
+12. Email address (optional):
