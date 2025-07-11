@@ -3,6 +3,8 @@
   --bg-dark: #1a1b1e;
   --text-light: #002244;
   --text-dark: #f0f0f0;
+  --main-title-light: #002244; /* Define blue for light mode */
+  --main-title-dark: #ffffff; /* Define white for dark mode */
 }
 
 body {
@@ -25,6 +27,15 @@ body[data-mantine-color-scheme="dark"] .home-container {
   animation: gradientFlow 20s ease infinite;
 }
 
+/* New rules for main-title color based on theme */
+body[data-mantine-color-scheme="light"] .main-title {
+  color: var(--main-title-light);
+}
+
+body[data-mantine-color-scheme="dark"] .main-title {
+  color: var(--main-title-dark);
+}
+
 @keyframes gradientFlow {
   0% {
     background-position: 0% 50%;
@@ -42,7 +53,7 @@ body[data-mantine-color-scheme="dark"] .home-container {
   position: absolute;
   inset: 0;
   background: white;
-  opacity: 0.10; /* adjust this to control white intensity */
+  opacity: 0.1; /* adjust this to control white intensity */
   z-index: 0;
   pointer-events: none;
 }
@@ -69,12 +80,13 @@ body[data-mantine-color-scheme="dark"] .home-container {
 }
 
 .hero-main {
-  margin-bottom: auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  padding-bottom: 2rem;
+  flex-grow: 1;
+  padding: 0;
+  margin: 0;
+  min-height: calc(100vh - 200px); /* fits screen without scrolling */
 }
 
 .hero-content {
@@ -98,7 +110,7 @@ body[data-mantine-color-scheme="dark"] .home-container {
 .hero-logos {
   justify-content: center;
   align-items: center;
-    gap: 10px;
+  gap: 10px;
   margin-bottom: 10px;
 }
 
@@ -115,14 +127,7 @@ body[data-mantine-color-scheme="dark"] .home-container {
 
 .agency-header {
   text-align: center;
-  padding-top: 20px;
-}
-
-.agency-header-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  margin-top: -400px;
 }
 
 .agency-name {
@@ -154,20 +159,14 @@ body[data-mantine-color-scheme="dark"] .home-container {
 }
 
 .main-title {
-  font-family: "Gotham", sans-serif; /* 👈 change to your preferred font */
-  font-size: 2.8rem;
-  font-weight: 700;
-  color: inherit;
-  text-align: center;
-  transition: color 0.3s ease;
-  margin-top: 1rem;
+  font-size: 2.4rem;
+  margin-top: 0.5rem;
+  /* Remove direct color application here, it will be handled by theme-specific rules */
 }
 
 .survey-text {
-  font-size: 1.25rem; /* increased from default */
-  font-weight: 500;
-  text-align: center;
-  margin-top: 0.5rem;
+  font-size: 1.125rem;
+  margin-top: 0.25rem;
 }
 
 .survey-button {
@@ -223,7 +222,6 @@ body[data-mantine-color-scheme="dark"] .logo-svg path {
 .floating-theme-toggle:hover {
   transform: scale(1.1);
 }
-
 
 .home-background-circles {
   position: absolute;
@@ -298,10 +296,44 @@ body[data-mantine-color-scheme="dark"] .logo-svg path {
     opacity: 0.02;
   }
   50% {
-    opacity: 0.10;
+    opacity: 0.1;
   }
   100% {
     transform: translateY(-120vh);
     opacity: 0;
+  }
+}
+
+.survey-graphic {
+  width: 100%;
+  max-width: 500px;
+  margin: -100px auto 0 auto; /* tight spacing below agency */
+  display: block;
+}
+
+@media screen and (max-width: 1080px) {
+  .survey-graphic {
+    max-width: 300px;
+    margin: -50px auto 0 auto;
+  }
+
+  .agency-header {
+    text-align: center;
+    margin-top: -120px;
+  }
+
+  .main-title {
+    font-size: 2rem;
+    margin-top: 0.25rem;
+  }
+
+  .survey-text {
+    font-size: 1rem;
+    margin-top: 0.2rem;
+  }
+
+  .survey-button {
+    padding: 10px 24px;
+    margin-top: 0.4rem;
   }
 }

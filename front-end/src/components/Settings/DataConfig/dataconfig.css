@@ -1,0 +1,173 @@
+/* dataconfig.css */
+
+/* --- General Container and Heading Styles --- */
+.data-config-container {
+  padding: 20px;
+  max-width: 1200px; /* Limit width for better readability on large screens */
+  margin: 0 auto; /* Center the container */
+  min-height: calc(100vh - 136px);
+  border-radius: 8px;
+}
+
+h1 {
+  color: #1890ff;
+  margin-bottom: 24px;
+  text-align: center;
+  font-size: 2.5em;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.search-input {
+  width: 400px;
+}
+
+/* --- Table Controls (Search & Add Button) --- */
+.table-controls {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* Allows wrapping on smaller screens */
+  gap: 10px;
+}
+
+.add-question-button {
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1.1em;
+}
+
+.questions-table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.ant-table-thead > tr > th {
+  font-weight: bold;
+  color: #333;
+  padding: 12px 16px;
+  font-size: 11px;
+}
+
+.questions-table-compact .ant-table-tbody > tr > td {
+  font-size: 0.85em; /* Smaller font size for table cells */
+  vertical-align: top;
+  padding: 10px 16px;
+}
+
+/* Ensure actions column doesn't wrap unnecessarily */
+.questions-table-compact .ant-table-tbody > tr > td:last-child {
+  white-space: nowrap;
+}
+
+/* --- Ant Design Modal Styling --- */
+.ant-modal-header {
+  padding: 16px 24px;
+  border-radius: 8px 8px 0 0;
+}
+
+.ant-modal-title {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.ant-modal-body {
+  padding: 24px;
+}
+
+.ant-modal-footer {
+  padding: 10px 16px;
+  text-align: right;
+  border-radius: 0 0 8px 8px;
+}
+
+/* --- Ant Design Form Item and Input Styling --- */
+.ant-form-item-label > label {
+  font-weight: 600;
+  color: #555;
+}
+
+.ant-input,
+.ant-input-textarea,
+.ant-select-selector {
+  border-radius: 6px;
+}
+
+@media (max-width: 1080px) {
+  .data-config-container {
+    padding: 5px; /* Slightly less padding for tablets */
+    max-width: 960px; /* Adjust max-width for common tablet landscape sizes */
+  }
+
+  .data-config-title {
+    text-align: left;
+    font-size: 2em;
+  }
+
+  /* Table controls: allow wrapping, slightly adjust spacing */
+  .table-controls {
+    flex-wrap: wrap;
+    justify-content: center; /* Center items if they wrap onto a new line */
+  }
+
+  .search-input {
+    width: 400px;
+    height: 32px;
+    max-width: 300px; /* Cap its maximum width */
+    font-size: 11px;
+  }
+
+  .add-question-button {
+    padding: 8px 18px; /* Slightly less button padding */
+    font-size: 1em; /* Slightly smaller button font */
+  }
+
+  .questions-table-compact {
+    padding: none;
+  }
+
+  /* Adjust table font sizes and padding for tablets */
+  .questions-table-compact .ant-table-tbody > tr > td {
+    font-size: 11px; /* Make table content slightly smaller */
+    padding: 8px 12px;
+  }
+
+  .questions-table-compact .ant-table-thead > tr > th {
+    font-size: 11px; /* Adjust header font size */
+    padding: 10px 12px;
+  }
+
+  /* ✨ Adjust font size for Tags within the table for tablets */
+  .questions-table-compact .ant-table-tbody .ant-tag {
+    font-size: 9px; /* Smaller font for tags */
+    //padding: 2px 5px; /* Adjust padding to make them more compact */
+  }
+}
+
+@media (max-width: 767px) {
+  .table-controls {
+    flex-direction: column; /* Stack items vertically on small screens */
+    align-items: stretch; /* Stretch items to full width */
+  }
+
+  .table-controls .ant-input-search {
+    width: 100% !important; /* Full width for search input */
+  }
+
+  .add-question-button {
+    width: 100%; /* Full width on small screens */
+    display: block;
+  }
+}
+
+@media (min-width: 768px) {
+  .add-question-button {
+    width: auto; /* Auto width on larger screens */
+    display: inline-block; /* Display inline block on larger screens */
+  }
+}
