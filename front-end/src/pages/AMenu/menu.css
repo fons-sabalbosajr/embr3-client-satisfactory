@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
 
 :root {
   --bg-light: #f5f7fa;
@@ -7,37 +7,91 @@
   --text-dark: #f0f0f0;
 }
 
+/* ---------- THEMING ---------- */
 body[data-mantine-color-scheme="light"] .menu-container {
   background-color: var(--bg-light);
   color: var(--text-light);
 }
 
 body[data-mantine-color-scheme="dark"] .menu-container {
-  background: linear-gradient(-45deg, #052532, #0c506e, #0c6831, #003563);
-  background-size: 400% 400%;
+  background-color: var(--bg-dark);
   color: var(--text-dark);
-  animation: gradientFlow 20s ease infinite;
 }
 
+/* ---------- MAIN CONTAINER ---------- */
 .menu-container {
   position: relative;
-  z-index: 0;
+  z-index: 1;
   min-height: 100vh;
-  text-align: center;
-  padding: 0 20px;
   box-sizing: border-box;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* instead of center */
+  padding-top: 40px;
+  align-items: center;
+  text-align: center;
+}
 
-  background: linear-gradient(-45deg, #e1fffd, #89ebff, #c7fff0, #a9ffe9);
+/* Background image with low opacity */
+.menu-container::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url("../../assets/bgemb.webp") no-repeat center center;
+  background-size: cover;
+  opacity: 0.1;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Background gradient on top of image */
+.menu-container::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(-45deg, #19bafa, #ffe9c0, #d4ffe5, #afdaff);
   background-size: 400% 400%;
   animation: gradientFlow 15s ease infinite;
+  opacity: 0.4;
+  z-index: 0;
+  pointer-events: none;
 }
 
-.menu-container > * {
-  position: relative;
-  z-index: 1;
+/* ---------- ANIMATIONS ---------- */
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
+@keyframes floatUp {
+  0% {
+    transform: translateY(0);
+    opacity: 0.08;
+  }
+  50% {
+    opacity: 0.15;
+  }
+  100% {
+    transform: translateY(-120vh);
+    opacity: 0;
+  }
+}
+
+/* ---------- FLOATING CIRCLES ---------- */
 .menu-background-circles {
   position: absolute;
   top: 0;
@@ -64,7 +118,6 @@ body[data-mantine-color-scheme="dark"] .menu-container {
   bottom: -250px;
   animation-duration: 40s;
 }
-
 .circle2 {
   width: 300px;
   height: 300px;
@@ -74,7 +127,6 @@ body[data-mantine-color-scheme="dark"] .menu-container {
   animation-duration: 60s;
   animation-delay: 10s;
 }
-
 .circle3 {
   width: 180px;
   height: 180px;
@@ -84,7 +136,6 @@ body[data-mantine-color-scheme="dark"] .menu-container {
   animation-duration: 50s;
   animation-delay: 5s;
 }
-
 .circle4 {
   width: 250px;
   height: 250px;
@@ -94,7 +145,6 @@ body[data-mantine-color-scheme="dark"] .menu-container {
   animation-duration: 55s;
   animation-delay: 3s;
 }
-
 .circle5 {
   width: 150px;
   height: 150px;
@@ -105,53 +155,28 @@ body[data-mantine-color-scheme="dark"] .menu-container {
   animation-delay: 7s;
 }
 
-@keyframes floatUp {
-  0% {
-    transform: translateY(0);
-    opacity: 0.08;
-  }
-  50% {
-    opacity: 0.15;
-  }
-  100% {
-    transform: translateY(-120vh);
-    opacity: 0;
-  }
-}
-
-@keyframes gradientFlow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
+/* ---------- HEADER & LOGOS ---------- */
 .hero-logos {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
-.logo-svg-emb-menu {
+.logo-svg-emb-menu,
+.logo-svg-bp-menu {
   height: 60px;
   width: auto;
+  max-width: 100px;
   transition: fill 0.3s ease;
+  flex-shrink: 0;
 }
-.logo-svg-bp-menu {
-  height: 65px;
-  width: auto;
-  transition: fill 0.3s ease;
-}
+
 .agency-header {
   text-align: center;
-  padding-top: 20px;
+  padding-top: 0;
 }
 
 .agency-header-inner {
@@ -161,6 +186,7 @@ body[data-mantine-color-scheme="dark"] .menu-container {
   justify-content: center;
 }
 
+/* ---------- AGENCY INFO ---------- */
 .agency-name {
   font-weight: 700;
   font-size: 1.2rem;
@@ -189,6 +215,7 @@ body[data-mantine-color-scheme="dark"] .menu-container {
   font-weight: 500;
 }
 
+/* ---------- TITLES ---------- */
 .main-title {
   font-family: "Gotham", sans-serif;
   font-size: 2.5rem;
@@ -202,8 +229,9 @@ body[data-mantine-color-scheme="dark"] .menu-container {
   margin-top: 0.5rem;
 }
 
-.survey-button {
-  margin: 0 auto;
+/* ---------- BUTTONS ---------- */
+.survey-button,
+.survey-button-admin {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -222,38 +250,40 @@ body[data-mantine-color-scheme="dark"] .menu-container {
 }
 
 .survey-button-admin {
-  margin: 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px 32px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: white;
-  border: none;
-  border-radius: 50px;
-  cursor: pointer;
-  background: linear-gradient(135deg, #0ed2f7, #29ffc6);
-  background-size: 200% 200%;
-  box-shadow: 0 4px 14px rgba(0, 128, 128, 0.25);
-  transition: all 0.4s ease, transform 0.15s ease;
   margin-right: 10px;
 }
 
-.survey-button:hover {
+.survey-button:hover,
+.survey-button-admin:hover {
   background-position: right center;
   transform: scale(1.05);
   box-shadow: 0 6px 20px rgba(0, 128, 128, 0.35);
 }
 
-.survey-button:active {
+.survey-button:active,
+.survey-button-admin:active {
   transform: scale(0.98);
   box-shadow: 0 2px 10px rgba(0, 128, 128, 0.2);
 }
 
-@media (max-width: 768px) {
+/* ---------- RESPONSIVE STYLES ---------- */
+
+/* --- Mobile (<768px) --- */
+@media screen and (max-width: 767px) {
+  .hero-logos {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .logo-svg-emb-menu,
+  .logo-svg-bp-menu {
+    max-width: 80%;
+    height: 50px;
+  }
+
   .main-title {
     font-size: 1.8rem;
+    margin-top: 1.5rem;
   }
 
   .agency-name-text-emb {
@@ -263,8 +293,52 @@ body[data-mantine-color-scheme="dark"] .menu-container {
   .survey-button {
     width: 100%;
   }
+}
 
+/* --- Tablet (768px to 1024px) --- */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
   .hero-logos {
-    flex-direction: column;
+    flex-direction: row;
+    gap: 12px;
+  }
+
+  .logo-svg-emb-menu,
+  .logo-svg-bp-menu {
+    height: 55px;
+    max-width: 100px;
+  }
+
+  .main-title {
+    font-size: 2rem;
+  }
+
+  .agency-name-text {
+    font-size: 11px;
+  }
+
+  .agency-name-text-emb {
+    font-size: 18px;
+  }
+
+  .agency-name-text-address {
+    font-size: 11px;
+  }
+}
+
+@media screen and (min-width: 440px) and (max-width: 768px) {
+  .hero-logos {
+    flex-direction: row;
+    gap: 12px;
+  }
+
+  .agency-header {
+    transform: translateY(-10%);
+  }
+
+  .survey-button,
+  .survey-button-admin {
+    width: 200px; /* Adjust as needed */
+    font-size: 0.9rem; /* Optional: scale font for smaller screens */
+    padding: 10px 24px;
   }
 }

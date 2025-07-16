@@ -20,7 +20,7 @@ import DataConfig from "./components/Settings/DataConfig/DataConfig";
 import Accounts from "./components/Settings/Accounts/Accounts";
 import BackupData from "./components/Settings/Backup/Backup";
 
-import SurveyPage1 from "./page_survey/page1/SurveyPage1";
+import SurveyPage1 from "./page_survey/Survey";
 
 import "@fontsource/poppins";
 import { getDecryptedItem, setEncryptedItem } from "./utils/encryptedStorage";
@@ -93,9 +93,16 @@ const MainApp = () => {
             <Route path="settings/data-config" element={<DataConfig />} />
             <Route path="settings/account" element={<Accounts />} />
             <Route path="settings/backup" element={<BackupData />} />
-            
           </Route>
-          <Route path="/survey/page1" element={<SurveyPage1 />} />
+          <Route
+            path="/survey/page1"
+            element={
+              <SurveyPage1
+                toggleColorScheme={toggleColorScheme}
+                colorScheme={colorScheme}
+              />
+            }
+          />
         </Routes>
       </BrowserRouter>
     </MantineProvider>
