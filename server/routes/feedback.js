@@ -1,5 +1,6 @@
 import express from 'express';
 import Feedback from '../models/Feedback.js';
+import { updateFeedback } from '../controllers/feedback.js';
 
 const router = express.Router();
 
@@ -28,4 +29,8 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.put('/:id', updateFeedback);
+
 export default router;
+
+

@@ -9,6 +9,7 @@ import { Server } from 'socket.io'; // Import Server from socket.io
 import feedbackRoutes from "./routes/feedback.js";
 import authRoutes from "./routes/auth.js";
 import questionRoutes from "./routes/question.js";
+import clientSatisfactoryRoutes from "./routes/clientSatisfactory.js";
 
 dotenv.config();
 
@@ -45,10 +46,8 @@ io.on('connection', (socket) => {
 
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/auth", authRoutes);
-
-// Modify question routes to include `io` for real-time updates
-// Option 1: Pass io directly to the router
-app.use("/api/question", questionRoutes(io)); // Assuming your router accepts 'io'
+app.use("/api/question", questionRoutes(io)); 
+app.use("/api/client-satisfactory", clientSatisfactoryRoutes);
 
 // DB Connect - Now use `server.listen` instead of `app.listen`
 mongoose

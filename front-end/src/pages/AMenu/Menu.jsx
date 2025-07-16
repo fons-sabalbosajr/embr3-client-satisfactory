@@ -77,7 +77,7 @@ function Menu() {
 
       <Container size="xs" className="menu-content">
         <Title order={1} className="main-title">
-          Online Client Satisfactory Survey
+          Online Client Satisfactory Measurement
         </Title>
         <Text size="lg" className="survey-text">
           Select your portal below

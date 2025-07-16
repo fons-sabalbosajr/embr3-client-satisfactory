@@ -3,8 +3,8 @@
   --bg-dark: #1a1b1e;
   --text-light: #002244;
   --text-dark: #f0f0f0;
-  --main-title-light: #002244; /* Define blue for light mode */
-  --main-title-dark: #ffffff; /* Define white for dark mode */
+  --main-title-light: #002244;
+  --main-title-dark: #ffffff;
 }
 
 body {
@@ -12,22 +12,18 @@ body {
   padding: 0;
   font-family: "Poppins", sans-serif;
   transition: background 0.3s ease, color 0.3s ease;
-  min-height: 100vh;
 }
 
+/* --- THEME-BASED STYLING --- */
 body[data-mantine-color-scheme="light"] .home-container {
   background-color: var(--bg-light);
   color: var(--text-light);
 }
 
 body[data-mantine-color-scheme="dark"] .home-container {
-  background: linear-gradient(-45deg, #052532, #0c506e, #0c6831, #003563);
-  background-size: 400% 400%;
   color: var(--text-dark);
-  animation: gradientFlow 20s ease infinite;
 }
 
-/* New rules for main-title color based on theme */
 body[data-mantine-color-scheme="light"] .main-title {
   color: var(--main-title-light);
 }
@@ -36,103 +32,98 @@ body[data-mantine-color-scheme="dark"] .main-title {
   color: var(--main-title-dark);
 }
 
-@keyframes gradientFlow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+body[data-mantine-color-scheme="dark"] .logo-svg-emb path,
+body[data-mantine-color-scheme="dark"] .logo-svg-bp path {
+  fill: white;
+}
+
+/* --- MAIN CONTAINER & BACKGROUND IMAGE --- */
+.home-container {
+  position: relative;
+  min-height: 100vh;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 20px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 1;
 }
 
 .home-container::before {
   content: "";
-  position: absolute;
-  inset: 0;
-  background: white;
-  opacity: 0.1; /* adjust this to control white intensity */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  background-image: url("../../assets/bgemb.webp");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 0.1; /* <<< lowered image visibility */
   z-index: 0;
   pointer-events: none;
 }
 
-.home-container {
-  position: relative;
-  z-index: 0; /* base layer for container */
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  text-align: center;
-  padding: 0 20px;
-  box-sizing: border-box;
-  overflow: hidden;
-
-  background: linear-gradient(-45deg, #e1fffd, #89ebff, #c7fff0, #a9ffe9);
+.home-container::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(-45deg, #19bafa, #ffe9c0, #d4ffe5, #afdaff);
   background-size: 400% 400%;
   animation: gradientFlow 15s ease infinite;
+  opacity: 0.3; /* <<< overlay blends with the image */
+  pointer-events: none;
 }
 
-.home-container > * {
+body[data-mantine-color-scheme="dark"] .home-container::after {
+  background: linear-gradient(-45deg, #043257, #486e0c, #1d2b7a, #006360);
+  opacity: 0.2;
+}
+
+body[data-mantine-color-scheme="dark"] .home-container::before {
+  opacity: 0.08;
+}
+
+/* --- CONTENT WRAPPER --- */
+.home-content-wrapper {
+  z-index: 1;
   position: relative;
-  z-index: 1; /* ensures content stays above overlay */
+  text-align: center;
+  width: 100%;
 }
 
-.hero-main {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  flex-grow: 1;
-  padding: 0;
-  margin: 0;
-  min-height: calc(100vh - 200px); /* fits screen without scrolling */
+.main-content-container {
+  transform: translateY(-20%);
 }
 
-.hero-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.hero-wrapper {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 8rem;
-}
-
-.hero-header {
-  margin-bottom: 0.5rem;
-}
-
+/* --- LOGOS --- */
 .hero-logos {
+  display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 15px;
+  margin-bottom: 15px;
 }
 
 .logo-svg-emb {
   height: 60px;
   width: auto;
-  transition: fill 0.3s ease;
 }
+
 .logo-svg-bp {
   height: 65px;
   width: auto;
-  transition: fill 0.3s ease;
 }
 
-.agency-header {
-  text-align: center;
-  margin-top: -400px;
-}
-
+/* --- HEADER TEXT --- */
 .agency-name {
   font-weight: 700;
-  font-size: 1.2rem;
   line-height: 1.4;
   margin: 0 auto;
   padding: 0 20px;
@@ -158,19 +149,24 @@ body[data-mantine-color-scheme="dark"] .main-title {
   font-weight: 500;
 }
 
+/* --- MAIN CONTENT & BUTTON --- */
+.survey-graphic {
+  width: 100%;
+  max-width: 450px;
+  height: auto;
+}
+
 .main-title {
-  font-size: 2.4rem;
-  margin-top: 0.5rem;
-  /* Remove direct color application here, it will be handled by theme-specific rules */
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  margin-top: 0;
 }
 
 .survey-text {
   font-size: 1.125rem;
-  margin-top: 0.25rem;
 }
 
 .survey-button {
-  margin: 1rem auto 0 auto; /* top auto bottom auto */
+  margin-top: 1rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -199,28 +195,17 @@ body[data-mantine-color-scheme="dark"] .main-title {
   box-shadow: 0 2px 10px rgba(0, 128, 128, 0.2);
 }
 
-.color-toggle {
-  align-self: flex-end;
-  margin-bottom: 1rem;
-}
-
-/* Dark mode logo path override if needed */
-body[data-mantine-color-scheme="dark"] .logo-svg path {
-  fill: white;
-}
-
-.floating-theme-toggle {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000;
-  border-radius: 50%;
-  padding: 3px;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-.floating-theme-toggle:hover {
-  transform: scale(1.1);
+/* --- BACKGROUND ANIMATIONS --- */
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .home-background-circles {
@@ -240,7 +225,6 @@ body[data-mantine-color-scheme="dark"] .logo-svg path {
   opacity: 0.08;
   animation: floatUp linear infinite;
 }
-
 .circle1 {
   width: 200px;
   height: 200px;
@@ -249,7 +233,6 @@ body[data-mantine-color-scheme="dark"] .logo-svg path {
   bottom: -250px;
   animation-duration: 40s;
 }
-
 .circle2 {
   width: 300px;
   height: 300px;
@@ -259,7 +242,6 @@ body[data-mantine-color-scheme="dark"] .logo-svg path {
   animation-duration: 60s;
   animation-delay: 10s;
 }
-
 .circle3 {
   width: 180px;
   height: 180px;
@@ -269,7 +251,6 @@ body[data-mantine-color-scheme="dark"] .logo-svg path {
   animation-duration: 50s;
   animation-delay: 5s;
 }
-
 .circle4 {
   width: 250px;
   height: 250px;
@@ -279,7 +260,6 @@ body[data-mantine-color-scheme="dark"] .logo-svg path {
   animation-duration: 55s;
   animation-delay: 3s;
 }
-
 .circle5 {
   width: 150px;
   height: 150px;
@@ -304,36 +284,134 @@ body[data-mantine-color-scheme="dark"] .logo-svg path {
   }
 }
 
-.survey-graphic {
-  width: 100%;
-  max-width: 500px;
-  margin: -100px auto 0 auto; /* tight spacing below agency */
-  display: block;
-}
+/* --- RESPONSIVE --- */
 
-@media screen and (max-width: 1080px) {
-  .survey-graphic {
-    max-width: 300px;
-    margin: -50px auto 0 auto;
+/* --- RESPONSIVE: TABLET VIEW (768px–1024px) --- */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .main-content-container {
+    transform: translateY(-20%);
+    padding: 0 16px;
   }
 
   .agency-header {
-    text-align: center;
-    margin-top: -120px;
+    transform: translateY(-15%);
+  }
+
+  .survey-graphic {
+    max-width: 320px;
+    margin-bottom: 1rem;
   }
 
   .main-title {
-    font-size: 2rem;
-    margin-top: 0.25rem;
+    font-size: 1.8rem;
+    text-align: center;
   }
 
   .survey-text {
     font-size: 1rem;
-    margin-top: 0.2rem;
+    text-align: center;
   }
 
   .survey-button {
-    padding: 10px 24px;
-    margin-top: 0.4rem;
+    font-size: 0.95rem;
+    padding: 12px 28px;
+  }
+
+  .agency-name {
+    padding: 0 10px;
+  }
+
+  .agency-name-text {
+    font-size: 11px;
+  }
+
+  .agency-name-text-emb {
+    font-size: 18px;
+  }
+
+  .agency-name-text-address {
+    font-size: 11px;
+  }
+
+  .hero-logos {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 5px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .logo-svg-emb,
+  .logo-svg-bp {
+    height: 55px;
+    width: auto;
+    max-width: 100px;
+    flex-shrink: 0;
+  }
+}
+
+@media screen and (min-width: 440px) and (max-width: 768px) {
+
+   .main-content-container {
+    transform: translateY(-20%);
+    padding: 0 16px;
+  }
+
+  .agency-header {
+    transform: translateY(-15%);
+  }
+
+  .hero-logos {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 5px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .logo-svg-emb,
+  .logo-svg-bp {
+    height: 40px !important;; 
+    width: auto;
+    max-width: 100px;
+    flex-shrink: 0;
+  }
+
+  .survey-graphic {
+    max-width: 300px;
+    margin-bottom: 1rem;
+  }
+
+  .main-title {
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .survey-text {
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .survey-button {
+    font-size: 0.95rem;
+    padding: 40px 30px;
+  }
+
+  .agency-name {
+    padding: 0 10px;
+  }
+
+  .agency-name-text {
+    font-size: 11px;
+  }
+
+  .agency-name-text-emb {
+    font-size: 18px;
+  }
+
+  .agency-name-text-address {
+    font-size: 11px;
   }
 }
