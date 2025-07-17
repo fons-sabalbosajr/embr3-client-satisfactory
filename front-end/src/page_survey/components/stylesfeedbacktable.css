@@ -1,0 +1,53 @@
+.feedback-table-wrapper {
+  width: 100%;
+}
+
+.feedback-form-item {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.feedback-form-item.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.feedback-label {
+  font-size: 30px;
+  color: #000;
+}
+
+.feedback-label.disabled {
+  color: #888;
+}
+
+.feedback-select {
+  font-size: 14px;
+  height: 45px;
+}
+
+@media screen and (min-width: 768px) and (max-width: 1080px){
+    .feedback-label {
+    font-size: 30px;
+  }
+}
+
+/* Responsive fix for mobile dropdown word-wrap */
+@media screen and (max-width: 768px) {
+  .ant-select-dropdown .ant-select-item-option-content {
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .ant-select-item {
+    padding: 6px 10px !important;
+  }
+
+  .ant-select-selector {
+    white-space: normal !important;
+    line-height: 1.4 !important;
+  }
+}

@@ -3,6 +3,7 @@ import "antd/dist/reset.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import MainApp from "./mainApp";
+import "./i18n.js";
 
 //console.log("App is loading...");
 

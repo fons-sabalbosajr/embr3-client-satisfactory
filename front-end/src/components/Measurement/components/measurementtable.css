@@ -1,0 +1,12 @@
+.service-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+   max-width: 200px;
+}
+
+.service-tags-container .ant-tag {
+  //width: calc(33.33% - 6px); /* 3 per line, minus small spacing */
+  margin-right: 6px;
+  text-align: center;
+  white-space: normal;
+}

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Button, Card, Input, DatePicker, Row, Col } from "antd";
-import { ExportOutlined, ReloadOutlined } from "@ant-design/icons";
+import { Button, Card, Input, DatePicker, Row, Col, Tooltip } from "antd";
+import { ExportOutlined } from "@ant-design/icons";
 import MeasurementTable from "../Measurement/components/MeasurementTable";
 import MeasurementFormModal from "../Measurement/components/MeasurementFormModal";
-import {getFeedbacks} from "../../services/api";
+import { getFeedbacks } from "../../services/api";
 import * as XLSX from "xlsx";
 import dayjs from "dayjs";
-
+import { io } from "socket.io-client";
+const socket = io("http://localhost:5000"); // or your backend URL
 
 const { RangePicker } = DatePicker;
 
@@ -20,6 +21,15 @@ function Measurement() {
 
   useEffect(() => {
     fetchData();
+
+    // 👇 Listen for real-time survey submissions
+    socket.on("feedbackAdded", () => {
+      fetchData(); // reloads both `data` and `filtered`
+    });
+
+    return () => {
+      socket.off("feedbackAdded");
+    };
   }, []);
 
   const fetchData = async () => {
@@ -95,25 +105,40 @@ function Measurement() {
   };
 
   return (
-    <Card
-      title="Client Measurement Data"
-      extra={<Button icon={<ReloadOutlined />} onClick={fetchData}>Reload</Button>}
-    >
+    <Card title="Client Measurement Data">
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={8}>
-          <Input.Search placeholder="Search..." onSearch={handleSearch} allowClear />
+          <Input.Search
+            placeholder="Search..."
+            onSearch={handleSearch}
+            allowClear
+          />
         </Col>
         <Col span={8}>
           <RangePicker onChange={handleDateFilter} />
         </Col>
         <Col span={8}>
-          <Button icon={<ExportOutlined />} onClick={handleExport} type="primary">
-            Export to Excel
-          </Button>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: 12,
+            }}
+          >
+            <Tooltip title="Export to Excel">
+              <Button type="primary" onClick={handleExport}>
+                <ExportOutlined />
+              </Button>
+            </Tooltip>
+          </div>
         </Col>
       </Row>
 
-      <MeasurementTable data={filtered} onEdit={openEditModal} onDataRefresh={fetchData} />
+      <MeasurementTable
+        data={filtered}
+        onEdit={openEditModal}
+        onDataRefresh={fetchData}
+      />
 
       <MeasurementFormModal
         visible={modalVisible}

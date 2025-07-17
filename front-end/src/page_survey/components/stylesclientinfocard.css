@@ -1,0 +1,45 @@
+.text-filled {
+  margin-top: 20px;
+}
+
+/* stylesclientinfocard.css */
+
+.client-info-card-space {
+  width: 100%;
+}
+
+.client-info-card-radio-space {
+  display: flex;
+  flex-direction: column;
+}
+
+.client-info-card-dynamic-input {
+  margin-top: 8px;
+  width: 300px;
+  margin-left: 36px;
+}
+
+.client-info-card-note {
+  padding-top: 25px;
+}
+
+.client-info-card-note-text {
+  font-size: 12px;
+  color: gray;
+}
+
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .client-info-card-note-text {
+    font-size: 10px;
+    color: gray;
+  }
+}
+
+@media screen and (min-width: 440px) and (max-width: 768px) {
+  .client-info-card-note-text {
+    font-size: 10px;
+    color: gray;
+    display: flex;
+    margin-top: -20px;
+  }
+}

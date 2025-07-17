@@ -1,25 +1,22 @@
-import {
-  Container,
-  Button,
-  Text,
-  Title,
-  Stack,
-  Grid,
-} from "@mantine/core";
-import { ArrowRight } from "tabler-icons-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FloatButton, Row, Col, Typography, Button } from "antd";
+import { BulbOutlined, ArrowRightOutlined } from "@ant-design/icons";
+
 import { getFeedbacks } from "../../services/api";
 import EMBLogo from "../../assets/emblogo.svg";
 import BPLogo from "../../assets/bplogo.svg";
 import Survey from "../../assets/surveyman.png";
-import { FloatButton } from "antd";
-import { BulbOutlined } from "@ant-design/icons";
 import "./home.css";
-import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+
+const { Title, Text } = Typography;
 
 function Home({ toggleColorScheme }) {
   const [feedbacks, setFeedbacks] = useState([]);
+  const [language, setLanguage] = useState("en");
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,13 +31,13 @@ function Home({ toggleColorScheme }) {
   }, []);
 
   const handleTakeSurveyClick = () => {
-    navigate("/survey/page1");
+    navigate(`/survey/page1?lang=${language}`);
   };
 
   return (
     <>
       <div className="home-container">
-        {/* Background elements remain the same */}
+        {/* Background Circles */}
         <div className="home-background-circles">
           <div className="circle circle1" />
           <div className="circle circle2" />
@@ -49,72 +46,38 @@ function Home({ toggleColorScheme }) {
           <div className="circle circle5" />
         </div>
 
-        {/* Central content wrapper for easy flexbox alignment */}
-        <div className="home-content-wrapper">
-          <header className="agency-header">
-            <div className="agency-header-inner">
-              <div className="hero-logos">
+        {/* ✅ Agency Header */}
+        <header className="agency-header">
+          <div className="agency-header-inner">
+            <div className="agency-header-top">
+              <div className="agency-header-logos">
                 <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb" />
                 <img src={BPLogo} alt="BP Logo" className="logo-svg-bp" />
               </div>
-              <Title order={2} className="agency-name">
-                <span className="agency-name-text">
-                  Republic of the Philippines
-                </span>
-                <span className="agency-name-text">
-                  DEPARTMENT OF ENVIRONMENT AND NATURAL RESOURCES
-                </span>
-                <span className="agency-name-text-emb">
-                  ENVIRONMENTAL MANAGEMENT BUREAU III
-                </span>
-                <span className="agency-name-text-address">
-                  Masinop Corner, Matalino St., Diosdado Macapagal Government
-                  Center,
-                </span>
-                <span className="agency-name-text-address">
-                  Maimpis, City of San Fernando, Pampanga
-                </span>
-              </Title>
             </div>
-          </header>
 
-          <Container size="lg" className="main-content-container">
-            <Grid gutter="xl" align="center">
-              <Grid.Col xs={12} md={6}>
-                <img
-                  src={Survey}
-                  alt="Survey Graphic"
-                  className="survey-graphic"
-                />
-              </Grid.Col>
-              <Grid.Col xs={12} md={6}>
-                <Stack spacing="xs" align="center">
-                  <Title order={1} className="main-title">
-                    Online Client Satisfaction Measurement
-                  </Title>
-                  <Text size="lg" c="dimmed" className="survey-text">
-                    We want your feedback!
-                  </Text>
-                  <Button
-                    size="md"
-                    radius="xl"
-                    className="survey-button"
-                    onClick={handleTakeSurveyClick}
-                  >
-                    Take the Survey{" "}
-                    <ArrowRight size={18} style={{ marginLeft: "8px" }} />
-                  </Button>
-                </Stack>
-              </Grid.Col>
-            </Grid>
-          </Container>
-        </div>
+            <div className="agency-header-text">
+              <span className="republic-text">Republic of the Philippines</span>
+              <span className="department-text">
+                Department of Environment and Natural Resources
+              </span>
+              <span className="bureau-text">
+                ENVIRONMENTAL MANAGEMENT BUREAU REGION III
+              </span>
+              <span className="address-text">
+                Masinop Corner Matalino St., Diosdado Macapagal Government
+                Center, Maimpis, City of San Fernando, Pampanga
+              </span>
+            </div>
+          </div>
+        </header>
       </div>
 
+      {/* Theme Toggle Button */}
       <FloatButton
         icon={<BulbOutlined />}
         onClick={toggleColorScheme}
-        tooltip={<div>Toggle color scheme</div>}
+        tooltip={<div>{t("toggleColor")}</div>}
         style={{ right: 20, bottom: 20 }}
       />
     </>
