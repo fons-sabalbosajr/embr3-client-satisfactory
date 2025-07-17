@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Form, Typography, Select, Space } from "antd";
+import "./stylesfeedbacktable.css";
 
 const { Title, Text } = Typography;
 
@@ -18,14 +19,12 @@ function FeedbackTable({ questions }) {
     cc1Answer?.toLowerCase().includes("no") ||
     cc2Answer?.toLowerCase().includes("no");
 
-  // Clear Q8 when skipped
   useEffect(() => {
     if (isQ8Skipped && q8) {
       form.setFieldsValue({ [`answer_${q8._id}`]: undefined });
     }
   }, [isQ8Skipped, q8?._id, form]);
 
-  // Clear Q9 when skipped
   useEffect(() => {
     if (isQ9Skipped && q9) {
       form.setFieldsValue({ [`answer_${q9._id}`]: undefined });
@@ -33,7 +32,7 @@ function FeedbackTable({ questions }) {
   }, [isQ9Skipped, q9?._id, form]);
 
   return (
-    <Space direction="vertical" style={{ width: "100%" }}>
+    <Space direction="vertical" className="feedback-table-wrapper">
       <Title level={5}>Citizens Charter</Title>
 
       {questions.map((q) => {
@@ -43,36 +42,29 @@ function FeedbackTable({ questions }) {
         if (q.questionCode === "Q8") isDisabled = isQ8Skipped;
         if (q.questionCode === "Q9") isDisabled = isQ9Skipped;
 
+        const itemClass = isDisabled
+          ? "feedback-form-item disabled"
+          : "feedback-form-item";
+
+        const labelClass = isDisabled
+          ? "feedback-label disabled"
+          : "feedback-label";
+
         return (
-          <div
-            key={q._id}
-            style={{
-              opacity: isDisabled ? 0.5 : 1,
-              pointerEvents: isDisabled ? "none" : "auto",
-            }}
-          >
+          <div key={q._id} className={itemClass}>
             <Form.Item
               name={formItemName}
-              label={
-                <Text
-                  style={{
-                    fontSize: "20px",
-                    color: isDisabled ? "#888" : undefined,
-                  }}
-                >
-                  {q.questionText}
-                </Text>
-              }
+              label={<Text className={labelClass} style={{ fontSize: 14 }}>{q.questionText}</Text>}
               rules={
                 isDisabled
-                  ? [] // No validation if disabled
+                  ? []
                   : [{ required: true, message: "Please select an answer." }]
               }
             >
               <Select
                 placeholder="Select an option"
                 disabled={isDisabled}
-                style={{ fontSize: "14px", height: "45px" }}
+                className="feedback-select"
               >
                 {q.options.map((opt) => (
                   <Select.Option key={opt} value={opt}>

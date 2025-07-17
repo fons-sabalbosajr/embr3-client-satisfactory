@@ -1,24 +1,55 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Modal, Form, Input, Select } from 'antd';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 
 function MeasurementFormModal({ visible, onClose, onSubmit, record }) {
   const [form] = Form.useForm();
 
-  React.useEffect(() => {
-    if (record) form.setFieldsValue(record.answersLabeled);
+  useEffect(() => {
+    if (record) {
+      form.setFieldsValue({
+        Agency: record.answersLabeled?.Agency || "",
+        Region: record.answersLabeled?.Region || "",
+        "Customer Type": record.answersLabeled?.["Customer Type"] || "",
+        Age: record.answersLabeled?.Age || "",
+        Gender: record.answersLabeled?.Gender || "",
+        "Remarks (optional):": record.answersLabeled?.["Remarks (optional):"] || "",
+      });
+    }
   }, [record, form]);
 
   const handleOk = () => {
-    form.validateFields().then(values => {
-      onSubmit({ ...record, answersLabeled: values });
-      onClose();
+    form.validateFields().then((values) => {
+      MySwal.fire({
+        title: "Confirm update?",
+        text: "Are you sure you want to save these changes?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Yes, update it",
+        cancelButtonText: "Cancel",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          onSubmit({
+            ...record,
+            answersLabeled: {
+              ...record.answersLabeled,
+              ...values,
+            },
+          });
+          MySwal.fire("Updated!", "The client entry has been updated.", "success");
+          onClose();
+        }
+      });
     });
   };
 
   return (
     <Modal
       title="Edit Client Entry"
-      visible={visible}
+      open={visible}
       onOk={handleOk}
       onCancel={onClose}
       okText="Save"

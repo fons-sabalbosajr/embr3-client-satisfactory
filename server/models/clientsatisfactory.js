@@ -1,16 +1,13 @@
 import mongoose from "mongoose";
 
 const ClientSatisfactorySchema = new mongoose.Schema({
-  deviceId: { type: String, required: true, unique: true },
+ deviceId: { type: String, required: true },
   answers: { type: Object, required: true },
   answersLabeled: { type: Object },
   submittedAt: { type: Date, default: Date.now },
 });
 
-
-
-// Ensure index is only applied once
-ClientSatisfactorySchema.index({ deviceId: 1, submittedAt: 1 }, { unique: true });
+ClientSatisfactorySchema.index({ deviceId: 1, submittedAt: -1 });
 
 export default mongoose.model(
   "ClientSatisfactory",

@@ -16,8 +16,10 @@ import {
   ArrowLeftOutlined,
   LoadingOutlined,
   BulbOutlined,
+  HomeOutlined,
 } from "@ant-design/icons";
 import "./survey.css";
+import { useSearchParams } from "react-router-dom";
 import { getQuestions, submitFeedback } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import EMBLogo from "../assets/emblogo.svg";
@@ -49,6 +51,9 @@ function Survey({ toggleColorScheme }) {
   const [form] = Form.useForm();
   const [answers, setAnswers] = useState({});
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [searchParams] = useSearchParams();
+  const language = searchParams.get("lang") || "en"; // fallback
 
   useEffect(() => {
     const fetchQuestionsData = async () => {
@@ -146,6 +151,21 @@ function Survey({ toggleColorScheme }) {
 
     fetchQuestionsData();
   }, []);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const stepItems = [
+    { title: "Primary Info" },
+    { title: "Citizens Charter" },
+    {
+      title: isMobile ? "SQD" : "Service Quality Dimensions (SQD)", // 👈 dynamic
+    },
+  ];
 
   const currentQuestion = allQuestions[currentQuestionIndex];
 
@@ -311,7 +331,7 @@ function Survey({ toggleColorScheme }) {
           title: "Client Response Summary",
           html: buildGroupedSummaryHTML(),
           showCancelButton: true,
-          confirmButtonText: "Submit Response",
+          confirmButtonText: "Submit",
           cancelButtonText: "Review again",
           width: 800,
         });
@@ -371,12 +391,6 @@ function Survey({ toggleColorScheme }) {
               <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb" />
               <img src={BPLogo} alt="BP Logo" className="logo-svg-bp" />
             </div>
-            <div className="agency-header-toggle">
-              <FloatButton
-                icon={<BulbOutlined />}
-                onClick={toggleColorScheme}
-              />
-            </div>
           </div>
 
           <div className="agency-header-text">
@@ -398,6 +412,8 @@ function Survey({ toggleColorScheme }) {
       <Card className="survey-page-content" bordered={false}>
         <Steps
           progressDot
+          direction="horizontal"
+          responsive={false}
           current={
             currentQuestion._id === MERGED_CUSTOMER_AGE_GENDER_QID
               ? 0
@@ -405,11 +421,8 @@ function Survey({ toggleColorScheme }) {
               ? 1
               : 2
           }
-          items={[
-            { title: "Primary Info" },
-            { title: "Citizens Charter" },
-            { title: "Service Quality Dimensions (SQD)" },
-          ]}
+          items={stepItems}
+          className="survey-steps"
         />
         <Form
           form={form}
@@ -440,47 +453,76 @@ function Survey({ toggleColorScheme }) {
               onAnswerChange={(field, value) =>
                 setAnswers((prev) => ({ ...prev, [field]: value }))
               }
+              startIndex={currentQuestion.groupedSQD
+                .slice(0, currentSQDGroupIndex)
+                .reduce((sum, group) => sum + group.length, 1)}
             />
           ) : (
             renderQuestionInput(currentQuestion)
           )}
         </Form>
 
-        <Space style={{ marginTop: 20 }}>
-          <Button
-            onClick={handlePreviousQuestion}
-            disabled={currentQuestionIndex === 0}
-            icon={<ArrowLeftOutlined />}
-          >
-            Previous
-          </Button>
-          <Button
-            type="primary"
-            onClick={handleNextQuestion}
-            icon={<ArrowRightOutlined />}
-          >
-            {(() => {
-              if (currentQuestion.questionType === "merged_sqd_table") {
-                return currentSQDGroupIndex <
-                  currentQuestion.groupedSQD.length - 1
-                  ? "Next"
-                  : currentQuestionIndex === allQuestions.length - 1
+        <div style={{ textAlign: "center", marginTop: 10 }}>
+          <Space size="middle" wrap>
+            <Button
+              onClick={handlePreviousQuestion}
+              disabled={currentQuestionIndex === 0}
+              icon={<ArrowLeftOutlined />}
+            >
+              Previous
+            </Button>
+
+            <Button
+              type="primary"
+              onClick={handleNextQuestion}
+              icon={<ArrowRightOutlined />}
+            >
+              {(() => {
+                if (currentQuestion.questionType === "merged_sqd_table") {
+                  return currentSQDGroupIndex <
+                    currentQuestion.groupedSQD.length - 1
+                    ? "Next"
+                    : currentQuestionIndex === allQuestions.length - 1
+                    ? "Submit"
+                    : "Next";
+                }
+                return currentQuestionIndex === allQuestions.length - 1
                   ? "Submit"
                   : "Next";
-              }
-              return currentQuestionIndex === allQuestions.length - 1
-                ? "Submit"
-                : "Next";
-            })()}
-          </Button>
-        </Space>
+              })()}
+            </Button>
+
+            <Button
+              danger
+              type="primary"
+              icon={<HomeOutlined />}
+              onClick={() => {
+                Swal.fire({
+                  title: "Exit Survey?",
+                  text: "Are you sure you want to return home? Your progress will not be saved.",
+                  icon: "warning",
+                  showCancelButton: true,
+                  confirmButtonText: "Quit Survey",
+                  cancelButtonText: "Stay",
+                }).then((result) => {
+                  if (result.isConfirmed) {
+                    navigate("/");
+                  }
+                });
+              }}
+            >
+              Quit
+            </Button>
+          </Space>
+        </div>
       </Card>
 
       <FloatButton icon={<BulbOutlined />} onClick={toggleColorScheme} />
       <footer className="survey-footer">
         <span>
           &copy; {new Date().getFullYear()} Environmental Management Bureau
-          Region III. All rights reserved.
+          Region III Online Customer Satisfaction Measurement. All rights
+          reserved.
         </span>
       </footer>
     </div>

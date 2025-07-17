@@ -1,59 +1,84 @@
 // src/page-survey/components/ClientInfoCard.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Form, Input, Radio, Select, Space, Row, Col, Typography } from "antd";
-import { getQuestions } from "../../services/api";
-import "./styles.css";
+import socket from "../../utils/socket";
+import "./stylesclientinfocard.css";
+import { isEqual } from "lodash";
 
 function ClientInfoCard({ formItemName, form, options }) {
-  const { customerTypeOptions, genderOptions, region, agency, serviceOptions } =
-    options;
+  const { customerTypeOptions, genderOptions, region, agency, serviceOptions } = options;
   const { Text } = Typography;
 
-  const dynamicInputStyle = {
-    marginTop: 8,
-    width: 300,
-    marginLeft: 36,
-  };
+  useEffect(() => {
+    const lastPayloadRef = { current: null };
+
+    const interval = setInterval(() => {
+      const values = form.getFieldsValue();
+      const clientType = values[`${formItemName}_customerType`];
+      const companyName = values[`${formItemName}_companyName`] || "";
+      const agencyVal = values[`${formItemName}_agency`] || "";
+      const regionVal = values[`${formItemName}_region`] || "";
+
+      if (!clientType) return;
+
+      const payload = {
+        clientType,
+        companyName,
+        agency: agencyVal,
+        region: regionVal,
+        startedAt: new Date().toISOString(),
+      };
+
+      if (!isEqual(payload, lastPayloadRef.current)) {
+        lastPayloadRef.current = payload;
+        socket.emit("feedback-incoming", payload);
+      }
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+      socket.emit("feedback-leave");
+    };
+  }, [form, formItemName]);
 
   return (
-    <Space direction="vertical" style={{ width: "100%" }}>
+    <Space direction="vertical" className="client-info-card-space">
       <Form.Item
         name={`${formItemName}_customerType`}
         label="Client Type"
         rules={[{ required: true, message: "Select client type" }]}
       >
         <Radio.Group>
-          <Space direction="vertical">
+          <Space direction="vertical" className="client-info-card-radio-space">
             {customerTypeOptions.map((type) => (
               <div key={type}>
                 <Radio value={type}>{type}</Radio>
 
-                {form.getFieldValue(`${formItemName}_customerType`) ===
-                  "Business" &&
+                {form.getFieldValue(`${formItemName}_customerType`) === "Business" &&
                   type === "Business" && (
                     <Form.Item
                       name={`${formItemName}_companyName`}
                       noStyle
-                      rules={[
-                        { required: true, message: "Enter company name" },
-                      ]}
+                      rules={[{ required: true, message: "Enter company name" }]}
                     >
                       <Input
                         placeholder="Company Name"
-                        style={dynamicInputStyle}
+                        className="client-info-card-dynamic-input"
                       />
                     </Form.Item>
                   )}
 
-                {form.getFieldValue(`${formItemName}_customerType`) ===
-                  "Government" &&
+                {form.getFieldValue(`${formItemName}_customerType`) === "Government" &&
                   type === "Government" && (
                     <Form.Item
                       name={`${formItemName}_agencyName`}
                       noStyle
                       rules={[{ required: true, message: "Enter agency" }]}
                     >
-                      <Input placeholder="Agency" style={dynamicInputStyle} />
+                      <Input
+                        placeholder="Agency"
+                        className="client-info-card-dynamic-input"
+                      />
                     </Form.Item>
                   )}
               </div>
@@ -105,10 +130,10 @@ function ClientInfoCard({ formItemName, form, options }) {
           </Form.Item>
         </Col>
         <Col xs={24} sm={8}>
-          <div style={{ paddingTop: 25 }}>
-            <Text type="secondary" style={{ fontSize: "12px", color: "gray" }}>
+          <div className="client-info-card-note">
+            <span className="client-info-card-note-text">
               Region and agency are pre-filled automatically.
-            </Text>
+            </span>
           </div>
         </Col>
       </Row>
@@ -120,17 +145,13 @@ function ClientInfoCard({ formItemName, form, options }) {
             label="Service Availed"
             rules={[{ required: true, message: "Select service" }]}
           >
-            <Select
-    placeholder="Select service(s)"
-    mode="multiple" // ✅ Enables multiple selection
-    allowClear
-  >
-    {serviceOptions.map((service) => (
-      <Select.Option key={service} value={service}>
-        {service}
-      </Select.Option>
-    ))}
-  </Select>
+            <Select placeholder="Select service(s)" mode="multiple" allowClear>
+              {serviceOptions.map((service) => (
+                <Select.Option key={service} value={service}>
+                  {service}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
         </Col>
       </Row>

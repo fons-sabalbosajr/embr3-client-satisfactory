@@ -7,7 +7,7 @@
   height: 100%;
   background: url("../assets/bgemb.webp") no-repeat center center;
   background-size: cover;
-  opacity: 0.10;
+  opacity: 0.1;
   pointer-events: none;
   z-index: 0;
 }
@@ -18,6 +18,7 @@
   transition: background-color 0.3s ease, color 0.3s ease;
   position: relative;
   z-index: 1;
+  justify-content: space-between;
 }
 
 body[data-mantine-color-scheme="dark"] .survey-page-container {
@@ -54,13 +55,6 @@ body[data-mantine-color-scheme="dark"] .survey-page-container::before {
   text-align: center;
 }
 
-.agency-header-inner {
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
 
 .agency-header-logos {
   display: flex;
@@ -89,22 +83,22 @@ body[data-mantine-color-scheme="dark"] .survey-page-container::before {
   gap: 4px; /* Smaller gap between text elements */
 }
 
-.republic-text{
+.republic-text {
   font-size: 16px;
   font-weight: 500;
 }
 
-.department-text{
+.department-text {
   font-size: 16px;
   font-weight: 500;
 }
 
-.bureau-text{
+.bureau-text {
   font-size: 25px;
   font-weight: 600;
 }
 
-.address-text{
+.address-text {
   font-size: 12px;
   font-weight: 400;
 }
@@ -119,11 +113,11 @@ body[data-mantine-color-scheme="dark"] .survey-page-container::before {
   line-height: 1;
 }
 
-body[data-mantine-color-scheme="dark"] .bureau-text{
+body[data-mantine-color-scheme="dark"] .bureau-text {
   color: yellowgreen;
 }
 
-body[data-mantine-color-scheme="light"] .bureau-text{
+body[data-mantine-color-scheme="light"] .bureau-text {
   color: rgb(15, 134, 19);
 }
 
@@ -164,7 +158,6 @@ body[data-mantine-color-scheme="dark"] .address-text {
   color: #888;
 }
 
-
 .survey-footer {
   text-align: center;
   padding: 16px 0;
@@ -190,7 +183,6 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
   min-width: 140px;
 }
 
-
 /* === Background Animation === */
 @keyframes gradientFlow {
   0% {
@@ -205,30 +197,180 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
 }
 
 /* === Responsive Fixes === */
-@media (max-width: 768px) {
+
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+  }
+
+  .survey-page-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow-y: auto;
+  }
+
+  .agency-header {
+    margin-top: 20px;
+    padding-bottom: 0;
+  }
+
   .survey-page-content.ant-card {
-    margin: 0 16px 24px 16px;
+    max-width: 840px;
+    margin-top: 0; /* prevent further stacking */
+    margin-bottom: 0 !important; /* ← kill extra space */
+    padding-bottom: 12px;
+    width: 100%;
+    flex: 0 1 auto; /* ← prevent it from pushing footer down */
+  }
+
+  .survey-steps {
+    max-width: 840px;
+    margin-top: -20px;
+  }
+
+  .survey-footer {
+    font-size: 11px;
+    padding: 6px 0 !important;
+    margin-top: 0 !important;
+    flex-shrink: 0; /* ← don't let flex collapse it */
   }
 
   .logo-svg-emb,
   .logo-svg-bp {
-    height: 40px;
-    width: 40px;
+    height: 36px;
+    width: 36px;
+    object-fit: contain;
   }
 
-  .republic-text {
-    font-size: 16px;
-  }
-
+  .republic-text,
   .department-text {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .bureau-text {
-    font-size: 14px;
+    font-size: 18px;
   }
 
   .address-text {
+    font-size: 10px;
+  }
+
+  .survey-page-content .ant-typography {
     font-size: 12px;
+  }
+
+  .survey-page-content .ant-steps-item-title {
+    font-size: 11px;
+  }
+
+  .survey-page-content .ant-steps-item-description {
+    font-size: 10px;
+  }
+
+  .ant-btn {
+    height: 25px;
+    font-size: 11px;
+    padding: 0 10px;
+  }
+}
+
+@media screen and (min-width: 440px) and (max-width: 768px) {
+  html,
+  body {
+    height: auto;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+  }
+
+  .survey-page-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow-y: auto;
+  }
+
+  .agency-header {
+    margin-top: 5px;
+    padding-bottom: 0;
+  }
+
+  .survey-page-content.ant-card {
+    max-width: 95%;
+    margin: 0 auto 12px auto;
+    padding: 20px 16px;
+    width: 100%;
+    flex: 0 1 auto;
+  }
+
+  .survey-steps {
+    margin-left: -45px !important; /* ← shrink default margin */
+    max-width: 100%;
+  }
+
+  .survey-steps .ant-steps-item-title {
+    font-size: 11px;
+  }
+
+  .survey-steps .ant-steps-item-description {
+    font-size: 8px;
+  }
+
+  .survey-steps .ant-steps-item {
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+
+  .survey-footer {
+    font-size: 10px;
+    padding: 4px 0 !important;
+    margin-top: 0 !important;
+    flex-shrink: 0;
+    text-align: center;
+  }
+
+  .logo-svg-emb,
+  .logo-svg-bp {
+    height: 32px;
+    width: 32px;
+    object-fit: contain;
+  }
+
+  .republic-text,
+  .department-text {
+    font-size: 11px;
+  }
+
+  .bureau-text {
+    font-size: 16px;
+  }
+
+  .address-text {
+    font-size: 9px;
+  }
+
+  .survey-page-content .ant-typography {
+    font-size: 11px;
+  }
+
+  .survey-page-content .ant-steps-item-title {
+    font-size: 10px;
+  }
+
+  .survey-page-content .ant-steps-item-description {
+    font-size: 9px;
+  }
+
+  .ant-btn {
+    height: 30px;
+    font-size: 14px;
+    padding: 0 8px;
   }
 }

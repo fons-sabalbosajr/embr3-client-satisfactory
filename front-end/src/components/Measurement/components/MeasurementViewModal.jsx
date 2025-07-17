@@ -65,23 +65,23 @@ function MeasurementViewModal({ visible, onClose, record }) {
       key: "question",
       width: "55%",
     },
-   {
-    title: "Response",
-    dataIndex: "answer",
-    key: "answer",
-    width: "35%",
-    render: (text) => {
-      let color = "default";
-      const lower = text.toLowerCase();
+    {
+      title: "Response",
+      dataIndex: "answer",
+      key: "answer",
+      width: "35%",
+      render: (text) => {
+        let color = "default";
+        const lower = text.toLowerCase();
 
-      if (lower === "yes") {
-        color = "green";
-      } else if (lower === "no") {
-        color = "red";
-      }
+        if (lower === "yes") {
+          color = "green";
+        } else if (lower === "no") {
+          color = "red";
+        }
 
-      return <Tag color={color}>{text}</Tag>;
-    },
+        return <Tag color={color}>{text}</Tag>;
+      },
     },
   ];
 
@@ -97,7 +97,29 @@ function MeasurementViewModal({ visible, onClose, record }) {
   ];
 
   const sqdData = [];
-  let sqdCounter = 1;
+
+  let sqdCounter = 0;
+
+  // Manually include SQD0: "I am satisfied with the service that I availed."
+  const sqd0Entry = Object.entries(record.answersLabeled || {}).find(
+    ([q]) =>
+      q.trim().toLowerCase() ===
+      "i am satisfied with the service that i availed."
+  );
+
+  if (sqd0Entry) {
+    const [question, answer] = sqd0Entry;
+    sqdData.push({
+      key: `SQD0`,
+      code: `SQD0`,
+      category: "", // No keyword/category
+      question,
+      answer,
+    });
+    sqdCounter = 1; // Start next SQD index at 1
+  }
+
+  // Continue generating the rest of the SQD questions with category match
   Object.entries(record.answersLabeled || {}).forEach(([question, answer]) => {
     const match = sqdMap.find(({ keyword }) =>
       question.toLowerCase().includes(keyword)
@@ -138,7 +160,7 @@ function MeasurementViewModal({ visible, onClose, record }) {
       key: "question",
       width: "45%",
     },
-     {
+    {
       title: "Response",
       dataIndex: "answer",
       key: "answer",

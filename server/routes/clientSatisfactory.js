@@ -1,8 +1,10 @@
 import express from "express";
 import { submitSurvey } from "../controllers/clientSatisfactoryController.js";
 
-const router = express.Router();
+export default (io) => {
+  const router = express.Router();
 
-router.post("/submit", submitSurvey);
+  router.post("/submit", submitSurvey(io));
 
-export default router;
+  return router;
+};

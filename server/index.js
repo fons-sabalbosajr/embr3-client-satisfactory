@@ -2,10 +2,10 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-import http from 'http'; // Import http module
-import { Server } from 'socket.io'; // Import Server from socket.io
+import http from "http";
+import { Server } from "socket.io";
 
-// Import your routes
+// Routes
 import feedbackRoutes from "./routes/feedback.js";
 import authRoutes from "./routes/auth.js";
 import questionRoutes from "./routes/question.js";
@@ -16,40 +16,73 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Create an HTTP server from your Express app
+// HTTP server
 const server = http.createServer(app);
 
-// Initialize Socket.IO with your HTTP server
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5000",
-    methods: ["GET", "POST"]
-  }
+    origin: "http://10.14.77.107:5173",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://10.14.77.107:5173",
+    credentials: true,
+  })
+);
 app.use(express.json());
 
-// Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log(`A user connected: ${socket.id}`);
+const activeFeedbacks = new Map();
 
-  // Join a specific room for question updates
-  socket.join('questions-table');
-  console.log(`Socket ${socket.id} joined 'questions-table' room.`);
+io.on("connection", (socket) => {
+  socket.on("joinRoom", (room) => {
+    socket.join(room);
+  });
 
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
+  socket.on("feedback-incoming", (data) => {
+    activeFeedbacks.set(socket.id, { ...data, socketId: socket.id });
+    io.to("questions-table").emit(
+      "active-feedbacks",
+      Array.from(activeFeedbacks.values()).slice(0, 3)
+    );
+  });
+
+  socket.on("feedback-leave", () => {
+    activeFeedbacks.delete(socket.id);
+    io.to("questions-table").emit(
+      "active-feedbacks",
+      Array.from(activeFeedbacks.values()).slice(0, 3)
+    );
+  });
+
+  socket.on("disconnect", () => {
+    activeFeedbacks.delete(socket.id);
+    io.to("questions-table").emit(
+      "active-feedbacks",
+      Array.from(activeFeedbacks.values()).slice(0, 3)
+    );
+  });
+
+  // ✅ NEW: support polling from frontend every 10s
+  socket.on("fetchLatestFeedback", () => {
+    io.to("questions-table").emit(
+      "active-feedbacks",
+      Array.from(activeFeedbacks.values()).slice(0, 3)
+    );
   });
 });
 
+// Routes
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/question", questionRoutes(io)); 
-app.use("/api/client-satisfactory", clientSatisfactoryRoutes);
+app.use("/api/question", questionRoutes(io)); // pass io to question routes
+app.use("/api/client-satisfactory", clientSatisfactoryRoutes(io));
 
-// DB Connect - Now use `server.listen` instead of `app.listen`
+// DB Connection and start server
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
