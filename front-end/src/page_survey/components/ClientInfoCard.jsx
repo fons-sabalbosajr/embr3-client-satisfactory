@@ -3,11 +3,19 @@ import React, { useEffect } from "react";
 import { Form, Input, Radio, Select, Space, Row, Col, Typography } from "antd";
 import socket from "../../utils/socket";
 import "./stylesclientinfocard.css";
+import { useTranslation } from "react-i18next";
 import { isEqual } from "lodash";
 
-function ClientInfoCard({ formItemName, form, options }) {
-  const { customerTypeOptions, genderOptions, region, agency, serviceOptions } = options;
+function ClientInfoCard({ formItemName, form, options, language }) {
+  const { genderOptions, region, agency, serviceOptions } = options;
   const { Text } = Typography;
+  const { t } = useTranslation();
+
+  const customerTypeOptions = [
+    { value: "Citizen", label: t("clientTypeCitizen") },
+    { value: "Business", label: t("clientTypeBusiness") },
+    { value: "Government", label: t("clientTypeGovernment") },
+  ];
 
   useEffect(() => {
     const lastPayloadRef = { current: null };
@@ -45,38 +53,44 @@ function ClientInfoCard({ formItemName, form, options }) {
     <Space direction="vertical" className="client-info-card-space">
       <Form.Item
         name={`${formItemName}_customerType`}
-        label="Client Type"
-        rules={[{ required: true, message: "Select client type" }]}
+        label={t("clientTypeLabel")}
+        rules={[{ required: true, message: t("selectClientType") }]}
       >
         <Radio.Group>
           <Space direction="vertical" className="client-info-card-radio-space">
-            {customerTypeOptions.map((type) => (
-              <div key={type}>
-                <Radio value={type}>{type}</Radio>
+            {customerTypeOptions.map(({ value, label }) => (
+              <div key={value}>
+                <Radio value={value}>{label}</Radio>
 
-                {form.getFieldValue(`${formItemName}_customerType`) === "Business" &&
-                  type === "Business" && (
+                {form.getFieldValue(`${formItemName}_customerType`) ===
+                  "Business" &&
+                  value === "Business" && (
                     <Form.Item
                       name={`${formItemName}_companyName`}
                       noStyle
-                      rules={[{ required: true, message: "Enter company name" }]}
+                      rules={[
+                        { required: true, message: t("enterCompanyName") },
+                      ]}
                     >
                       <Input
-                        placeholder="Company Name"
+                        placeholder={t("companyNamePlaceholder")}
                         className="client-info-card-dynamic-input"
                       />
                     </Form.Item>
                   )}
 
-                {form.getFieldValue(`${formItemName}_customerType`) === "Government" &&
-                  type === "Government" && (
+                {form.getFieldValue(`${formItemName}_customerType`) ===
+                  "Government" &&
+                  value === "Government" && (
                     <Form.Item
                       name={`${formItemName}_agencyName`}
                       noStyle
-                      rules={[{ required: true, message: "Enter agency" }]}
+                      rules={[
+                        { required: true, message: t("enterAgencyName") },
+                      ]}
                     >
                       <Input
-                        placeholder="Agency"
+                        placeholder={t("agencyPlaceholder")}
                         className="client-info-card-dynamic-input"
                       />
                     </Form.Item>
@@ -89,20 +103,20 @@ function ClientInfoCard({ formItemName, form, options }) {
 
       <Row gutter={16}>
         <Col xs={24} sm={12}>
-          <Form.Item name={`${formItemName}_age`} label="Age">
-            <Input type="number" placeholder="Enter age" />
+          <Form.Item name={`${formItemName}_age`} label={t("ageLabel")}>
+            <Input type="number" placeholder={t("agePlaceholder")} />
           </Form.Item>
         </Col>
         <Col xs={24} sm={12}>
           <Form.Item
             name={`${formItemName}_gender`}
-            label="Gender"
-            rules={[{ required: true, message: "Select gender" }]}
+            label={t("genderLabel")}
+            rules={[{ required: true, message: t("selectGender") }]}
           >
-            <Select placeholder="Select gender">
+            <Select placeholder={t("selectGender")}>
               {genderOptions.map((g) => (
                 <Select.Option key={g} value={g}>
-                  {g}
+                  {t(`gender.${g}`)}
                 </Select.Option>
               ))}
             </Select>
@@ -114,7 +128,7 @@ function ClientInfoCard({ formItemName, form, options }) {
         <Col xs={24} sm={8}>
           <Form.Item
             name={`${formItemName}_region`}
-            label="Region"
+            label={t("regionLabel")}
             initialValue={region}
           >
             <Input disabled />
@@ -123,7 +137,7 @@ function ClientInfoCard({ formItemName, form, options }) {
         <Col xs={24} sm={8}>
           <Form.Item
             name={`${formItemName}_agency`}
-            label="Agency"
+            label={t("agencyLabel")}
             initialValue={agency}
           >
             <Input disabled />
@@ -132,7 +146,7 @@ function ClientInfoCard({ formItemName, form, options }) {
         <Col xs={24} sm={8}>
           <div className="client-info-card-note">
             <span className="client-info-card-note-text">
-              Region and agency are pre-filled automatically.
+              {t("regionAgencyNote")}
             </span>
           </div>
         </Col>
@@ -142,10 +156,14 @@ function ClientInfoCard({ formItemName, form, options }) {
         <Col xs={24} sm={24}>
           <Form.Item
             name={`${formItemName}_serviceAvailed`}
-            label="Service Availed"
-            rules={[{ required: true, message: "Select service" }]}
+            label={t("serviceAvailedLabel")}
+            rules={[{ required: true, message: t("selectService") }]}
           >
-            <Select placeholder="Select service(s)" mode="multiple" allowClear>
+            <Select
+              placeholder={t("selectServicePlaceholder")}
+              mode="multiple"
+              allowClear
+            >
               {serviceOptions.map((service) => (
                 <Select.Option key={service} value={service}>
                   {service}

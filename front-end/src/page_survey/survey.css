@@ -38,7 +38,7 @@ body[data-mantine-color-scheme="dark"] .survey-page-container::before {
 }
 
 /* === Fixed Header === */
-.agency-header {
+.agency-header-survey {
   top: 0;
   left: 0;
   right: 0;
@@ -47,7 +47,7 @@ body[data-mantine-color-scheme="dark"] .survey-page-container::before {
   padding: 16px;
 }
 
-.agency-header-inner {
+.agency-header-inner-survey {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -181,6 +181,11 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
   font-size: 16px !important;
   border-radius: 6px;
   min-width: 140px;
+}
+
+.swal-wide {
+  width: 90vw !important;
+  max-width: 700px !important;
 }
 
 /* === Background Animation === */
