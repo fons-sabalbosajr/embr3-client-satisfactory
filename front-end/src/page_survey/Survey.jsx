@@ -9,6 +9,7 @@ import {
   Alert,
   Steps,
   FloatButton,
+  Dropdown,
 } from "antd";
 import Swal from "sweetalert2";
 import {
@@ -17,6 +18,7 @@ import {
   LoadingOutlined,
   BulbOutlined,
   HomeOutlined,
+  TranslationOutlined,
 } from "@ant-design/icons";
 import "./survey.css";
 import { useSearchParams } from "react-router-dom";
@@ -29,7 +31,9 @@ import FeedbackTable from "./components/FeedbackTable";
 import SQDTable from "./components/SQDTable";
 import { chunk } from "lodash";
 import { v4 as uuidv4 } from "uuid";
-
+import i18n from "../i18n";
+import { useTranslation } from "react-i18next";
+import { buildGroupedSummaryHTML } from "./constants/buildGroupedSummaryHTML";
 import {
   AUTO_REGION,
   AUTO_AGENCY,
@@ -54,6 +58,9 @@ function Survey({ toggleColorScheme }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [searchParams] = useSearchParams();
   const language = searchParams.get("lang") || "en"; // fallback
+  const [currentLang, setCurrentLang] = useState(language);
+  const { t, i18n } = useTranslation();
+  const [originalQuestionData, setOriginalQuestionData] = useState([]);
 
   useEffect(() => {
     const fetchQuestionsData = async () => {
@@ -61,6 +68,9 @@ function Survey({ toggleColorScheme }) {
         setLoading(true);
         const fetchedResponse = await getQuestions();
         let questionsArray = [];
+
+        questionsArray =
+          fetchedResponse.data || fetchedResponse.questions || [];
 
         if (Array.isArray(fetchedResponse)) {
           questionsArray = fetchedResponse;
@@ -134,7 +144,7 @@ function Survey({ toggleColorScheme }) {
         ];
 
         setAllQuestions(filteredQuestions);
-
+        setOriginalQuestionData(questionsArray);
         setAnswers((prev) => ({
           ...prev,
           [`answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_region`]: AUTO_REGION,
@@ -159,11 +169,26 @@ function Survey({ toggleColorScheme }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    i18n.changeLanguage(currentLang);
+  }, [currentLang]);
+
   const stepItems = [
-    { title: "Primary Info" },
-    { title: "Citizens Charter" },
+    { title: t("step.primaryInfo") },
+    { title: t("step.citizensCharter") },
     {
-      title: isMobile ? "SQD" : "Service Quality Dimensions (SQD)", // 👈 dynamic
+      title: isMobile ? t("step.sqdShort") : t("step.sqdFull"),
+    },
+  ];
+
+  const languageItems = [
+    {
+      key: "en",
+      label: "🇬🇧 English",
+    },
+    {
+      key: "fil",
+      label: "🇵🇭 Filipino",
     },
   ];
 
@@ -174,6 +199,7 @@ function Survey({ toggleColorScheme }) {
     if (question._id === MERGED_CUSTOMER_AGE_GENDER_QID) {
       return (
         <ClientInfoCard
+          key={currentLang}
           formItemName={formItemName}
           form={form}
           options={question.options}
@@ -191,163 +217,50 @@ function Survey({ toggleColorScheme }) {
     );
   };
 
-  const buildGroupedSummaryHTML = () => {
-    const sections = {
-      "Personal Information": [],
-      "Citizen’s Charter": [],
-      "Service Quality Dimensions": [],
-      "Remarks / Suggestions": [],
-    };
+  const handleNextQuestion = async () => {
+    const formValues = form.getFieldsValue(true);
 
-    // Flatten questions from merged blocks for lookup
-    const questionMap = {};
-    allQuestions.forEach((q) => {
-      if (q.isMerged) {
-        if (Array.isArray(q.questions)) {
-          q.questions.forEach((subQ) => {
-            questionMap[subQ._id.toString()] = subQ;
-          });
-        }
-        if (Array.isArray(q.groupedSQD)) {
-          q.groupedSQD.flat().forEach((subQ) => {
-            questionMap[subQ._id.toString()] = subQ;
-          });
-        }
-        if (q.extraQuestion?._id) {
-          questionMap[q.extraQuestion._id.toString()] = q.extraQuestion;
-        }
-      } else {
-        questionMap[q._id.toString()] = q;
-      }
-    });
+    // Check if we're in SQD grouped section
+    if (currentQuestion.questionType === "merged_sqd_table") {
+      const isLastSQDGroup =
+        currentSQDGroupIndex >= currentQuestion.groupedSQD.length - 1;
 
-    // Manual label for merged personal info fields
-    const fieldLabels = {
-      region: "Region",
-      agency: "Agency",
-      customerType: "Customer Type",
-      companyName: "Establishment/Proponent Name",
-      gender: "Gender",
-      age: "Age",
-      serviceAvailed: "Service Availed",
-    };
-
-    for (const [key, value] of Object.entries(answers)) {
-      if (!key.startsWith("answer_")) continue;
-
-      const id = key.replace("answer_", "");
-      let label = key;
-      let display = Array.isArray(value) ? value.join(", ") : value;
-
-      if (id.startsWith("merged_customer_age_gender_question_")) {
-        const field = id.replace("merged_customer_age_gender_question_", "");
-        label = fieldLabels[field] || field;
-        sections["Personal Information"].push({ label, value: display });
-        continue;
-      }
-
-      const question = questionMap[id];
-      if (!question) {
-        sections["Remarks / Suggestions"].push({ label: id, value: display });
-        continue;
-      }
-
-      label = question.questionText || id;
-      const code = question.questionCode || "";
-
-      if (["Q7", "Q8", "Q9"].includes(code)) {
-        sections["Citizen’s Charter"].push({ label, value: display });
-      } else if (
-        [
-          "Q10",
-          "Q11",
-          "Q12",
-          "Q13",
-          "Q14",
-          "Q15",
-          "Q16",
-          "Q17",
-          "Q18",
-        ].includes(code)
-      ) {
-        sections["Service Quality Dimensions"].push({ label, value: display });
-      } else if (code === "Q19") {
-        sections["Remarks / Suggestions"].push({ label, value: display });
+      if (!isLastSQDGroup) {
+        // Just go to next group of SQD questions
+        setCurrentSQDGroupIndex((prev) => prev + 1);
+        return;
       }
     }
 
-    const renderSectionTable = (title, items) => {
-      if (!items.length) return "";
+    const isLastMainStep = currentQuestionIndex >= allQuestions.length - 1;
 
-      const rows = items
-        .map(
-          (item) => `
-          <tr>
-            <td style="font-weight:500; text-align:left; padding:6px; border:1px solid #ccc; width: 60%; word-break: break-word; vertical-align: top;">
-              ${item.label}
-            </td>
-            <td style="padding:6px; border:1px solid #ccc; width: 40%; word-break: break-word; vertical-align: middle;">
-              ${item.value}
-            </td>
-          </tr>`
-        )
-        .join("");
+    if (!isLastMainStep) {
+      // Go to next main step
+      setCurrentQuestionIndex((prev) => prev + 1);
+      setCurrentSQDGroupIndex(0); // Reset group index on step change
+      return;
+    }
 
-      return `
-      <h3 style="margin-top:5px; margin-bottom:6px; font-size:14px; font-weight:600;">${title}</h3>
-      <table style="width:100%; border-collapse:collapse; margin-bottom:6px; font-size:12px; table-layout:fixed;">
-        <tbody>${rows}</tbody>
-      </table>
-`;
-    };
+    // At final question and final group — show SweetAlert summary
+    const summaryHTML = buildGroupedSummaryHTML(
+      formValues,
+      originalQuestionData,
+      t
+    );
 
-    return Object.entries(sections)
-      .map(([title, items]) => renderSectionTable(title, items))
-      .join("");
-  };
+    const result = await Swal.fire({
+      title: t("summary.confirmTitle"),
+      html: summaryHTML,
+      showCancelButton: true,
+      confirmButtonText: t("summary.submit"),
+      cancelButtonText: t("summary.cancel"),
+      customClass: {
+        popup: "swal-wide",
+      },
+    });
 
-  const handleNextQuestion = async () => {
-    try {
-      if (currentQuestion.questionType === "merged_sqd_table") {
-        const group = currentQuestion.groupedSQD[currentSQDGroupIndex];
-        const isLastGroup =
-          currentSQDGroupIndex === currentQuestion.groupedSQD.length - 1;
-        const fieldNames = group.map((q) => `answer_${q._id}`);
-        if (isLastGroup && currentQuestion.extraQuestion) {
-          fieldNames.push(`answer_${currentQuestion.extraQuestion._id}`);
-        }
-        await form.validateFields(fieldNames);
-        if (!isLastGroup) {
-          setCurrentSQDGroupIndex((prev) => prev + 1);
-          return;
-        }
-      } else {
-        await form.validateFields();
-      }
-
-      const isLast = currentQuestionIndex === allQuestions.length - 1;
-      if (isLast) {
-        const result = await Swal.fire({
-          title: "Client Response Summary",
-          html: buildGroupedSummaryHTML(),
-          showCancelButton: true,
-          confirmButtonText: "Submit",
-          cancelButtonText: "Review again",
-          width: 800,
-        });
-
-        if (result.isConfirmed) {
-          const payload = { answers, deviceId };
-          await submitFeedback(payload);
-          Swal.fire("Success", "Survey submitted successfully!", "success");
-          navigate("/");
-        }
-      } else {
-        setCurrentQuestionIndex((prev) => prev + 1);
-        setCurrentSQDGroupIndex(0);
-      }
-    } catch (err) {
-      console.warn("Validation error:", err);
+    if (result.isConfirmed) {
+      handleSubmit(formValues);
     }
   };
 
@@ -384,8 +297,8 @@ function Survey({ toggleColorScheme }) {
 
   return (
     <div className="survey-page-container">
-      <header className="agency-header">
-        <div className="agency-header-inner">
+      <header className="agency-header-survey">
+        <div className="agency-header-inner-survey">
           <div className="agency-header-top">
             <div className="agency-header-logos">
               <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb" />
@@ -408,7 +321,6 @@ function Survey({ toggleColorScheme }) {
           </div>
         </div>
       </header>
-
       <Card className="survey-page-content" bordered={false}>
         <Steps
           progressDot
@@ -436,6 +348,8 @@ function Survey({ toggleColorScheme }) {
 
           {currentQuestion._id === MERGED_CCSQD_QID ? (
             <FeedbackTable
+              key={currentLang}
+              language={currentLang}
               questions={currentQuestion.questions}
               renderInput={renderQuestionInput}
               form={form}
@@ -517,7 +431,29 @@ function Survey({ toggleColorScheme }) {
         </div>
       </Card>
 
-      <FloatButton icon={<BulbOutlined />} onClick={toggleColorScheme} />
+      <FloatButton.Group shape="circle">
+        <FloatButton
+          icon={<BulbOutlined />}
+          onClick={toggleColorScheme}
+          tooltip={<div>Toggle Theme</div>}
+        />
+
+        <Dropdown
+          menu={{
+            items: languageItems,
+            onClick: ({ key }) => {
+              setCurrentLang(key);
+              i18n.changeLanguage(key); // <-- make it global
+            },
+          }}
+          placement="topRight"
+          trigger={["click"]}
+        >
+          <FloatButton
+            icon={<span>{currentLang === "fil" ? "🇵🇭" : "🇬🇧"}</span>}
+          />
+        </Dropdown>
+      </FloatButton.Group>
       <footer className="survey-footer">
         <span>
           &copy; {new Date().getFullYear()} Environmental Management Bureau

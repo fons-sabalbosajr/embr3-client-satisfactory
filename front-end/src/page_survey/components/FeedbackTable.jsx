@@ -1,11 +1,14 @@
 import React, { useEffect } from "react";
 import { Form, Typography, Select, Space } from "antd";
+import { useTranslation } from "react-i18next";
 import "./stylesfeedbacktable.css";
+import i18n from "../../i18n";
 
 const { Title, Text } = Typography;
 
-function FeedbackTable({ questions }) {
+function FeedbackTable({ questions, language }) {
   const form = Form.useFormInstance();
+  const { t, i18n } = useTranslation();
 
   const q7 = questions.find((q) => q.questionCode === "Q7");
   const q8 = questions.find((q) => q.questionCode === "Q8");
@@ -31,9 +34,18 @@ function FeedbackTable({ questions }) {
     }
   }, [isQ9Skipped, q9?._id, form]);
 
+  useEffect(() => {
+    if (language && i18n.language !== language) {
+      i18n.changeLanguage(language).then(() => {
+        // Trigger rerender by updating a dummy state
+        form.setFieldsValue({ _langRerenderHack: Date.now() });
+      });
+    }
+  }, [language]);
+
   return (
     <Space direction="vertical" className="feedback-table-wrapper">
-      <Title level={5}>Citizens Charter</Title>
+      <Title level={5}>{t("citizensCharterTitle", "Citizens Charter")}</Title>
 
       {questions.map((q) => {
         const formItemName = `answer_${q._id}`;
@@ -50,25 +62,38 @@ function FeedbackTable({ questions }) {
           ? "feedback-label disabled"
           : "feedback-label";
 
+        const questionText = t(`questions.${q.questionCode}.text`, {
+          defaultValue: q.questionText,
+        });
+
+        const questionOptions = t(`questions.${q.questionCode}.options`, {
+          returnObjects: true,
+          defaultValue: q.options,
+        });
+
         return (
           <div key={q._id} className={itemClass}>
             <Form.Item
               name={formItemName}
-              label={<Text className={labelClass} style={{ fontSize: 14 }}>{q.questionText}</Text>}
+              label={
+                <Text className={labelClass} style={{ fontSize: 14 }}>
+                  {questionText}
+                </Text>
+              }
               rules={
                 isDisabled
                   ? []
-                  : [{ required: true, message: "Please select an answer." }]
+                  : [{ required: true, message: t("selectRequired") }]
               }
             >
               <Select
-                placeholder="Select an option"
+                placeholder={t("selectAnswerPlaceholder")}
                 disabled={isDisabled}
                 className="feedback-select"
               >
-                {q.options.map((opt) => (
-                  <Select.Option key={opt} value={opt}>
-                    {opt}
+                {q.options.map((option, idx) => (
+                  <Select.Option key={idx} value={option}>
+                    {questionOptions[idx] || option}
                   </Select.Option>
                 ))}
               </Select>

@@ -2,9 +2,13 @@
   border: none;
   padding: 0 !important;
 }
+.sqd-card .ant-card-body {
+  border: none;
+  padding: 0 !important;
+}
 
 .sqd-question-row {
-  margin-bottom: 25px;
+  margin-bottom: 10px;
 }
 
 .sqd-question-text {
@@ -76,6 +80,12 @@
   .sqd-question-text {
     font-size: 15px;
   }
+
+  .rating-label {
+    font-size: 10px;
+    text-align: center;
+    line-height: 1;
+  }
 }
 
 @media screen and (max-width: 768px) {
@@ -84,7 +94,7 @@
     padding: 0 !important;
   }
 
-   .sqd-card .ant-card-body {
+  .sqd-card .ant-card-body {
     padding: 8px !important;
   }
 

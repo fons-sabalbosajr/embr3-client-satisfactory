@@ -48,65 +48,67 @@ function Menu() {
         <div className="circle circle5" />
       </div>
 
-      <header className="agency-header">
-        <div className="agency-header-inner">
-          <div className="hero-logos">
-            <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb-menu" />
-            <img src={BPLogo} alt="BP Logo" className="logo-svg-bp-menu" />
+      <div className="menu-foreground">
+        <header className="agency-header-menu">
+          <div className="agency-header-inner-menu">
+            <div className="hero-logos">
+              <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb-menu" />
+              <img src={BPLogo} alt="BP Logo" className="logo-svg-bp-menu" />
+            </div>
+            <Title order={2} className="agency-name">
+              <span className="agency-name-text">
+                Republic of the Philippines
+              </span>
+              <span className="agency-name-text">
+                DEPARTMENT OF ENVIRONMENT AND NATURAL RESOURCES
+              </span>
+              <span className="agency-name-text-emb">
+                ENVIRONMENTAL MANAGEMENT BUREAU III
+              </span>
+              <span className="agency-name-text-address">
+                Masinop Corner, Matalino St., Diosdado Macapagal Government
+                Center,
+              </span>
+              <span className="agency-name-text-address">
+                Maimpis, City of San Fernando, Pampanga
+              </span>
+            </Title>
           </div>
-          <Title order={2} className="agency-name">
-            <span className="agency-name-text">
-              Republic of the Philippines
-            </span>
-            <span className="agency-name-text">
-              DEPARTMENT OF ENVIRONMENT AND NATURAL RESOURCES
-            </span>
-            <span className="agency-name-text-emb">
-              ENVIRONMENTAL MANAGEMENT BUREAU III
-            </span>
-            <span className="agency-name-text-address">
-              Masinop Corner, Matalino St., Diosdado Macapagal Government
-              Center,
-            </span>
-            <span className="agency-name-text-address">
-              Maimpis, City of San Fernando, Pampanga
-            </span>
-          </Title>
-        </div>
-      </header>
+        </header>
 
-      <Container size="xs" className="menu-content">
-        <Title order={1} className="main-title">
-          Online Client Satisfactory Measurement
-        </Title>
-        <Text size="lg" className="survey-text">
-          Select your portal below
-        </Text>
-        <Stack spacing="md" mt="lg">
-          {showAdmin && (
+        <Container size="xs" className="menu-content">
+          <Title order={1} className="main-title">
+            Online Client Satisfactory Measurement
+          </Title>
+          <Text size="lg" className="survey-text">
+            Select your portal below
+          </Text>
+          <Stack spacing="md" mt="lg">
+            {showAdmin && (
+              <Button
+                size="md"
+                radius="xl"
+                className="survey-button-admin"
+                onClick={() => navigate("/admin-auth")}
+              >
+                Admin
+              </Button>
+            )}
             <Button
               size="md"
               radius="xl"
-              className="survey-button-admin"
-              onClick={() => navigate("/admin-auth")}
+              className="survey-button"
+              onClick={() => {
+                const encrypted = encrypt("visited");
+                sessionStorage.setItem("menuFlag", encrypted);
+                navigate("/client", { replace: true });
+              }}
             >
-              Admin
+              Client
             </Button>
-          )}
-          <Button
-            size="md"
-            radius="xl"
-            className="survey-button"
-            onClick={() => {
-              const encrypted = encrypt("visited");
-              sessionStorage.setItem("menuFlag", encrypted);
-              navigate("/client", { replace: true });
-            }}
-          >
-            Client
-          </Button>
-        </Stack>
-      </Container>
+          </Stack>
+        </Container>
+      </div>
     </div>
   );
 }

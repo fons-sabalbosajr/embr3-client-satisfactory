@@ -64,6 +64,15 @@ body[data-mantine-color-scheme="dark"] .menu-container {
   pointer-events: none;
 }
 
+.menu-foreground {
+  position: relative;
+  z-index: 10;         /* Put it above background & gradient */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 /* ---------- ANIMATIONS ---------- */
 @keyframes gradientFlow {
   0% {
@@ -175,19 +184,21 @@ body[data-mantine-color-scheme="dark"] .menu-container {
 }
 
 .agency-header {
+  position: absolute;
   text-align: center;
   padding-top: 0;
 }
 
-.agency-header-inner {
+.agency-header-inner-menu {
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  text-align: center;
 }
 
 /* ---------- AGENCY INFO ---------- */
-.agency-name {
+.agency-name-menu {
   font-weight: 700;
   font-size: 1.2rem;
   line-height: 1.4;
@@ -221,6 +232,7 @@ body[data-mantine-color-scheme="dark"] .menu-container {
   font-size: 2.5rem;
   font-weight: 700;
   margin-top: 2rem;
+ color: var(--main-title-light);
 }
 
 .survey-text {
