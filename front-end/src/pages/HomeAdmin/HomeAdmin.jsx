@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card, Tabs, Form, Input, Button, Typography, Row, Col } from "antd";
 import "./homeadmin.css";
-import EMBLogo from "../../assets/emblogo.svg";
+import AgencyHeader from "./AgencyHeader";
 import Swal from "sweetalert2";
 import { BulbOutlined, BulbFilled } from "@ant-design/icons";
 import { FloatButton } from "antd";
@@ -11,32 +11,30 @@ import CryptoJS from "crypto-js";
 
 const secretKey = import.meta.env.VITE_SECRET_KEY;
 
-const { Title } = Typography;
-
 function HomeAdmin({ toggleColorScheme, colorScheme }) {
   const [activeTab, setActiveTab] = useState("login");
   const location = useLocation();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [signupForm] = Form.useForm();
 
   useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    navigate("/admin");
-    return;
-  }
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/admin");
+      return;
+    }
 
-  const params = new URLSearchParams(location.search);
-  if (params.get("verified") === "true") {
-    setActiveTab("login");
-  }
-}, [location, navigate]);
+    const params = new URLSearchParams(location.search);
+    if (params.get("verified") === "true") {
+      setActiveTab("login");
+    }
+  }, [location, navigate]);
 
-
-  const handleLogin = async ({ email, password }) => {
+  const handleLogin = async ({ username, password }) => {
     setLoading(true);
     try {
-      const res = await login({ email, password });
+      const res = await login({ username, password });
 
       // Encrypt and store user info
       const encryptedUser = CryptoJS.AES.encrypt(
@@ -61,10 +59,10 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
     }
   };
 
-  const handleSignup = async ({ fullname, email, password }) => {
+  const handleSignup = async ({ fullname, username, email, password }) => {
     setLoading(true);
     try {
-      const res = await signUp({ fullname, email, password });
+      const res = await signUp({ fullname, username, email, password });
 
       Swal.fire({
         icon: "success",
@@ -73,6 +71,9 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
           res.data.message ||
           "Verification email sent. Please check your inbox.",
       });
+
+      signupForm.resetFields(); // Clear the signup form
+      setActiveTab("login"); // Switch to login tab
     } catch (err) {
       console.error("Signup error:", err);
       Swal.fire({
@@ -98,21 +99,10 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
           <div className="circle circle4" />
           <div className="circle circle5" />
         </div>
-
+        <AgencyHeader /> {/* <-- Add this line */}
         <div className="form-wrapper">
           <Card className="auth-card">
-            <div className="logo-wrapper">
-              <img src={EMBLogo} alt="EMB Logo" className="logo" />
-              <Title level={5} style={{ marginTop: 5 }}>
-                Environmental Management Bureau Region III
-                <span className="subtitle-line">
-                  Online Client Satisfaction Measurement
-                </span>
-              </Title>
-            </div>
-            <Title level={4} style={{ textAlign: "center", marginBottom: 24 }}>
-              {activeTab === "login" ? "Login" : "Sign Up"}
-            </Title>
+            <h2 className="auth-title">ADMINISTRATION PANEL</h2>
             <Tabs
               activeKey={activeTab}
               onChange={setActiveTab}
@@ -128,13 +118,13 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
                       disabled={loading}
                     >
                       <Form.Item
-                        label="Email"
-                        name="email"
+                        label="Username"
+                        name="username"
                         rules={[
-                          { required: true, message: "Email is required" },
+                          { required: true, message: "Username is required" },
                         ]}
                       >
-                        <Input placeholder="Enter your email" />
+                        <Input placeholder="Enter your username" />
                       </Form.Item>
                       <Form.Item
                         label="Password"
@@ -163,6 +153,7 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
                   label: "Sign Up",
                   children: (
                     <Form
+                      form={signupForm} // Add this prop
                       layout="vertical"
                       onFinish={({ confirm, ...formData }) =>
                         handleSignup(formData)
@@ -177,6 +168,15 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
                         ]}
                       >
                         <Input placeholder="Enter your full name" />
+                      </Form.Item>
+                      <Form.Item
+                        label="Username"
+                        name="username"
+                        rules={[
+                          { required: true, message: "Username is required" },
+                        ]}
+                      >
+                        <Input placeholder="Enter your username" />
                       </Form.Item>
                       <Form.Item
                         label="Email"

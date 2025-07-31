@@ -1,4 +1,3 @@
-// utils/email.js
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 
@@ -19,7 +18,7 @@ export const sendVerificationEmail = async (to, name, link) => {
     subject: "Verify your email address",
     html: `
       <h2>Hello, ${name}</h2>
-      <p>Thank you for signing up for the <strong>EMB Region III Online Survey Portal (Admin)</strong>.</p>
+      <p>Thank you for signing up for the <strong>EMB Region III Online Customer Satisfaction Measurement (Admin Portal)</strong>.</p>
       <p>Please verify your email by clicking the button below:</p>
       <p style="text-align: center;">
         <a href="${link}" style="
