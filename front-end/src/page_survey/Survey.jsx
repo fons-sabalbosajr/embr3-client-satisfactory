@@ -194,6 +194,47 @@ function Survey({ toggleColorScheme }) {
 
   const currentQuestion = allQuestions[currentQuestionIndex];
 
+  const handleSubmit = async (formValues) => {
+    try {
+      const response = await fetch(
+        "http://10.14.77.107:5000/api/client-satisfactory/submit",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            answers: formValues,
+            deviceId, // <-- include deviceId
+          }),
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to submit feedback");
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: t("thankYou"),
+        text: t("summary.thankYou") || t("thankYou"),
+        confirmButtonText: t("summary.submit"),
+      }).then(() => {
+        navigate("/");
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: t("summary.submissionFailed") || "Submission Failed",
+        text:
+          error.message ||
+          t("summary.submissionError") ||
+          "An error occurred while submitting feedback.",
+      });
+    }
+  };
+
   const renderQuestionInput = (question) => {
     const formItemName = `answer_${question._id}`;
     if (question._id === MERGED_CUSTOMER_AGE_GENDER_QID) {
@@ -218,6 +259,41 @@ function Survey({ toggleColorScheme }) {
   };
 
   const handleNextQuestion = async () => {
+    if (currentQuestion._id === MERGED_CUSTOMER_AGE_GENDER_QID) {
+      try {
+        await form.validateFields([
+          `answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_customerType`,
+          `answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_age`,
+          `answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_gender`,
+          `answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_serviceAvailed`,
+          // Optionally add companyName/agencyName if needed
+        ]);
+      } catch (err) {
+        // Validation failed, do not proceed
+        return;
+      }
+    }
+
+    // Citizens Charter: at least one answer required
+    if (currentQuestion._id === MERGED_CCSQD_QID) {
+      const formValues = form.getFieldsValue(true);
+      const ccAnswerKeys = ccQuestions.map((q) => `answer_${q._id}`);
+      const hasAtLeastOneAnswer = ccAnswerKeys.some((key) => {
+        const val = formValues[key];
+        return val !== undefined && val !== null && val !== "";
+      });
+      if (!hasAtLeastOneAnswer) {
+        Swal.fire({
+          icon: "warning",
+          title: t("summary.incompleteCC"),
+          text:
+            t("summary.atLeastOneCCRequired") ||
+            "Please answer at least one Citizens Charter question before proceeding.",
+        });
+        return;
+      }
+    }
+
     const formValues = form.getFieldsValue(true);
 
     // Check if we're in SQD grouped section
@@ -252,6 +328,7 @@ function Survey({ toggleColorScheme }) {
       title: t("summary.confirmTitle"),
       html: summaryHTML,
       showCancelButton: true,
+      width: Math.min(window.innerWidth * 0.95, 600), // <-- dynamic width
       confirmButtonText: t("summary.submit"),
       cancelButtonText: t("summary.cancel"),
       customClass: {
@@ -321,7 +398,7 @@ function Survey({ toggleColorScheme }) {
           </div>
         </div>
       </header>
-      <Card className="survey-page-content" bordered={false}>
+      <Card className="survey-page-content">
         <Steps
           progressDot
           direction="horizontal"
@@ -383,7 +460,7 @@ function Survey({ toggleColorScheme }) {
               disabled={currentQuestionIndex === 0}
               icon={<ArrowLeftOutlined />}
             >
-              Previous
+              {t("back")}
             </Button>
 
             <Button
@@ -395,14 +472,14 @@ function Survey({ toggleColorScheme }) {
                 if (currentQuestion.questionType === "merged_sqd_table") {
                   return currentSQDGroupIndex <
                     currentQuestion.groupedSQD.length - 1
-                    ? "Next"
+                    ? t("next")
                     : currentQuestionIndex === allQuestions.length - 1
-                    ? "Submit"
-                    : "Next";
+                    ? t("submitSurvey")
+                    : t("next");
                 }
                 return currentQuestionIndex === allQuestions.length - 1
-                  ? "Submit"
-                  : "Next";
+                  ? t("submitSurvey")
+                  : t("next");
               })()}
             </Button>
 
@@ -412,12 +489,14 @@ function Survey({ toggleColorScheme }) {
               icon={<HomeOutlined />}
               onClick={() => {
                 Swal.fire({
-                  title: "Exit Survey?",
-                  text: "Are you sure you want to return home? Your progress will not be saved.",
+                  title: t("summary.exitTitle") || "Exit Survey?",
+                  text:
+                    t("summary.exitText") ||
+                    "Are you sure you want to return home? Your progress will not be saved.",
                   icon: "warning",
                   showCancelButton: true,
-                  confirmButtonText: "Quit Survey",
-                  cancelButtonText: "Stay",
+                  confirmButtonText: t("summary.quitSurvey") || "Quit Survey",
+                  cancelButtonText: t("summary.stay") || "Stay",
                 }).then((result) => {
                   if (result.isConfirmed) {
                     navigate("/");
@@ -425,7 +504,7 @@ function Survey({ toggleColorScheme }) {
                 });
               }}
             >
-              Quit
+              {t("summary.quitSurvey") || "Quit"}
             </Button>
           </Space>
         </div>

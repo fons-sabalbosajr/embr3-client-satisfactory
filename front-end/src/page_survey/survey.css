@@ -55,7 +55,6 @@ body[data-mantine-color-scheme="dark"] .survey-page-container::before {
   text-align: center;
 }
 
-
 .agency-header-logos {
   display: flex;
   justify-content: center;
@@ -203,6 +202,35 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
 
 /* === Responsive Fixes === */
 
+@media screen and (min-width: 1080px) and (max-width: 1400px){
+ .survey-page-content.ant-card {
+    max-width: 1000px;
+    margin-top: 0; /* prevent further stacking */
+    margin-bottom: 0 !important; /* ← kill extra space */
+    padding-bottom: 12px;
+    width: 100%;
+    flex: 0 1 auto; /* ← prevent it from pushing footer down */
+  }
+
+  .survey-steps {
+    margin-left: -30px !important; /* ← shrink default margin */
+    max-width: 100%;
+  }
+
+  .survey-steps .ant-steps-item-title {
+    font-size: 12px;
+  }
+
+  .survey-steps .ant-steps-item-description {
+    font-size: 10px;
+  }
+
+  .survey-steps .ant-steps-item {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+}
+
 @media screen and (min-width: 768px) and (max-width: 1080px) {
   html,
   body {
@@ -285,6 +313,8 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
   }
 }
 
+
+
 @media screen and (min-width: 440px) and (max-width: 768px) {
   html,
   body {
@@ -329,9 +359,9 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
   }
 
   .survey-steps .ant-steps-item {
-  padding-left: 4px !important;
-  padding-right: 4px !important;
-}
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
 
   .survey-footer {
     font-size: 10px;

@@ -32,6 +32,7 @@ const MainApp = () => {
   const toggleColorScheme = () => {
     const next = colorScheme === "dark" ? "light" : "dark";
     setColorScheme(next);
+
     setEncryptedItem("mantine-color-scheme", next);
   };
 
@@ -55,7 +56,10 @@ const MainApp = () => {
     >
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Menu />} />
+          <Route
+            path="/"
+            element={<Menu toggleColorScheme={toggleColorScheme} />}
+          />
           <Route
             path="/client"
             element={

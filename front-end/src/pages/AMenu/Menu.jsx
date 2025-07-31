@@ -5,6 +5,9 @@ import EMBLogo from "../../assets/emblogo.svg";
 import BPLogo from "../../assets/bplogo.svg";
 import CryptoJS from "crypto-js";
 import "./menu.css";
+// Add these imports for theme toggle
+import { FloatButton } from "antd";
+import { BulbOutlined } from "@ant-design/icons";
 
 const secretKey = import.meta.env.VITE_MENU_SECRET_KEY;
 
@@ -21,7 +24,8 @@ function decrypt(cipherText) {
   }
 }
 
-function Menu() {
+// Accept toggleColorScheme as prop
+function Menu({ toggleColorScheme }) {
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
@@ -109,6 +113,13 @@ function Menu() {
           </Stack>
         </Container>
       </div>
+      {/* Theme Toggle Button */}
+      <FloatButton
+        icon={<BulbOutlined />}
+        onClick={toggleColorScheme}
+        tooltip={<div>Toggle Theme</div>}
+        style={{ right: 20, bottom: 20 }}
+      />
     </div>
   );
 }
