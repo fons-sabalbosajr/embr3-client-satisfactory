@@ -13,10 +13,8 @@ import dayjs from "dayjs";
 import MeasurementFormModal from "./MeasurementFormModal";
 import MeasurementViewModal from "./MeasurementViewModal";
 import { deleteFeedback, updateFeedback } from "../../../services/api";
-import io from "socket.io-client";
 import "./measurementtable.css";
-
-const socket = io("http://10.14.77.107:5000"); // Replace with your backend URL if different
+import socket from "../../../utils/socket";
 
 function MeasurementTable({ data, onEdit, onDataRefresh }) {
   const [tableData, setTableData] = useState([...data]);

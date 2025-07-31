@@ -203,6 +203,15 @@ i18n
             },
           },
 
+           rating: {
+            stronglyDisagree: "Strongly Disagree",
+            disagree: "Disagree",
+            satisfactory: "Satisfactory",
+            agree: "Agree",
+            stronglyAgree: "Strongly Agree",
+            notApplicable: "Not Applicable",
+          },
+
           section: {
             personalInfo: "Personal Information",
             citizensCharter: "Citizen’s Charter",

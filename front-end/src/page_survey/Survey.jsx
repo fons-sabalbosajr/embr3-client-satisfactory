@@ -195,45 +195,45 @@ function Survey({ toggleColorScheme }) {
   const currentQuestion = allQuestions[currentQuestionIndex];
 
   const handleSubmit = async (formValues) => {
-    try {
-      const response = await fetch(
-        "http://10.14.77.107:5000/api/client-satisfactory/submit",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            answers: formValues,
-            deviceId, // <-- include deviceId
-          }),
-          credentials: "include",
-        }
-      );
+  const API_URL = import.meta.env.VITE_API_URL;
 
-      if (!response.ok) {
-        throw new Error("Failed to submit feedback");
-      }
+  try {
+    const response = await fetch(`${API_URL}/client-satisfactory/submit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        answers: formValues,
+        deviceId,
+      }),
+      credentials: "include",
+    });
 
-      Swal.fire({
-        icon: "success",
-        title: t("thankYou"),
-        text: t("summary.thankYou") || t("thankYou"),
-        confirmButtonText: t("summary.submit"),
-      }).then(() => {
-        navigate("/");
-      });
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: t("summary.submissionFailed") || "Submission Failed",
-        text:
-          error.message ||
-          t("summary.submissionError") ||
-          "An error occurred while submitting feedback.",
-      });
+    if (!response.ok) {
+      throw new Error("Failed to submit feedback");
     }
-  };
+
+    Swal.fire({
+      icon: "success",
+      title: t("thankYou"),
+      text: t("summary.thankYou") || t("thankYou"),
+      confirmButtonText: t("summary.submit"),
+    }).then(() => {
+      navigate("/");
+    });
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: t("summary.submissionFailed") || "Submission Failed",
+      text:
+        error.message ||
+        t("summary.submissionError") ||
+        "An error occurred while submitting feedback.",
+    });
+  }
+};
+
 
   const renderQuestionInput = (question) => {
     const formItemName = `answer_${question._id}`;
