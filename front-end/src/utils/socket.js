@@ -1,9 +1,9 @@
 // src/socket.js
 import { io } from "socket.io-client";
 
-const socket = io("http://10.14.77.107:5000", {
-  transports: ["websocket", "polling"], // optional, to improve fallback
-  reconnectionAttempts: 5, // optional
+const socket = io(import.meta.env.VITE_SOCKET_URL, {
+  transports: ["websocket", "polling"],
+  reconnectionAttempts: 5,
 });
 
 export default socket;
