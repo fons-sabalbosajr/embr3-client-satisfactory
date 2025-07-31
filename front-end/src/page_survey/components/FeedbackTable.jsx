@@ -76,7 +76,7 @@ function FeedbackTable({ questions, language }) {
             <Form.Item
               name={formItemName}
               label={
-                <Text className={labelClass} style={{ fontSize: 14 }}>
+                <Text className={labelClass} style={{ fontSize: 18 }}>
                   {questionText}
                 </Text>
               }

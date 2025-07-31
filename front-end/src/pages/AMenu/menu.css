@@ -5,6 +5,8 @@
   --bg-dark: #1a1b1e;
   --text-light: #002244;
   --text-dark: #f0f0f0;
+  --main-title-light: #002244;
+  --main-title-dark: #ffffff;
 }
 
 /* ---------- THEMING ---------- */
@@ -228,11 +230,14 @@ body[data-mantine-color-scheme="dark"] .menu-container {
 
 /* ---------- TITLES ---------- */
 .main-title {
-  font-family: "Gotham", sans-serif;
   font-size: 2.5rem;
   font-weight: 700;
   margin-top: 2rem;
- color: var(--main-title-light);
+  color: var(--main-title-light);
+}
+
+body[data-mantine-color-scheme="dark"] .main-title {
+  color: var(--main-title-dark);
 }
 
 .survey-text {

@@ -199,6 +199,7 @@ i18n
             Q19: {
               text: "Do you have any other comments or suggestions?",
               options: [],
+              placeholder: "Any improvements or suggestions...", // ENGLISH
             },
           },
 
@@ -223,6 +224,17 @@ i18n
             confirmTitle: "Please confirm your responses",
             submit: "Submit",
             cancel: "Cancel",
+            thankYou: "Thank you for your feedback!",
+            submissionFailed: "Submission Failed",
+            submissionError: "An error occurred while submitting feedback.",
+            exitTitle: "Exit Survey?",
+            exitText:
+              "Are you sure you want to return home? Your progress will not be saved.",
+            quitSurvey: "Quit Survey",
+            stay: "Stay",
+            incompleteCC: "Citizens Charter answers incomplete",
+            atLeastOneCCRequired:
+              "Please answer at least one Citizens Charter question before proceeding.",
           },
         },
       },
@@ -241,7 +253,7 @@ i18n
 
           // i18n.js extras
           subtitle:
-            "Ang Client Satisfaction Measurement (CSM) ay naglalayong masubaybayan ang karanasan ng taumbayan hinggil sa kanilang pakkikitransaksyon sa mga tanggapan ng gobyerno. Makatutulong ang inyong kasagutan ukol sa inyong naging karanasan sa kakatpos lamang ng transaksyon, upang mas mapabuti at lalong mapahusay ang aming serbisyo publiko. Ang personal na impormasyon na iyong ibabahagi ay mananatiling kumpidensyal. Maari ring piliin na hindi sagutin ang sarbey na ito.",
+            "Ang Client Satisfaction Measurement (CSM) ay naglalayong masubaybayan ang karanasan ng taumbayan hinggil sa kanilang pakikipag-transaksyon sa mga tanggapan ng gobyerno. Makatutulong ang inyong kasagutan ukol sa inyong naging karanasan sa kakatpos lamang ng transaksyon, upang mas mapabuti at lalong mapahusay ang aming serbisyo publiko. Ang personal na impormasyon na iyong ibabahagi ay mananatiling kumpidensyal. Maari ring piliin na hindi sagutin ang sarbey na ito.",
           takeSurvey: "Sagutan ang Survey",
           selectLanguage: "Piliin ang Wika",
           toggleColor: "I-toggle ang tema",
@@ -417,6 +429,7 @@ i18n
             Q19: {
               text: "Mga suhestyon kung paano pa mapapabuti ang aming serbisyo(opsyonal)?",
               options: [],
+              placeholder: "Mga suhestyon o komento...", // FILIPINO
             },
           },
 
@@ -450,6 +463,17 @@ i18n
             confirmTitle: "Pakitiyak ang iyong mga sagot",
             submit: "Ipasa",
             cancel: "Kanselahin",
+            thankYou: "Maraming salamat sa iyong puna!",
+            submissionFailed: "Nabigo ang pagsusumite",
+            submissionError: "May naganap na error sa pagsusumite ng puna.",
+            exitTitle: "Tapusin agad ang Survey?",
+            exitText:
+              "Sigurado ka bang nais mong bumalik sa home? Hindi masasave ang iyong progress.",
+            quitSurvey: "Tapusin ang Survey",
+            stay: "Manatili",
+            incompleteCC: "Hindi kumpleto ang sagot sa Citizens Charter",
+            atLeastOneCCRequired:
+              "Sagutan ang kahit isang tanong sa Citizens Charter bago magpatuloy.",
           },
         },
       },

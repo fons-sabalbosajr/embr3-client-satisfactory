@@ -6,8 +6,26 @@ export const buildGroupedSummaryHTML = (formValues, questionData, t) => {
     remarks: [],
   };
 
+  // Map for rating translations
+  const ratingTranslationMap = {
+    "Strongly Disagree": "stronglyDisagree",
+    Disagree: "disagree",
+    Satisfactory: "satisfactory",
+    Agree: "agree",
+    "Strongly Agree": "stronglyAgree",
+    "Not Applicable": "notApplicable",
+    // Also support short keys if needed
+    StronglyDisagree: "stronglyDisagree",
+    Disagree: "disagree",
+    Satisfactory: "satisfactory",
+    Agree: "agree",
+    StronglyAgree: "stronglyAgree",
+    NA: "notApplicable",
+  };
+
   for (const [id, answer] of Object.entries(formValues)) {
-    const display = Array.isArray(answer) ? answer.join(", ") : answer;
+    let display = Array.isArray(answer) ? answer.join(", ") : answer;
+    if (display === undefined || display === null) display = ""; // <-- add this line
     let label = "";
 
     // Personal Info fields
@@ -39,16 +57,8 @@ export const buildGroupedSummaryHTML = (formValues, questionData, t) => {
         returnObjects: true,
       });
 
-      if (Array.isArray(options)) {
-        const selectedOptionIndex = parseInt(display, 10) - 1;
-        valueToDisplay = options[selectedOptionIndex] || display;
-      } else if (typeof options === "object" && options !== null) {
-        valueToDisplay = options[display] || display;
-      }
-
-      if (["Q7", "Q8", "Q9"].includes(question.questionCode)) {
-        sections.citizensCharter.push({ label, value: valueToDisplay });
-      } else if (
+      // For SQD and rating questions, translate the rating value
+      if (
         [
           "Q10",
           "Q11",
@@ -61,7 +71,23 @@ export const buildGroupedSummaryHTML = (formValues, questionData, t) => {
           "Q18",
         ].includes(question.questionCode)
       ) {
+        // Try to translate using ratingTranslationMap
+        const ratingKey =
+          ratingTranslationMap[display] || ratingTranslationMap[answer] || null;
+        if (ratingKey) {
+          valueToDisplay = t(`rating.${ratingKey}`);
+        }
         sections.sqd.push({ label, value: valueToDisplay });
+      } else if (["Q7", "Q8", "Q9"].includes(question.questionCode)) {
+        // For Citizens Charter, try to translate option if available
+        if (Array.isArray(options)) {
+          const selectedOptionIndex = parseInt(display, 10) - 1;
+          valueToDisplay = options[selectedOptionIndex] || display;
+        } else if (typeof options === "object" && options !== null) {
+          // If options is an object, try to translate using key
+          valueToDisplay = options[display] || options[answer] || display;
+        }
+        sections.citizensCharter.push({ label, value: valueToDisplay });
       } else if (question.questionCode === "Q19") {
         sections.remarks.push({ label, value: valueToDisplay });
       }
