@@ -62,3 +62,13 @@ export const submitSurvey = (io) => async (req, res) => {
   }
 };
 
+export const getAllSurveys = async (req, res) => {
+  try {
+    const surveys = await ClientSatisfactory.find().sort({ submittedAt: -1 });
+    res.json(surveys);
+  } catch (err) {
+    console.error("❌ Error fetching surveys:", err);
+    res.status(500).json({ message: "Server error while fetching surveys" });
+  }
+};
+

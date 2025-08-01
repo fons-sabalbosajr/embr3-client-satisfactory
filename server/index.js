@@ -94,8 +94,7 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     server.listen(PORT, HOST, () => {
-      console.log(`Server running at http://${HOST}:${PORT}`);
-      console.log(`Socket.IO listening on port ${PORT}`);
+      console.log(`Server + Socket.IO running at http://${HOST}:${PORT}`);
     });
   })
   .catch((err) => {

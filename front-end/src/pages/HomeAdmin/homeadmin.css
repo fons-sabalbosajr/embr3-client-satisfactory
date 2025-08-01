@@ -133,11 +133,12 @@ body[data-mantine-color-scheme="dark"] .home-container {
 
 .form-wrapper {
   position: relative;
-  z-index: 2; /* ensure form is above circles and container */
+  z-index: 2;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 100px; /* Add this line to push card below header */
 }
 
 .auth-card {
@@ -191,6 +192,11 @@ body[data-mantine-color-scheme="dark"] .home-container {
 }
 
 @media screen and (max-width: 1080px) {
+
+  .form-wrapper {
+    margin-top: 260px; /* More space for smaller screens */
+  }
+
   .agency-header-inner {
     margin-top: 150px;
   }

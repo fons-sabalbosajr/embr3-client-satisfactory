@@ -1,10 +1,12 @@
 import express from "express";
-import { submitSurvey } from "../controllers/clientSatisfactoryController.js";
+import { submitSurvey, getAllSurveys } from "../controllers/clientSatisfactoryController.js";
 
 export default (io) => {
   const router = express.Router();
 
   router.post("/submit", submitSurvey(io));
+  router.get("/", getAllSurveys);
 
   return router;
 };
+

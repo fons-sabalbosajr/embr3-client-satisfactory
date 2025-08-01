@@ -22,3 +22,6 @@ export const submitFeedback = (payload) =>
 export const deleteFeedback = (id) => API.delete(`/feedback/${id}`);
 export const updateFeedback = (id, updatedFeedback) =>
   API.put(`/feedback/${id}`, updatedFeedback);
+
+export const getClientSatisfactoryData = () =>
+  API.get("/client-satisfactory");

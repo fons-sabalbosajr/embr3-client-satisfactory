@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 export const sendVerificationEmail = async (to, name, link) => {
   return transporter.sendMail({
-    from: `"EMB Region III" <${process.env.EMAIL_USER}>`,
+    from: `"EMB Region III Online CSM Portal" <${process.env.EMAIL_USER}>`,
     to,
     subject: "Verify your email address",
     html: `
