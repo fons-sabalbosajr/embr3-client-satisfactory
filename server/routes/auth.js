@@ -54,11 +54,11 @@ router.post("/signup", async (req, res) => {
 // Email verification
 router.get("/verify", async (req, res) => {
   const { token, email } = req.query;
-  console.log("Verification request:", { token, email });
+  // console.log("Verification request:", { token, email });
 
   try {
     const user = await User.findOne({ email });
-    console.log("User found:", user);
+    // console.log("User found:", user);
 
     if (!user) {
       return res.status(400).send("Invalid verification link");
@@ -66,7 +66,7 @@ router.get("/verify", async (req, res) => {
 
     if (user.isVerified) {
       // Already verified, redirect to admin-auth
-      return res.redirect(`${process.env.FRONTEND_URL}/admin-auth`);
+      return res.redirect(`${process.env.FRONTEND_URL}/?admin-auth=true`);
     }
 
     if (user.verificationToken !== token) {
@@ -78,7 +78,7 @@ router.get("/verify", async (req, res) => {
     await user.save();
 
     // Redirect to admin-auth after successful verification
-    return res.redirect(`${process.env.FRONTEND_URL}/admin-auth`);
+     return res.redirect(`${process.env.FRONTEND_URL}/?admin-auth=true`);
   } catch (err) {
     console.error("Verification error:", err);
     res.status(500).send("Server error");

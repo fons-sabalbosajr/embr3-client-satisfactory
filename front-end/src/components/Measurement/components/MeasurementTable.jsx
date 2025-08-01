@@ -164,8 +164,8 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
     title: "Submitted At",
     dataIndex: "submittedAt",
     render: (d) => dayjs(d).format("MM/DD/YYYY hh:mm A"),
-    sorter: (a, b) => new Date(b.submittedAt) - new Date(a.submittedAt),
-    defaultSortOrder: "descend",
+    //sorter: (a, b) => new Date(b.submittedAt) - new Date(a.submittedAt),
+    //defaultSortOrder: "descend",
   },
   {
     title: "Actions",

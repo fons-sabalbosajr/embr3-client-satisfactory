@@ -20,7 +20,8 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
+    // Only redirect if not already on /admin
+    if (token && location.pathname !== "/admin") {
       navigate("/admin");
       return;
     }
