@@ -62,8 +62,7 @@ function ClientInfoCard({ formItemName, form, options, language }) {
               <div key={value}>
                 <Radio value={value}>{label}</Radio>
 
-                {form.getFieldValue(`${formItemName}_customerType`) ===
-                  "Business" &&
+                {form.getFieldValue(`${formItemName}_customerType`) === "Business" &&
                   value === "Business" && (
                     <Form.Item
                       name={`${formItemName}_companyName`}
@@ -79,8 +78,7 @@ function ClientInfoCard({ formItemName, form, options, language }) {
                     </Form.Item>
                   )}
 
-                {form.getFieldValue(`${formItemName}_customerType`) ===
-                  "Government" &&
+                {form.getFieldValue(`${formItemName}_customerType`) === "Government" &&
                   value === "Government" && (
                     <Form.Item
                       name={`${formItemName}_agencyName`}
@@ -129,7 +127,6 @@ function ClientInfoCard({ formItemName, form, options, language }) {
           <Form.Item
             name={`${formItemName}_region`}
             label={t("regionLabel")}
-            initialValue={region}
           >
             <Input disabled />
           </Form.Item>
@@ -138,7 +135,6 @@ function ClientInfoCard({ formItemName, form, options, language }) {
           <Form.Item
             name={`${formItemName}_agency`}
             label={t("agencyLabel")}
-            initialValue={agency}
           >
             <Input disabled />
           </Form.Item>
