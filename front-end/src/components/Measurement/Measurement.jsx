@@ -6,8 +6,7 @@ import MeasurementFormModal from "../Measurement/components/MeasurementFormModal
 import { getFeedbacks } from "../../services/api";
 import * as XLSX from "xlsx";
 import dayjs from "dayjs";
-import { io } from "socket.io-client";
-const socket = io(import.meta.env.VITE_SOCKET_URL);
+import socket from "../../utils/socket"; // Ensure this path is correct
 
 const { RangePicker } = DatePicker;
 
