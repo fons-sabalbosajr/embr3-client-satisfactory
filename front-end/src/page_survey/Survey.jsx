@@ -67,20 +67,19 @@ function Survey({ toggleColorScheme }) {
       try {
         setLoading(true);
         const fetchedResponse = await getQuestions();
+        //console.log("Fetched questions response:", fetchedResponse);
         let questionsArray = [];
-
-        questionsArray =
-          fetchedResponse.data || fetchedResponse.questions || [];
 
         if (Array.isArray(fetchedResponse)) {
           questionsArray = fetchedResponse;
-        } else if (fetchedResponse?.data) {
+        } else if (fetchedResponse && Array.isArray(fetchedResponse.data)) {
           questionsArray = fetchedResponse.data;
-        } else if (fetchedResponse?.questions) {
+        } else if (
+          fetchedResponse &&
+          Array.isArray(fetchedResponse.questions)
+        ) {
           questionsArray = fetchedResponse.questions;
-        }
-
-        if (!Array.isArray(questionsArray)) {
+        } else {
           throw new Error("Invalid data structure");
         }
 
@@ -195,45 +194,44 @@ function Survey({ toggleColorScheme }) {
   const currentQuestion = allQuestions[currentQuestionIndex];
 
   const handleSubmit = async (formValues) => {
-  const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = import.meta.env.VITE_API_URL;
 
-  try {
-    const response = await fetch(`${API_URL}/client-satisfactory/submit`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        answers: formValues,
-        deviceId,
-      }),
-      credentials: "include",
-    });
+    try {
+      const response = await fetch(`${API_URL}/client-satisfactory/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          answers: formValues,
+          deviceId,
+        }),
+        credentials: "include",
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to submit feedback");
+      if (!response.ok) {
+        throw new Error("Failed to submit feedback");
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: t("thankYou"),
+        text: t("summary.thankYou") || t("thankYou"),
+        confirmButtonText: t("summary.submit"),
+      }).then(() => {
+        navigate("/");
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: t("summary.submissionFailed") || "Submission Failed",
+        text:
+          error.message ||
+          t("summary.submissionError") ||
+          "An error occurred while submitting feedback.",
+      });
     }
-
-    Swal.fire({
-      icon: "success",
-      title: t("thankYou"),
-      text: t("summary.thankYou") || t("thankYou"),
-      confirmButtonText: t("summary.submit"),
-    }).then(() => {
-      navigate("/");
-    });
-  } catch (error) {
-    Swal.fire({
-      icon: "error",
-      title: t("summary.submissionFailed") || "Submission Failed",
-      text:
-        error.message ||
-        t("summary.submissionError") ||
-        "An error occurred while submitting feedback.",
-    });
-  }
-};
-
+  };
 
   const renderQuestionInput = (question) => {
     const formItemName = `answer_${question._id}`;
