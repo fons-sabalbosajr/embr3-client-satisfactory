@@ -280,7 +280,10 @@ function Dashboard() {
 
       {loading ? (
         <div className="dashboard-loading">
-          <Spin size="large" tip="Loading Dashboard Data..." />
+          <Spin size="large" tip="Loading Dashboard Data...">
+            <div style={{ minHeight: "200px" }} />{" "}
+            {/* placeholder for nested mode */}
+          </Spin>
         </div>
       ) : (
         <Space direction="vertical" size={24} style={{ width: "100%" }}>
