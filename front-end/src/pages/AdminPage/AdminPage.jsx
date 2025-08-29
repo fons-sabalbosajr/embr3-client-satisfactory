@@ -125,28 +125,29 @@ function AdminPage() {
     }
   };
 
-  const userMenu = (
-    <Menu>
-      <Menu.Item
-        key="feature"
-        icon={<BulbOutlined />}
-        onClick={handleSuggestFeature}
-      >
-        Suggest a Feature
-      </Menu.Item>
-      <Menu.Item
-        key="contact"
-        icon={<MailOutlined />}
-        onClick={handleContactUs}
-      >
-        Contact Us
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
-        Logout
-      </Menu.Item>
-    </Menu>
-  );
+  const userMenuItems = [
+    {
+      key: "feature",
+      icon: <BulbOutlined />,
+      label: "Suggest a Feature",
+      onClick: handleSuggestFeature,
+    },
+    {
+      key: "contact",
+      icon: <MailOutlined />,
+      label: "Contact Us",
+      onClick: handleContactUs,
+    },
+    {
+      type: "divider",
+    },
+    {
+      key: "logout",
+      icon: <LogoutOutlined />,
+      label: "Logout",
+      onClick: handleLogout,
+    },
+  ];
 
   const currentTheme = useMemo(
     () => ({
@@ -238,6 +239,9 @@ function AdminPage() {
         >
           <Header
             style={{
+              position: "sticky", // ✅ this keeps it visible while scrolling
+              top: 0,
+              zIndex: 1000, // ensures it stays above content
               padding: "0 24px",
               background: currentTheme.components.Layout.headerBg,
               display: "flex",
@@ -258,7 +262,7 @@ function AdminPage() {
               }}
             />
             <Space align="center" size="middle">
-              <Dropdown overlay={userMenu} trigger={["click"]}>
+              <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
                 <Avatar
                   style={{ backgroundColor: "#4B8D73", cursor: "pointer" }}
                   icon={<UserOutlined />}
@@ -278,17 +282,21 @@ function AdminPage() {
           </Header>
           <Content
             style={{
-              margin: "10px 10px 12px 10px", // Adjusted margins
-              overflow: "initial",
+              margin: "10px 10px 12px 10px",
               background: isDarkMode ? "#1d1d1d" : "#ffffff",
               borderRadius: borderRadius,
+              overflow: "auto",
             }}
           >
             <div
               style={{
                 padding: 12,
                 borderRadius: borderRadius,
-                minHeight: "calc(100vh - 136px)", // Adjusted for accuracy
+                minHeight: "calc(100vh - 136px)",
+                boxShadow: isDarkMode
+                  ? "0 2px 8px rgba(255, 255, 255, 0.08)"
+                  : "0 2px 8px rgba(0, 0, 0, 0.1)",
+                transition: "box-shadow 0.3s ease-in-out",
               }}
             >
               <Outlet />

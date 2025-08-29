@@ -3,7 +3,7 @@ import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import { sendVerificationEmail } from "../utils/email.js";
+import { sendVerificationEmail, sendResetPasswordEmail } from "../utils/email.js";
 
 const router = express.Router();
 const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -128,5 +128,63 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user)
+      return res.status(404).json({ message: "No account with that email." });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiration = Date.now() + 3600000; // 1 hour
+
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = new Date(expiration);
+    await user.save();
+
+    const resetLink = `${frontendUrl}/reset-password?token=${token}&email=${email}`;
+    await sendResetPasswordEmail(email, user.fullname, resetLink);
+
+    res.status(200).json({
+      message: "Password reset email sent. Please check your inbox.",
+    });
+  } catch (err) {
+    console.error("Forgot Password error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  const { email, token, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({
+      email,
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }, // not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token." });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful." });
+  } catch (err) {
+    console.error("Reset Password error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 export default router;

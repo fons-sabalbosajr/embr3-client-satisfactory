@@ -10,6 +10,7 @@ import HomeAdmin from "./pages/HomeAdmin/HomeAdmin";
 import AdminPage from "./pages/AdminPage/AdminPage";
 import Menu from "./pages/AMenu/Menu";
 import VerifyPage from "./pages/VerifyEmail/VerifyEmail";
+import ResetPassword from "./pages/ResetPassword/ResetPassword";
 
 import Dashboard from "./components/Dashboard/Dashboard";
 import Measurement from "./components/Measurement/Measurement";
@@ -79,6 +80,7 @@ const MainApp = () => {
             }
           />
           <Route path="/verify" element={<VerifyPage />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/admin"
             element={

@@ -23,5 +23,9 @@ export const deleteFeedback = (id) => API.delete(`/feedback/${id}`);
 export const updateFeedback = (id, updatedFeedback) =>
   API.put(`/feedback/${id}`, updatedFeedback);
 
-export const getClientSatisfactoryData = () =>
-  API.get("/client-satisfactory");
+export const getClientSatisfactoryData = () => API.get("/client-satisfactory");
+
+export const forgotPassword = (email) =>
+  API.post("/auth/forgot-password", { email });
+export const resetPassword = (payload) =>
+  API.post("/auth/reset-password", payload);

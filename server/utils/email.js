@@ -34,3 +34,26 @@ export const sendVerificationEmail = async (to, name, link) => {
     `,
   });
 };
+
+export const sendResetPasswordEmail = async (to, name, resetLink) => {
+  return transporter.sendMail({
+    from: `"EMB Region III Online CSM Portal" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "Password Reset Request",
+    html: `
+      <p>Hi ${name},</p>
+      <p>You requested a password reset. Click the link below to reset your password:</p>
+      <p style="text-align: center;">
+        <a href="${resetLink}" style="
+          padding: 10px 20px;
+          background-color: #1890ff;
+          color: white;
+          text-decoration: none;
+          border-radius: 4px;
+          font-weight: bold;
+        ">Reset Password</a>
+      </p>
+      <p>If you didn’t request this, just ignore this email.</p>
+    `,
+  });
+};

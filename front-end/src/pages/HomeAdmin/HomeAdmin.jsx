@@ -6,7 +6,7 @@ import AgencyHeader from "./AgencyHeader";
 import Swal from "sweetalert2";
 import { BulbOutlined, BulbFilled } from "@ant-design/icons";
 import { FloatButton } from "antd";
-import { signUp, login } from "../../services/api";
+import { signUp, login, forgotPassword } from "../../services/api";
 import CryptoJS from "crypto-js";
 
 const secretKey = import.meta.env.VITE_SECRET_KEY;
@@ -17,15 +17,10 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [signupForm] = Form.useForm();
+  const params = new URLSearchParams(location.search);
+  const [loginForm] = Form.useForm();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    // Only redirect if not already on /admin
-    if (token && location.pathname !== "/admin") {
-      navigate("/admin");
-      return;
-    }
-
     const params = new URLSearchParams(location.search);
     if (params.get("verified") === "true") {
       setActiveTab("login");
@@ -37,7 +32,6 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
     try {
       const res = await login({ username, password });
 
-      // Encrypt and store user info
       const encryptedUser = CryptoJS.AES.encrypt(
         JSON.stringify(res.data.user),
         secretKey
@@ -46,8 +40,8 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", encryptedUser);
 
-      // ⏩ Redirect to admin page
-      navigate("/admin");
+      // ✅ Full reload to properly apply auth state and avoid blinking
+      window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/admin`;
     } catch (err) {
       console.error("Login error:", err);
       Swal.fire({
@@ -89,6 +83,43 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
     }
   };
 
+  const handleForgotPassword = async () => {
+    const { value: email } = await Swal.fire({
+      title: "Forgot Password",
+      input: "email",
+      inputLabel: "Enter your registered email",
+      inputPlaceholder: "example@email.com",
+      confirmButtonText: "Submit",
+      showCancelButton: true,
+      inputValidator: (value) => {
+        if (!value) return "Email is required";
+      },
+    });
+
+    if (email) {
+      setLoading(true);
+      try {
+        const res = await forgotPassword(email);
+        Swal.fire({
+          icon: "success",
+          title: "Email Sent",
+          text:
+            res.data.message ||
+            "Please check your email for reset instructions.",
+        });
+      } catch (err) {
+        console.error("Forgot Password error:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Failed",
+          text: err.response?.data?.message || "Unable to send reset email.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   return (
     <>
       {" "}
@@ -114,6 +145,7 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
                   label: "Login",
                   children: (
                     <Form
+                      form={loginForm}
                       layout="vertical"
                       onFinish={handleLogin}
                       disabled={loading}
@@ -145,6 +177,14 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
                         >
                           {loading ? "Logging In..." : "Login"}
                         </Button>
+                      </Form.Item>
+                      <Form.Item>
+                        <Typography.Link
+                          onClick={handleForgotPassword}
+                          style={{ float: "right", fontSize: "0.85rem" }}
+                        >
+                          Forgot Password?
+                        </Typography.Link>
                       </Form.Item>
                     </Form>
                   ),

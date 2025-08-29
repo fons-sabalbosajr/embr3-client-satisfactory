@@ -1,0 +1,18 @@
+.generate-report-container {
+  min-height: 100vh;
+  border: transparent;
+
+}
+
+.filter-pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ant-tag {
+  margin-bottom: 2px;
+}
