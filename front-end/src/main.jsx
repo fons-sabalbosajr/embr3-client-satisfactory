@@ -2,6 +2,7 @@ import "./utils/devConsolePatch";
 import "antd/dist/reset.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";   // ✅ add this import
 import MainApp from "./mainApp";
 import "./i18n.js";
 
@@ -13,7 +14,7 @@ window.addEventListener("error", (e) => {
 });
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  <BrowserRouter basename="/ocsm">
     <MainApp />
-  </React.StrictMode>
+  </BrowserRouter>
 );
