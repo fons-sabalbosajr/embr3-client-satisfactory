@@ -4,7 +4,7 @@ import "./utils/devConsolePatch";
 import React, { useEffect, useState } from "react";
 import { MantineProvider } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom"; // ✅ removed BrowserRouter
 import App from "./pages/Home/Home";
 import HomeAdmin from "./pages/HomeAdmin/HomeAdmin";
 import AdminPage from "./pages/AdminPage/AdminPage";
@@ -54,61 +54,38 @@ const MainApp = () => {
         fontFamily: "Poppins, sans-serif",
       }}
     >
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={<Menu toggleColorScheme={toggleColorScheme} />}
-          />
-          <Route
-            path="/client"
-            element={
-              <App
-                toggleColorScheme={toggleColorScheme}
-                colorScheme={colorScheme}
-              />
-            }
-          />
-          <Route
-            path="/admin-auth"
-            element={
-              <HomeAdmin
-                toggleColorScheme={toggleColorScheme}
-                colorScheme={colorScheme}
-              />
-            }
-          />
-          <Route path="/verify" element={<VerifyPage />} />
-          <Route
-            path="/admin"
-            element={
-              isAuthenticated ? <AdminPage /> : <Navigate to="/admin-auth" />
-            }
-          >
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="measurement" element={<Measurement />} />
-            <Route
-              path="reports/generate-report" // This path corresponds to "/admin/reports/generate-report"
-              element={<GenerateReport />}
-            />
-            <Route path="reports/extract" element={<ExtractData />} />
-            <Route path="announcements" element={<Announcements />} />
-            <Route path="settings/data-config" element={<DataConfig />} />
-            <Route path="settings/account" element={<Accounts />} />
-            <Route path="settings/backup" element={<BackupData />} />
-          </Route>
-          <Route
-            path="/survey/page1"
-            element={
-              <SurveyPage1
-                toggleColorScheme={toggleColorScheme}
-                colorScheme={colorScheme}
-              />
-            }
-          />
-        </Routes>
-      </BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Menu toggleColorScheme={toggleColorScheme} />} />
+        <Route
+          path="/client"
+          element={<App toggleColorScheme={toggleColorScheme} colorScheme={colorScheme} />}
+        />
+        <Route
+          path="/admin-auth"
+          element={<HomeAdmin toggleColorScheme={toggleColorScheme} colorScheme={colorScheme} />}
+        />
+        <Route path="/verify" element={<VerifyPage />} />
+
+        <Route
+          path="/admin"
+          element={isAuthenticated ? <AdminPage /> : <Navigate to="/admin-auth" />}
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="measurement" element={<Measurement />} />
+          <Route path="reports/generate-report" element={<GenerateReport />} />
+          <Route path="reports/extract" element={<ExtractData />} />
+          <Route path="announcements" element={<Announcements />} />
+          <Route path="settings/data-config" element={<DataConfig />} />
+          <Route path="settings/account" element={<Accounts />} />
+          <Route path="settings/backup" element={<BackupData />} />
+        </Route>
+
+        <Route
+          path="/survey/page1"
+          element={<SurveyPage1 toggleColorScheme={toggleColorScheme} colorScheme={colorScheme} />}
+        />
+      </Routes>
     </MantineProvider>
   );
 };

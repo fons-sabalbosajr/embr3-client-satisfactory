@@ -2,12 +2,14 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
 
-// https://vite.dev/config/
 export default defineConfig({
+  base: "/ocsm/", // 👈 important for Nginx subpath
   plugins: [react(), svgr()],
   server: {
+    port: 5174,
+    host: "0.0.0.0",
     proxy: {
-      "/api": "http://localhost:5000", // backend server
+      "/api": "http://localhost:5001",
     },
   },
 });
