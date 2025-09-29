@@ -55,7 +55,6 @@ const MainApp = () => {
         fontFamily: "Poppins, sans-serif",
       }}
     >
-<<<<<<< HEAD
       <BrowserRouter>
         <Routes>
           <Route
@@ -112,40 +111,6 @@ const MainApp = () => {
           />
         </Routes>
       </BrowserRouter>
-=======
-      <Routes>
-        <Route path="/" element={<Menu toggleColorScheme={toggleColorScheme} />} />
-        <Route
-          path="/client"
-          element={<App toggleColorScheme={toggleColorScheme} colorScheme={colorScheme} />}
-        />
-        <Route
-          path="/admin-auth"
-          element={<HomeAdmin toggleColorScheme={toggleColorScheme} colorScheme={colorScheme} />}
-        />
-        <Route path="/verify" element={<VerifyPage />} />
-
-        <Route
-          path="/admin"
-          element={isAuthenticated ? <AdminPage /> : <Navigate to="/admin-auth" />}
-        >
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="measurement" element={<Measurement />} />
-          <Route path="reports/generate-report" element={<GenerateReport />} />
-          <Route path="reports/extract" element={<ExtractData />} />
-          <Route path="announcements" element={<Announcements />} />
-          <Route path="settings/data-config" element={<DataConfig />} />
-          <Route path="settings/account" element={<Accounts />} />
-          <Route path="settings/backup" element={<BackupData />} />
-        </Route>
-
-        <Route
-          path="/survey/page1"
-          element={<SurveyPage1 toggleColorScheme={toggleColorScheme} colorScheme={colorScheme} />}
-        />
-      </Routes>
->>>>>>> prod
     </MantineProvider>
   );
 };
