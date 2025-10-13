@@ -9,11 +9,10 @@ export default defineConfig({
     port: 5174,
     host: "0.0.0.0",
     proxy: {
-      "/api": "http://localhost:5001",
-      
+      "/api": "http://localhost:5000",
       // Proxy Socket.IO websocket requests
       "/socket.io": {
-        target: "http://localhost:5001",
+        target: "http://localhost:5000",
         ws: true,
       },
     },
