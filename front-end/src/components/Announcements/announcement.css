@@ -1,0 +1,19 @@
+.announcements-admin {
+  padding: 12px;
+}
+.announcements-client {
+  padding: 12px;
+}
+.announcements-client .ant-card {
+  box-shadow: none;
+  border-left: 4px solid #1677ff;
+}
+
+.announcement-closed td {
+  color: #9a9a9a !important;
+  background: #fafafa !important;
+}
+
+.announcement-closed strong {
+  color: #777 !important;
+}

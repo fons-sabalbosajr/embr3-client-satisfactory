@@ -14,6 +14,13 @@ import i18n from "../../i18n";
 const { Title, Text } = Typography;
 
 function Home({ toggleColorScheme }) {
+  useEffect(() => {
+    // Hide language key for non-authenticated users
+    const isAuthenticated = !!(localStorage.getItem("token") || Object.keys(localStorage).find(k => k.includes("token")));
+    if (!isAuthenticated) {
+      localStorage.removeItem("i18nextLng");
+    }
+  }, []);
   const [feedbacks, setFeedbacks] = useState([]);
   const [language, setLanguage] = useState("en");
   const navigate = useNavigate();

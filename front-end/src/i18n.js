@@ -62,6 +62,7 @@ i18n
           gender: {
             Male: "Male",
             Female: "Female",
+            RatherNotSay: "Rather Not Say",
           },
 
           step: {
@@ -75,8 +76,9 @@ i18n
             Q7: {
               text: "Which of the following best describes your awareness of a Citizen's Charter?",
               options: [
-                "I know what is Citizen's Charter is and I saw it in this office.",
-                "I know what is Citizen's Charter is but I did not see it in this office.",
+                "I know what a Citizen's Charter is and I saw it in this office.",
+                "I know what a Citizen's Charter is but I did not see it in this office.",
+                "I learned of the Citizen's Charter only when I saw this office' Citizens Charter.",
                 "I do not know what a Citizen's Charter is.",
               ],
             },
@@ -84,16 +86,19 @@ i18n
               text: "If aware of CC (answered 1-3 in CC1), would you say that the CC of this office was followed?",
               options: [
                 "Easy to see and follow",
-                "Somewhat easy to see and follow",
+                "Somewhat to see and follow",
                 "Difficult to see and follow",
-                "Not visible or not followed at all",
+                "Not visible at all",
+                "Not Applicable (N/A)",
               ],
             },
             Q9: {
-              text: "If aware of CC (answered 1-3 in CC1), how much did the CC helps you in your transactions?",
+              text: "If aware of CC (answered 1-3 in CC1), how much did the CC help you in your transactions?",
               options: [
-                "Yes, I was able to see and follow the Citizen's Charter",
-                "No, I was not able to see and follow the Citizen's Charter",
+                "Help very much",
+                "Somewhat helped",
+                "Did not help",
+                "Not Applicable (N/A)",
               ],
             },
             Q10: {
@@ -108,7 +113,7 @@ i18n
               },
             },
             Q11: {
-              text: "I sepent a reasonable amount of time for my transaction.",
+              text: "I spent a reasonable amount of time for my transaction.",
               options: {
                 StronglyAgree: "Strongly Agree",
                 Agree: "Agree",
@@ -153,7 +158,7 @@ i18n
               },
             },
             Q15: {
-              text: "I paid a reasonable amount of fees for my transaction (If service was freem mark the N/A icon).",
+              text: "I paid a reasonable amount of fees for my transaction (If service was free mark the N/A icon).",
               options: {
                 StronglyAgree: "Strongly Agree",
                 Agree: "Agree",
@@ -203,7 +208,7 @@ i18n
             },
           },
 
-           rating: {
+          rating: {
             stronglyDisagree: "Strongly Disagree",
             disagree: "Disagree",
             satisfactory: "Satisfactory",
@@ -308,6 +313,7 @@ i18n
           gender: {
             Male: "Lalaki",
             Female: "Babae",
+            RatherNotSay: "Mas mabuti nang hindi sabihin",
           },
 
           // Questions
@@ -318,6 +324,7 @@ i18n
                 "Alam ko kung ano ang Citizen's Charter at nakita ko ito sa opisina.",
                 "Alam ko kung ano ang Citizen's Charter pero hindi ko ito nakita sa opisina.",
                 "Hindi ko alam kung ano ang Citizen's Charter.",
+                "Nalaman ko lang ang Citizen's Charter nang makita ko ang Citizen's Charter ng opisina na ito.",
               ],
             },
             Q8: {
@@ -326,14 +333,17 @@ i18n
                 "Madaling makita at sundan",
                 "Medyo madaling makita at sundan",
                 "Mahirap makita at sundan",
-                "Hindi nakikita o hindi nasunod",
+                "Hindi nakikita",
+                "Hindi Naaangkop (N/A)",
               ],
             },
             Q9: {
               text: "Kung alam mo ang Citizen's Charter (sumagot ng 1-3 sa CC1), gaano nakatulong ang Citizen's Charter sa iyong transaksyon?",
               options: [
-                "Lubos na nakatulong ang Citizen's Charter",
-                "Hindi nakatulong ang Citizen's Charter",
+                "Lubos na nakatulong",
+                "Medyo nakatulong",
+                "Hindi nakatulong",
+                "Hindi Naaangkop (N/A)",
               ],
             },
             Q10: {

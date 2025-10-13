@@ -1,13 +1,14 @@
 // src/services/authService.js
 import CryptoJS from "crypto-js";
-import { getConfig } from "../utils/config";
+import { getCachedConfig } from "../utils/config";
+import { getOpaqueItem } from "../utils/encryptedStorage";
 
-export const getCurrentUserFullname = async () => {
-  const { secretKey = "" } = await getConfig();
-  const encryptedUser = localStorage.getItem("user");
+export const getCurrentUserFullname = () => {
+  const { colorSchemeSecret = "" } = getCachedConfig();
+  const encryptedUser = getOpaqueItem("user");
   if (encryptedUser) {
     try {
-      const bytes = CryptoJS.AES.decrypt(encryptedUser, secretKey);
+      const bytes = CryptoJS.AES.decrypt(encryptedUser, colorSchemeSecret);
       const decryptedDataString = bytes.toString(CryptoJS.enc.Utf8);
       if (!decryptedDataString) {
         throw new Error("Decryption resulted in empty string.");
@@ -16,11 +17,8 @@ export const getCurrentUserFullname = async () => {
       return decryptedData.fullname || "Unknown User";
     } catch (e) {
       console.error("Decryption failed:", e);
-      // It's good practice to clear corrupted data, though typically done on logout/login failure
-      // localStorage.removeItem("user");
-      // localStorage.removeItem("token");
       return "Unknown User";
     }
   }
-  return "Guest"; // Or null, depending on your desired default
+  return "Guest";
 };

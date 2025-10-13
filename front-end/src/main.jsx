@@ -17,7 +17,7 @@ window.addEventListener("error", (e) => {
 // Preload runtime config, then mount app
 preloadConfig().finally(() => {
   ReactDOM.createRoot(document.getElementById("root")).render(
-    <BrowserRouter basename="/ocsm">
+    <BrowserRouter>
       <MainApp />
     </BrowserRouter>
   );

@@ -9,6 +9,8 @@ import { FloatButton } from "antd";
 import { signUp, login, forgotPassword } from "../../services/api";
 import CryptoJS from "crypto-js";
 import { getConfig } from "../../utils/config";
+import { setOpaqueItem } from "../../utils/encryptedStorage";
+import { setEncryptedItem } from "../../utils/encryptedStorage";
 
 function HomeAdmin({ toggleColorScheme, colorScheme }) {
   const [activeTab, setActiveTab] = useState("login");
@@ -31,18 +33,13 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
     try {
       const res = await login({ username, password });
 
-      const { secretKey = "" } = await getConfig();
-      const encryptedUser = CryptoJS.AES.encrypt(
-        JSON.stringify(res.data.user),
-        secretKey
-      ).toString();
+      // Hide keys by storing under obfuscated storage keys
+  setOpaqueItem("token", res.data.token);
+  // Store user data encrypted using setEncryptedItem for compatibility
+  setEncryptedItem("user", JSON.stringify(res.data.user));
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", encryptedUser);
-
-      // ✅ Full reload to properly apply auth state and avoid blinking
-  const { frontendBasePath = "/ocsm" } = await getConfig();
-  window.location.href = `${frontendBasePath}/admin`;
+    // ✅ Full reload to properly apply auth state and avoid blinking
+  window.location.href = "/admin";
     } catch (err) {
       console.error("Login error:", err);
       Swal.fire({
@@ -136,6 +133,7 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
         <div className="form-wrapper">
           <Card className="auth-card">
             <h2 className="auth-title">ADMINISTRATION PANEL</h2>
+            <p className="auth-subtitle">Sign in to manage surveys, reports, and system configurations.</p>
             <Tabs
               activeKey={activeTab}
               onChange={setActiveTab}

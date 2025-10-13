@@ -13,7 +13,7 @@ router.get("/", (req, res) => {
     emailJsPublicKey: process.env.EMAILJS_PUBLIC_KEY || "",
 
     // Helpful hints for client
-    frontendBasePath: process.env.FRONTEND_BASE_PATH || "/ocsm",
+    frontendBasePath: process.env.FRONTEND_BASE_PATH || "/",
   });
 });
 

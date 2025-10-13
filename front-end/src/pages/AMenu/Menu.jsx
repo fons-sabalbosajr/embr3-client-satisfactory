@@ -27,10 +27,18 @@ async function decrypt(cipherText) {
 
 // Accept toggleColorScheme as prop
 function Menu({ toggleColorScheme }) {
+  useEffect(() => {
+    // Check for authentication (token in obfuscated key or plain)
+    const isAuthenticated = !!(localStorage.getItem("token") || Object.keys(localStorage).find(k => k.includes("token")));
+    if (!isAuthenticated) {
+      localStorage.clear();
+      sessionStorage.clear();
+    }
+  }, []);
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const showAdmin = params.get("admin-auth") === "true";
+  const showAdmin = params.get("admin") === "true";
 
   const encryptedFlag = sessionStorage.getItem("menuFlag");
   const [visited, setVisited] = React.useState(false);
@@ -107,7 +115,7 @@ function Menu({ toggleColorScheme }) {
                 size="md"
                 radius="xl"
                 className="survey-button-admin"
-                onClick={() => navigate("/admin-auth")}
+                onClick={() => navigate("/admin")}
               >
                 Admin
               </Button>

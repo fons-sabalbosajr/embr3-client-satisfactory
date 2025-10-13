@@ -95,7 +95,7 @@
   }
 
   .sqd-card .ant-card-body {
-    padding: 8px !important;
+    padding: 2px 4px !important;
   }
 
   .sqd-question-row {
@@ -110,6 +110,8 @@
   .rating-group {
     gap: 6px;
     margin-top: 4px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
   }
 
   .rating-box {

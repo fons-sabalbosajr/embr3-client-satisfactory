@@ -289,11 +289,13 @@ function GenerateReport() {
                 <div key={key}>
                   <Tooltip
                     title={question}
-                    overlayInnerStyle={{
-                      backgroundColor: tooltipBgColorMap[response] || "#d9d9d9",
-                      color: "#fff",
-                      borderRadius: "6px",
-                      fontWeight: 500,
+                    styles={{
+                      body: {
+                        backgroundColor: tooltipBgColorMap[response] || "#d9d9d9",
+                        color: "#fff",
+                        borderRadius: "6px",
+                        fontWeight: 500,
+                      },
                     }}
                   >
                     <Tag color={tagColorMap[response] || "default"}>
@@ -324,89 +326,100 @@ function GenerateReport() {
 
   return (
     <div className="generate-report-container">
-      <Card bordered={false}>
-        <Title level={4}>
+      <Card>
+        <Title level={4} className="generate-report-title">
           <FileSearchOutlined /> Generate Client Satisfaction Report
         </Title>
 
         <div className="filter-pagination-row">
-          <Space wrap>
-            <RangePicker onChange={(dates) => setDateRange(dates)} />
-            <Select
-              allowClear
-              placeholder="Select Region"
-              style={{ width: 150 }}
-              onChange={(value) => setFilters({ ...filters, region: value })}
-            >
-              {getUniqueValues("Region").map((r) => (
-                <Option key={r} value={r}>
-                  {r}
-                </Option>
-              ))}
-            </Select>
-            <Select
-              allowClear
-              placeholder="Select Agency"
-              style={{ width: 150 }}
-              onChange={(value) => setFilters({ ...filters, agency: value })}
-            >
-              {getUniqueValues("Agency").map((a) => (
-                <Option key={a} value={a}>
-                  {a}
-                </Option>
-              ))}
-            </Select>
-            <Select
-              allowClear
-              placeholder="Customer Type"
-              style={{ width: 150 }}
-              onChange={(value) =>
-                setFilters({ ...filters, customerType: value })
-              }
-            >
-              {getUniqueValues("Customer Type").map((ct) => (
-                <Option key={ct} value={ct}>
-                  {ct}
-                </Option>
-              ))}
-            </Select>
-            <Button type="primary" onClick={handleFilter}>
-              Filter
-            </Button>
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={exportToExcel}
-              disabled={!filteredData.length}
-            >
-              Export to Excel
-            </Button>
-          </Space>
+          <div className="filters-left">
+            <Space wrap>
+              <RangePicker onChange={(dates) => setDateRange(dates)} />
+              <Select
+                allowClear
+                placeholder="Select Region"
+                style={{ width: 150 }}
+                onChange={(value) => setFilters({ ...filters, region: value })}
+              >
+                {getUniqueValues("Region").map((r) => (
+                  <Option key={r} value={r}>
+                    {r}
+                  </Option>
+                ))}
+              </Select>
 
-          <Pagination
-            current={currentPage}
-            pageSize={pageSize}
-            total={filteredData.length}
-            showSizeChanger
-            pageSizeOptions={["5", "10", "20", "50", "100"]}
-            onChange={(page, size) => {
-              setCurrentPage(page);
-              setPageSize(size);
-            }}
-            style={{ marginLeft: "auto" }}
-          />
+              <Select
+                allowClear
+                placeholder="Select Agency"
+                style={{ width: 150 }}
+                onChange={(value) => setFilters({ ...filters, agency: value })}
+              >
+                {getUniqueValues("Agency").map((a) => (
+                  <Option key={a} value={a}>
+                    {a}
+                  </Option>
+                ))}
+              </Select>
+
+              <Select
+                allowClear
+                placeholder="Customer Type"
+                style={{ width: 150 }}
+                onChange={(value) =>
+                  setFilters({ ...filters, customerType: value })
+                }
+              >
+                {getUniqueValues("Customer Type").map((ct) => (
+                  <Option key={ct} value={ct}>
+                    {ct}
+                  </Option>
+                ))}
+              </Select>
+
+              <Button type="primary" onClick={handleFilter}>
+                Filter
+              </Button>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={exportToExcel}
+                disabled={!filteredData.length}
+              >
+                Export to Excel
+              </Button>
+            </Space>
+          </div>
+
+          <div className="pagination-right">
+            <Pagination
+              size="small"
+              simple
+              current={currentPage}
+              pageSize={pageSize}
+              total={filteredData.length}
+              showSizeChanger
+              pageSizeOptions={["5", "10", "20", "50", "100"]}
+              onChange={(page, size) => {
+                setCurrentPage(page);
+                setPageSize(size);
+              }}
+            />
+          </div>
         </div>
 
-        <Table
-          rowKey="_id"
-          columns={columns}
-          dataSource={filteredData.slice(
-            (currentPage - 1) * pageSize,
-            currentPage * pageSize
-          )}
-          loading={loading}
-          bordered
-          pagination={false}
-        />
+        <div className="table-responsive">
+          <Table
+            rowKey="_id"
+            columns={columns}
+            dataSource={filteredData.slice(
+              (currentPage - 1) * pageSize,
+              currentPage * pageSize
+            )}
+            loading={loading}
+            bordered
+            pagination={false}
+            scroll={{ x: 1200 }}
+          />
+        </div>
       </Card>
     </div>
   );

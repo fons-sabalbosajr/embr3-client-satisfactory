@@ -8,16 +8,37 @@ import {
   Alert,
   notification,
 } from "antd";
+import {
+  getDecryptedItem,
+  getOpaqueItem,
+  setOpaqueItem,
+} from "../../../utils/encryptedStorage";
 import { EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import MeasurementFormModal from "./MeasurementFormModal";
 import MeasurementViewModal from "./MeasurementViewModal";
-import { deleteFeedback, updateFeedback } from "../../../services/api";
+import { deleteFeedback, updateFeedback, getPreferences, updatePreferences } from "../../../services/api";
 import "./measurementtable.css";
 import socket from "../../../utils/socket";
 
 function MeasurementTable({ data, onEdit, onDataRefresh }) {
   const [tableData, setTableData] = useState([...data]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(() => {
+    try {
+      // build per-user logical key
+      const rawUser = getDecryptedItem("user");
+      const userObj = rawUser ? JSON.parse(rawUser) : null;
+      const key = userObj
+        ? `measurement_table_page_size_${userObj._id}`
+        : `measurement_table_page_size_guest`;
+
+      const stored = getOpaqueItem(key) ?? localStorage.getItem(key);
+      return stored ? Number(stored) : 10;
+    } catch {
+      return 10;
+    }
+  });
   const [editing, setEditing] = useState(null);
   const [viewing, setViewing] = useState(null);
   const [newFeedbackAlert, setNewFeedbackAlert] = useState(false);
@@ -30,6 +51,39 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
     );
     setTableData(sortedData);
   }, [data]);
+
+  useEffect(() => {
+    // reset to first page when data or pageSize changes
+    setCurrentPage(1);
+  }, [data, pageSize]);
+
+  // Load user preferences (server-backed) on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await getPreferences();
+        const prefs = res?.data?.preferences ?? res?.preferences ?? {};
+        if (!mounted) return;
+        if (prefs.measurement_table_page_size) {
+          setPageSize(Number(prefs.measurement_table_page_size));
+        }
+      } catch (err) {
+        // ignore if not logged in or endpoint unavailable
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const currentUser = (() => {
+    try {
+      const raw = getDecryptedItem("user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const perms = currentUser?.permissions || {};
 
   useEffect(() => {
     socket.emit("joinRoom", "questions-table");
@@ -66,142 +120,160 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
   }, []);
 
   const handleDelete = async (id) => {
+    if (!perms.canDelete && currentUser?.privilege !== "admin") {
+      notification.error({ message: "Permission denied" });
+      return;
+    }
     await deleteFeedback(id);
     onDataRefresh();
   };
 
   const handleEditSubmit = async (updated) => {
+    if (!perms.canEdit && currentUser?.privilege !== "admin") {
+      notification.error({ message: "Permission denied" });
+      return;
+    }
     await updateFeedback(updated._id, updated);
     onDataRefresh();
   };
 
- const columns = [
-  {
-    title: "Client Type",
-    render: (_, record) => {
-      const company = record.answersLabeled?.["Company Name"];
-      const type = record.answersLabeled?.["Customer Type"];
-      return company ? (
-        <div>
-          <div style={{ fontWeight: 500 }}>{company}</div>
-          <div style={{ fontSize: 12, color: "#888" }}>{type}</div>
-        </div>
-      ) : (
-        <div>{type}</div>
-      );
+  const columns = [
+    {
+      title: "Client Type",
+      render: (_, record) => {
+        const company = record.answersLabeled?.["Company Name"];
+        const type = record.answersLabeled?.["Customer Type"];
+        return company ? (
+          <div>
+            <div style={{ fontWeight: 500 }}>{company}</div>
+            <div style={{ fontSize: 12, color: "#888" }}>{type}</div>
+          </div>
+        ) : (
+          <div>{type}</div>
+        );
+      },
+      filters: Array.from(
+        new Set(
+          tableData
+            .map((d) => d.answersLabeled?.["Customer Type"])
+            .filter(Boolean)
+        )
+      ).map((val) => ({
+        text: val,
+        value: val,
+      })),
+      onFilter: (value, record) =>
+        record.answersLabeled?.["Customer Type"] === value,
     },
-    filters: Array.from(new Set(tableData.map(d => d.answersLabeled?.["Customer Type"]).filter(Boolean))).map(val => ({
-      text: val,
-      value: val,
-    })),
-    onFilter: (value, record) =>
-      record.answersLabeled?.["Customer Type"] === value,
-  },
-  {
-    title: "Gender",
-    dataIndex: ["answersLabeled", "Gender"],
-    filters: Array.from(new Set(tableData.map(d => d.answersLabeled?.["Gender"]).filter(Boolean))).map(val => ({
-      text: val,
-      value: val,
-    })),
-    onFilter: (value, record) =>
-      record.answersLabeled?.["Gender"] === value,
-  },
- 
-
-  {
-    title: "Service Availed",
-    render: (_, record) => {
-      const services = record.answersLabeled?.["Service Availed"] || [];
-      const serviceColors = {
-        "ECC Online": "#0b5f74",
-        "CNC Online": "#bc6e00",
-        "OPMS Online": "#4a2250",
-        "HWMS Online": "#415e20",
-        "CMR Online": "#542c14",
-        "COC Online": "#607d8b",
-        "ELR Online": "#9c27b0",
-        "Importation Clearance": "#5d4037",
-        "PCB Online": "#37474f",
-        "PCL Online": "#795548",
-        "PMPIN Online": "#3e2723",
-        "CRS Online": "#33691e",
-        "SMR Online": "#1a237e",
-        "PCO Online": "#263238",
-      };
-
-      return (
-        <div className="service-tags-container">
-          {services.map((service) => (
-            <Tag
-              key={service}
-              style={{
-                backgroundColor: serviceColors[service] || "#aaa",
-                color: "#fff",
-                border: "none",
-                marginBottom: 4,
-                display: "inline-block",
-              }}
-            >
-              {service}
-            </Tag>
-          ))}
-        </div>
-      );
+    {
+      title: "Gender",
+      dataIndex: ["answersLabeled", "Gender"],
+      filters: Array.from(
+        new Set(
+          tableData.map((d) => d.answersLabeled?.["Gender"]).filter(Boolean)
+        )
+      ).map((val) => ({
+        text: val,
+        value: val,
+      })),
+      onFilter: (value, record) => record.answersLabeled?.["Gender"] === value,
     },
-    filters: Array.from(
-      new Set(
-        tableData.flatMap(d => d.answersLabeled?.["Service Availed"] || [])
-      )
-    ).map(service => ({
-      text: service,
-      value: service,
-    })),
-    onFilter: (value, record) =>
-      (record.answersLabeled?.["Service Availed"] || []).includes(value),
-  },
-  {
-    title: "Submitted At",
-    dataIndex: "submittedAt",
-    render: (d) => dayjs(d).format("MM/DD/YYYY hh:mm A"),
-    //sorter: (a, b) => new Date(b.submittedAt) - new Date(a.submittedAt),
-    //defaultSortOrder: "descend",
-  },
-  {
-    title: "Actions",
-    render: (_, record) => (
-      <>
-        <Tooltip title="Review">
-          <Button
-            type="primary"
-            icon={<EyeOutlined />}
-            onClick={() => setViewing(record)}
-          />
-        </Tooltip>
-        <Tooltip title="Edit">
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => setEditing(record)}
-            style={{ marginLeft: 8 }}
-          />
-        </Tooltip>
-        <Popconfirm
-          title="Confirm delete?"
-          onConfirm={() => handleDelete(record._id)}
-        >
-          <Button
-            icon={<DeleteOutlined />}
-            danger
-            type="primary"
-            style={{ marginLeft: 8 }}
-          />
-        </Popconfirm>
-      </>
-    ),
-  },
-];
 
+    {
+      title: "Service Availed",
+      render: (_, record) => {
+        const services = record.answersLabeled?.["Service Availed"] || [];
+        const serviceColors = {
+          "ECC Online": "#0b5f74",
+          "CNC Online": "#bc6e00",
+          "OPMS Online": "#4a2250",
+          "HWMS Online": "#415e20",
+          "CMR Online": "#542c14",
+          "COC Online": "#607d8b",
+          "ELR Online": "#9c27b0",
+          "Importation Clearance": "#5d4037",
+          "PCB Online": "#37474f",
+          "PCL Online": "#795548",
+          "PMPIN Online": "#3e2723",
+          "CRS Online": "#33691e",
+          "SMR Online": "#1a237e",
+          "PCO Online": "#263238",
+        };
+
+        return (
+          <div className="service-tags-container">
+            {services.map((service) => (
+              <Tag
+                key={service}
+                style={{
+                  backgroundColor: serviceColors[service] || "#aaa",
+                  color: "#fff",
+                  border: "none",
+                  marginBottom: 4,
+                  display: "inline-block",
+                }}
+              >
+                {service}
+              </Tag>
+            ))}
+          </div>
+        );
+      },
+      filters: Array.from(
+        new Set(
+          tableData.flatMap((d) => d.answersLabeled?.["Service Availed"] || [])
+        )
+      ).map((service) => ({
+        text: service,
+        value: service,
+      })),
+      onFilter: (value, record) =>
+        (record.answersLabeled?.["Service Availed"] || []).includes(value),
+    },
+    {
+      title: "Submitted At",
+      dataIndex: "submittedAt",
+      render: (d) => dayjs(d).format("MM/DD/YYYY hh:mm A"),
+      //sorter: (a, b) => new Date(b.submittedAt) - new Date(a.submittedAt),
+      //defaultSortOrder: "descend",
+    },
+    {
+      title: "Actions",
+      render: (_, record) => (
+        <>
+          <Tooltip title="Review">
+            <Button
+              type="primary"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => setViewing(record)}
+            />
+          </Tooltip>
+          <Tooltip title="Edit">
+            <Button
+              type="primary"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => setEditing(record)}
+              style={{ marginLeft: 8 }}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Confirm delete?"
+            onConfirm={() => handleDelete(record._id)}
+          >
+            <Button
+              icon={<DeleteOutlined />}
+              danger
+              type="primary"
+              size="small"
+              style={{ marginLeft: 8 }}
+            />
+          </Popconfirm>
+        </>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -247,6 +319,31 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
         columns={columns}
         rowClassName={(record) => (record._new ? "new-row-highlight" : "")}
         size="small"
+        pagination={{
+          current: currentPage,
+          pageSize,
+          showSizeChanger: true,
+          pageSizeOptions: ["5", "10", "20", "50", "100"],
+          onChange: (page, size) => {
+            setCurrentPage(page);
+            if (size && size !== pageSize) {
+              setPageSize(size);
+              try {
+                const rawUser = getDecryptedItem("user");
+                const userObj = rawUser ? JSON.parse(rawUser) : null;
+                const key = userObj
+                  ? `measurement_table_page_size_${userObj._id}`
+                  : `measurement_table_page_size_guest`;
+
+                try {
+                  setOpaqueItem(key, String(size));
+                } catch {
+                  localStorage.setItem(key, String(size));
+                }
+              } catch {}
+            }
+          },
+        }}
       />
 
       {editing && (

@@ -45,8 +45,6 @@ function FeedbackTable({ questions, language }) {
 
   return (
     <Space direction="vertical" className="feedback-table-wrapper">
-      <Title level={5}>{t("citizensCharterTitle", "Citizens Charter")}</Title>
-
       {questions.map((q) => {
         const formItemName = `answer_${q._id}`;
         let isDisabled = false;
@@ -86,17 +84,17 @@ function FeedbackTable({ questions, language }) {
                   : [{ required: true, message: t("selectRequired") }]
               }
             >
-              <Select
-                placeholder={t("selectAnswerPlaceholder")}
-                disabled={isDisabled}
-                className="feedback-select"
-              >
-                {q.options.map((option, idx) => (
-                  <Select.Option key={idx} value={option}>
-                    {questionOptions[idx] || option}
-                  </Select.Option>
-                ))}
-              </Select>
+                <Select
+                  placeholder={t("selectAnswerPlaceholder")}
+                  disabled={isDisabled}
+                  className="feedback-select"
+                >
+                  {questionOptions.map((option, idx) => (
+                    <Select.Option key={idx} value={option}>
+                      {option}
+                    </Select.Option>
+                  ))}
+                </Select>
             </Form.Item>
           </div>
         );
