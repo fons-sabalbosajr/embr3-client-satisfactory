@@ -194,10 +194,8 @@ function Survey({ toggleColorScheme }) {
   const currentQuestion = allQuestions[currentQuestionIndex];
 
   const handleSubmit = async (formValues) => {
-    const API_URL = import.meta.env.VITE_API_URL;
-
     try {
-      const response = await fetch(`${API_URL}/client-satisfactory/submit`, {
+      const response = await fetch(`/api/client-satisfactory/submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

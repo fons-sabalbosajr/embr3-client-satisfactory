@@ -10,6 +10,7 @@ import feedbackRoutes from "./routes/feedback.js";
 import authRoutes from "./routes/auth.js";
 import questionRoutes from "./routes/question.js";
 import clientSatisfactoryRoutes from "./routes/clientSatisfactory.js";
+import configRoute from "./routes/config.js";
 
 dotenv.config();
 
@@ -84,6 +85,7 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/question", questionRoutes(io)); // pass io to question routes
 app.use("/api/client-satisfactory", clientSatisfactoryRoutes(io));
+app.use("/api/config", configRoute);
 
 // DB Connection and start server
 mongoose

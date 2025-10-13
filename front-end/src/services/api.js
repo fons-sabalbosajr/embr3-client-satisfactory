@@ -1,7 +1,8 @@
 import axios from "axios";
 
+// Use a relative base URL so it works in dev (via Vite proxy) and prod (same origin)
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: "/api",
 });
 
 export const getFeedbacks = () => API.get("/feedback");

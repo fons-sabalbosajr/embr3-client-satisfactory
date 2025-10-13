@@ -5,6 +5,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";   // ✅ add this import
 import MainApp from "./mainApp";
 import "./i18n.js";
+import { preloadConfig } from "./utils/config";
 
 //console.log("App is loading...");
 
@@ -13,8 +14,11 @@ window.addEventListener("error", (e) => {
   alert("Runtime error: " + e.message);
 });
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <BrowserRouter basename="/ocsm">
-    <MainApp />
-  </BrowserRouter>
-);
+// Preload runtime config, then mount app
+preloadConfig().finally(() => {
+  ReactDOM.createRoot(document.getElementById("root")).render(
+    <BrowserRouter basename="/ocsm">
+      <MainApp />
+    </BrowserRouter>
+  );
+});
