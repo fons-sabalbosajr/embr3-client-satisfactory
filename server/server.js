@@ -11,11 +11,14 @@ import authRoutes from "./routes/auth.js";
 import questionRoutes from "./routes/question.js";
 import clientSatisfactoryRoutes from "./routes/clientSatisfactory.js";
 import configRoute from "./routes/config.js";
+import adminRoute from "./routes/admin.js";
+import announcementsRoute from "./routes/announcements.js";
 
 dotenv.config();
 
 const HOST = process.env.SERVER_HOST || "0.0.0.0";
-const PORT = process.env.SERVER_PORT || 5001;
+// Prefer standard PORT, fallback to SERVER_PORT, then default
+const PORT = Number(process.env.PORT || process.env.SERVER_PORT || 5001);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5174";
 
 const app = express();
@@ -86,6 +89,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/question", questionRoutes(io)); // pass io to question routes
 app.use("/api/client-satisfactory", clientSatisfactoryRoutes(io));
 app.use("/api/config", configRoute);
+app.use("/api/admin", adminRoute);
+app.use("/api/announcements", announcementsRoute);
 
 // DB Connection and start server
 mongoose
@@ -98,3 +103,15 @@ mongoose
   .catch((err) => {
     console.error("MongoDB connection failed:", err.message);
   });
+
+// Provide clearer error message when port is already in use
+server.on("error", (err) => {
+  if (err && err.code === "EADDRINUSE") {
+    console.error(
+      `Port ${PORT} on ${HOST} is already in use. Another process is listening there.\n` +
+        `Tips: close the other process or change PORT/SERVER_PORT in server/.env.`
+    );
+  } else {
+    console.error("Server error:", err);
+  }
+});

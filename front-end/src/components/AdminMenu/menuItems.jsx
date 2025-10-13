@@ -49,15 +49,19 @@ const menuItems = [
     label: "Settings",
     children: [
       {
-        key: "data-configuration", // <-- CORRECTED KEY
+        key: "data-configuration",
         label: "Data Configuration",
       },
       {
-        key: "account-settings", // <-- CORRECTED KEY
+        key: "account-settings",
         label: "Account Settings",
       },
       {
-        key: "backup-data", // <-- CORRECTED KEY
+        key: "developer-settings",
+        label: "Developer Settings",
+      },
+      {
+        key: "backup-data",
         label: "Backup Data",
       },
     ],

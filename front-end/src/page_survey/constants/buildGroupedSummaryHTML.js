@@ -79,12 +79,25 @@ export const buildGroupedSummaryHTML = (formValues, questionData, t) => {
         }
         sections.sqd.push({ label, value: valueToDisplay });
       } else if (["Q7", "Q8", "Q9"].includes(question.questionCode)) {
-        // For Citizens Charter, try to translate option if available
+        // For Citizens Charter, always show the selected option in the current language
         if (Array.isArray(options)) {
-          const selectedOptionIndex = parseInt(display, 10) - 1;
-          valueToDisplay = options[selectedOptionIndex] || display;
+          // If answer matches an option in current language, use it
+          if (options.includes(display)) {
+            valueToDisplay = display;
+          } else {
+            // Try to find index in other language and map to current
+            // Get both language options
+            const enOptions = t(`questions.${question.questionCode}.options`, { lng: 'en', returnObjects: true });
+            const filOptions = t(`questions.${question.questionCode}.options`, { lng: 'fil', returnObjects: true });
+            let idx = enOptions.indexOf(display);
+            if (idx === -1) idx = filOptions.indexOf(display);
+            if (idx !== -1) {
+              valueToDisplay = options[idx];
+            } else {
+              valueToDisplay = display;
+            }
+          }
         } else if (typeof options === "object" && options !== null) {
-          // If options is an object, try to translate using key
           valueToDisplay = options[display] || options[answer] || display;
         }
         sections.citizensCharter.push({ label, value: valueToDisplay });

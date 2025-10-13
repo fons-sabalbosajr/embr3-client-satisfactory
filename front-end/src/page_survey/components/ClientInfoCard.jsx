@@ -7,7 +7,11 @@ import { useTranslation } from "react-i18next";
 import { isEqual } from "lodash";
 
 function ClientInfoCard({ formItemName, form, options, language }) {
-  const { genderOptions, region, agency, serviceOptions } = options;
+  let { genderOptions, region, agency, serviceOptions } = options;
+  // Ensure 'RatherNotSay' is always present
+  if (!genderOptions.includes('RatherNotSay')) {
+    genderOptions = [...genderOptions, 'RatherNotSay'];
+  }
   const { Text } = Typography;
   const { t } = useTranslation();
 
@@ -49,6 +53,7 @@ function ClientInfoCard({ formItemName, form, options, language }) {
     };
   }, [form, formItemName]);
 
+  const customerType = form.getFieldValue(`${formItemName}_customerType`);
   return (
     <Space direction="vertical" className="client-info-card-space">
       <Form.Item
@@ -61,66 +66,64 @@ function ClientInfoCard({ formItemName, form, options, language }) {
             {customerTypeOptions.map(({ value, label }) => (
               <div key={value}>
                 <Radio value={value}>{label}</Radio>
-
-                {form.getFieldValue(`${formItemName}_customerType`) === "Business" &&
-                  value === "Business" && (
-                    <Form.Item
-                      name={`${formItemName}_companyName`}
-                      noStyle
-                      rules={[
-                        { required: true, message: t("enterCompanyName") },
-                      ]}
-                    >
-                      <Input
-                        placeholder={t("companyNamePlaceholder")}
-                        className="client-info-card-dynamic-input"
-                      />
-                    </Form.Item>
-                  )}
-
-                {form.getFieldValue(`${formItemName}_customerType`) === "Government" &&
-                  value === "Government" && (
-                    <Form.Item
-                      name={`${formItemName}_agencyName`}
-                      noStyle
-                      rules={[
-                        { required: true, message: t("enterAgencyName") },
-                      ]}
-                    >
-                      <Input
-                        placeholder={t("agencyPlaceholder")}
-                        className="client-info-card-dynamic-input"
-                      />
-                    </Form.Item>
-                  )}
+                {customerType === "Business" && value === "Business" && (
+                  <Form.Item
+                    name={`${formItemName}_companyName`}
+                    noStyle
+                    rules={[
+                      { required: true, message: t("enterCompanyName") },
+                    ]}
+                  >
+                    <Input
+                      placeholder={t("companyNamePlaceholder")}
+                      className="client-info-card-dynamic-input"
+                    />
+                  </Form.Item>
+                )}
+                {customerType === "Government" && value === "Government" && (
+                  <Form.Item
+                    name={`${formItemName}_agencyName`}
+                    noStyle
+                    rules={[
+                      { required: true, message: t("enterAgencyName") },
+                    ]}
+                  >
+                    <Input
+                      placeholder={t("agencyPlaceholder")}
+                      className="client-info-card-dynamic-input"
+                    />
+                  </Form.Item>
+                )}
               </div>
             ))}
           </Space>
         </Radio.Group>
       </Form.Item>
 
-      <Row gutter={16}>
-        <Col xs={24} sm={12}>
-          <Form.Item name={`${formItemName}_age`} label={t("ageLabel")}>
-            <Input type="number" placeholder={t("agePlaceholder")} />
-          </Form.Item>
-        </Col>
-        <Col xs={24} sm={12}>
-          <Form.Item
-            name={`${formItemName}_gender`}
-            label={t("genderLabel")}
-            rules={[{ required: true, message: t("selectGender") }]}
-          >
-            <Select placeholder={t("selectGender")}>
-              {genderOptions.map((g) => (
-                <Select.Option key={g} value={g}>
-                  {t(`gender.${g}`)}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Col>
-      </Row>
+      {(customerType === "Citizen" || !customerType) && (
+        <Row gutter={16}>
+          <Col xs={24} sm={12}>
+            <Form.Item name={`${formItemName}_age`} label={t("ageLabel")}> 
+              <Input type="number" placeholder={t("agePlaceholder")} />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name={`${formItemName}_gender`}
+              label={t("genderLabel")}
+              rules={[{ required: true, message: t("selectGender") }]}
+            >
+              <Select placeholder={t("selectGender")}> 
+                {genderOptions.map((g) => (
+                  <Select.Option key={g} value={g}>
+                    {t(`gender.${g}`)}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+      )}
 
       <Row gutter={16} align="middle">
         <Col xs={24} sm={8}>

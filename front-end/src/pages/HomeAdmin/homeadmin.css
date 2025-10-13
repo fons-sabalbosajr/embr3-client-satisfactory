@@ -135,26 +135,36 @@ body[data-mantine-color-scheme="dark"] .home-container {
   position: relative;
   z-index: 2;
   width: 100%;
+  max-width: 960px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  margin-top: 100px; /* Add this line to push card below header */
+  margin: 120px auto 40px;
+  padding: 0 16px;
 }
 
 .auth-card {
-  border-radius: 12px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
+  border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  max-width: 520px;
   width: 100%;
-  margin: auto;
   z-index: 3; /* ensure card is above everything */
   position: relative;
+  border: 1px solid rgba(0,0,0,.04);
 }
 
 .auth-title{
   text-align: center;
-  margin-bottom: 20px;
-  font-weight: 700;
+  margin-bottom: 4px;
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+
+.auth-subtitle{
+  text-align: center;
+  margin: 0 0 20px;
+  color: #667085;
+  font-size: 13px;
 }
 
 .logo-wrapper {
@@ -167,7 +177,7 @@ body[data-mantine-color-scheme="dark"] .home-container {
 }
 
 .agency-header-inner {
-  margin-top: 100px;
+  margin-top: 64px;
   text-align: center;
 }
 
@@ -194,14 +204,14 @@ body[data-mantine-color-scheme="dark"] .home-container {
 @media screen and (max-width: 1080px) {
 
   .form-wrapper {
-    margin-top: 260px; /* More space for smaller screens */
+    margin-top: 180px; /* Adjusted for better vertical centering */
   }
 
   .agency-header-inner {
-    margin-top: 150px;
+    margin-top: 100px;
   }
 
   .auth-card{
-    margin-top: -100px;
+    margin-top: 0;
   }
 }

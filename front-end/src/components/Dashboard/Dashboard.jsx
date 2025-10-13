@@ -192,7 +192,6 @@ function Dashboard() {
         setStats({
           totalSurveys,
           averageOverallScore: Number(averageOverallScore.toFixed(2)),
-          scoreDistribution,
           recentSurveys,
           questionTypeData: [
             { name: "Text", count: 5 },

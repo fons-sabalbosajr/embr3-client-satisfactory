@@ -1,5 +1,6 @@
 // AdminPage.jsx
 import React, { useEffect, useState, useMemo } from "react";
+import { Modal } from "antd";
 import {
   Layout,
   Avatar,
@@ -23,6 +24,12 @@ import {
 } from "@ant-design/icons";
 import CryptoJS from "crypto-js";
 import { getCachedConfig } from "../../utils/config";
+import {
+  getOpaqueItem,
+  setOpaqueItem,
+  removeOpaqueItem,
+} from "../../utils/encryptedStorage";
+import { getDecryptedItem } from "../../utils/encryptedStorage";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import EMBLogo from "../../assets/emblogo.svg";
 import AdminMenu from "../../components/AdminMenu/AdminMenu";
@@ -35,50 +42,116 @@ const { defaultAlgorithm, darkAlgorithm } = theme;
 const { secretKey = "" } = getCachedConfig();
 
 function AdminPage() {
+  const timerRef = React.useRef();
+  // Auto-logout after 5 minutes of inactivity
+
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [userName, setUserName] = useState("Admin");
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedMode = localStorage.getItem("darkMode");
+    const savedMode =
+      getOpaqueItem("darkMode") ?? localStorage.getItem("darkMode");
     return savedMode ? JSON.parse(savedMode) : false;
   });
 
+  useEffect(() => {
+    let warningTimeout;
+    const resetTimer = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (warningTimeout) clearTimeout(warningTimeout);
+      timerRef.current = setTimeout(() => {
+        Modal.warning({
+          title: "Auto Logout Warning",
+          content: "The current user seems idle; the system will automatically log you out and redirect you to the login page.",
+          okText: "OK",
+          onOk: () => {
+            removeOpaqueItem("user");
+            removeOpaqueItem("token");
+            removeOpaqueItem("darkMode");
+            localStorage.removeItem("user");
+            localStorage.removeItem("token");
+            localStorage.removeItem("darkMode");
+            window.location.href = "http://10.14.77.107:5174/admin";
+          },
+        });
+        // Fallback: force redirect after 10s if modal not confirmed
+        warningTimeout = setTimeout(() => {
+          removeOpaqueItem("user");
+          removeOpaqueItem("token");
+          removeOpaqueItem("darkMode");
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          localStorage.removeItem("darkMode");
+          window.location.href = "http://10.14.77.107:5174/admin";
+        }, 10000);
+      }, 300000);
+    };
+    window.addEventListener("mousemove", resetTimer);
+    window.addEventListener("keydown", resetTimer);
+    window.addEventListener("mousedown", resetTimer);
+    window.addEventListener("touchstart", resetTimer);
+    resetTimer();
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (warningTimeout) clearTimeout(warningTimeout);
+      window.removeEventListener("mousemove", resetTimer);
+      window.removeEventListener("keydown", resetTimer);
+      window.removeEventListener("mousedown", resetTimer);
+      window.removeEventListener("touchstart", resetTimer);
+    };
+  }, []);
   // Effect for handling user authentication check
   useEffect(() => {
-    const encryptedUser = localStorage.getItem("user");
-    if (encryptedUser) {
-      try {
-        const bytes = CryptoJS.AES.decrypt(encryptedUser, secretKey);
-        const decryptedDataString = bytes.toString(CryptoJS.enc.Utf8);
-        if (!decryptedDataString) {
-          throw new Error("Decryption resulted in empty string.");
-        }
-        const decryptedData = JSON.parse(decryptedDataString);
-        setUserName(decryptedData.fullname || "Admin");
-      } catch (e) {
-        console.error("Decryption failed:", e);
-        // Clear corrupted data and redirect
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        localStorage.removeItem("darkMode"); // Ensure dark mode is also cleared
-        navigate("/admin-auth");
+    let failed = false;
+    try {
+      const decryptedDataString = getDecryptedItem("user");
+      if (!decryptedDataString) throw new Error("No decrypted user data.");
+      const decryptedData = JSON.parse(decryptedDataString);
+      if (
+        !decryptedData ||
+        typeof decryptedData !== "object" ||
+        !decryptedData.fullname
+      ) {
+        throw new Error("Decrypted data missing expected fields.");
       }
-    } else {
-      // No user data, redirect to login
-      navigate("/admin-auth");
+      setUserName(decryptedData.fullname || "Admin");
+    } catch (e) {
+      console.error("Decryption failed:", e);
+      failed = true;
+    }
+    if (failed) {
+      // Clear corrupted data and redirect
+      removeOpaqueItem("user");
+      removeOpaqueItem("token");
+      removeOpaqueItem("darkMode");
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("darkMode");
+  navigate("/admin");
     }
   }, [navigate]);
 
   // Effect for saving dark mode preference
   useEffect(() => {
-    localStorage.setItem("darkMode", JSON.stringify(isDarkMode));
+    setOpaqueItem("darkMode", JSON.stringify(isDarkMode));
   }, [isDarkMode]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("darkMode"); // Clear dark mode on logout
-    navigate("/admin-auth");
+    // Remove obfuscated keys
+    removeOpaqueItem("user");
+    removeOpaqueItem("token");
+    removeOpaqueItem("darkMode");
+    // Clear all localStorage and sessionStorage
+    localStorage.clear();
+    sessionStorage.clear();
+    // Optionally, overwrite any remaining keys with dummy values for extra obfuscation
+    Object.keys(localStorage).forEach((key) => {
+      try {
+        localStorage.setItem(key, "[hidden]");
+      } catch {}
+    });
+    navigate("/admin");
+    window.location.reload();
   };
 
   const handleSuggestFeature = () => {
@@ -95,11 +168,12 @@ function AdminPage() {
   const pathToKeyMap = {
     "/admin/dashboard": "dashboard",
     "/admin/measurement": "measurement-data",
-    "/admin/reports/generate-report": "generate-report", // <-- Corrected path to match mainApp.jsx
+    "/admin/reports/generate-report": "generate-report",
     "/admin/reports/extract": "extract-data",
     "/admin/announcements": "announcements",
     "/admin/settings/data-config": "data-configuration",
     "/admin/settings/account": "account-settings",
+    "/admin/settings/developer": "developer-settings",
     "/admin/settings/backup": "backup-data",
   };
 
@@ -107,11 +181,12 @@ function AdminPage() {
   const keyToPathMap = {
     dashboard: "/admin/dashboard",
     "measurement-data": "/admin/measurement",
-    "generate-report": "/admin/reports/generate-report", // <-- Corrected path to match mainApp.jsx
+    "generate-report": "/admin/reports/generate-report",
     "extract-data": "/admin/reports/extract",
     announcements: "/admin/announcements",
     "data-configuration": "/admin/settings/data-config",
     "account-settings": "/admin/settings/account",
+    "developer-settings": "/admin/settings/developer",
     "backup-data": "/admin/settings/backup",
   };
 
@@ -293,9 +368,6 @@ function AdminPage() {
                 padding: 12,
                 borderRadius: borderRadius,
                 minHeight: "calc(100vh - 136px)",
-                boxShadow: isDarkMode
-                  ? "0 2px 8px rgba(255, 255, 255, 0.08)"
-                  : "0 2px 8px rgba(0, 0, 0, 0.1)",
                 transition: "box-shadow 0.3s ease-in-out",
               }}
             >

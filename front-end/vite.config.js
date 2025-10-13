@@ -3,7 +3,8 @@ import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
 
 export default defineConfig({
-  base: "/ocsm/", // 👈 important for Nginx subpath
+  // Serve app at root during dev and build
+  base: "/",
   plugins: [react(), svgr()],
   server: {
     port: 5174,

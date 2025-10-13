@@ -7,17 +7,18 @@ import {
   updateQuestion,
   deleteQuestion,
 } from '../controllers/questionController.js'; // Adjust path if needed
+import { requirePermission } from '../middleware/permission.js';
 
 // Export a function that returns the router, accepting the io instance
 export default (io) => {
   const router = express.Router();
 
   // Pass io to controller functions where emissions are needed
-  router.post('/', (req, res) => createQuestion(req, res, io));
+  router.post('/', requirePermission('canCreate'), (req, res) => createQuestion(req, res, io));
   router.get('/', getQuestions); // No need to emit for GET
   router.get('/:id', getQuestionById); // No need to emit for GET
-  router.put('/:id', (req, res) => updateQuestion(req, res, io));
-  router.delete('/:id', (req, res) => deleteQuestion(req, res, io));
+  router.put('/:id', requirePermission('canEdit'), (req, res) => updateQuestion(req, res, io));
+  router.delete('/:id', requirePermission('canDelete'), (req, res) => deleteQuestion(req, res, io));
 
   return router;
 };
