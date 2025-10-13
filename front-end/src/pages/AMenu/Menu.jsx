@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { Button, Title, Text, Stack, Container } from "@mantine/core";
 import { useNavigate, useLocation } from "react-router-dom";
 import EMBLogo from "../../assets/emblogo.svg";
@@ -8,16 +8,17 @@ import "./menu.css";
 // Add these imports for theme toggle
 import { FloatButton } from "antd";
 import { BulbOutlined } from "@ant-design/icons";
+import { getConfig } from "../../utils/config";
 
-const secretKey = import.meta.env.VITE_MENU_SECRET_KEY;
-
-function encrypt(value) {
-  return CryptoJS.AES.encrypt(value, secretKey).toString();
+async function encrypt(value) {
+  const { menuSecretKey = "" } = await getConfig();
+  return CryptoJS.AES.encrypt(value, menuSecretKey).toString();
 }
 
-function decrypt(cipherText) {
+async function decrypt(cipherText) {
+  const { menuSecretKey = "" } = await getConfig();
   try {
-    const bytes = CryptoJS.AES.decrypt(cipherText, secretKey);
+    const bytes = CryptoJS.AES.decrypt(cipherText, menuSecretKey);
     return bytes.toString(CryptoJS.enc.Utf8);
   } catch (e) {
     return null;
@@ -32,7 +33,20 @@ function Menu({ toggleColorScheme }) {
   const showAdmin = params.get("admin-auth") === "true";
 
   const encryptedFlag = sessionStorage.getItem("menuFlag");
-  const visited = encryptedFlag ? decrypt(encryptedFlag) === "visited" : false;
+  const [visited, setVisited] = React.useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      if (encryptedFlag) {
+        const val = await decrypt(encryptedFlag);
+        if (isMounted) setVisited(val === "visited");
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [encryptedFlag]);
 
   useEffect(() => {
     if (visited && !showAdmin) {
@@ -102,8 +116,8 @@ function Menu({ toggleColorScheme }) {
               size="md"
               radius="xl"
               className="survey-button"
-              onClick={() => {
-                const encrypted = encrypt("visited");
+              onClick={async () => {
+                const encrypted = await encrypt("visited");
                 sessionStorage.setItem("menuFlag", encrypted);
                 navigate("/client", { replace: true });
               }}

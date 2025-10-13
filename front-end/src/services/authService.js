@@ -1,9 +1,9 @@
 // src/services/authService.js
 import CryptoJS from "crypto-js";
+import { getConfig } from "../utils/config";
 
-const secretKey = import.meta.env.VITE_SECRET_KEY;
-
-export const getCurrentUserFullname = () => {
+export const getCurrentUserFullname = async () => {
+  const { secretKey = "" } = await getConfig();
   const encryptedUser = localStorage.getItem("user");
   if (encryptedUser) {
     try {

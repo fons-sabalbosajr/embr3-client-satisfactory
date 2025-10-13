@@ -24,8 +24,9 @@ const ResetPassword = () => {
         text: res.data.message || "Your password has been reset successfully.",
       });
 
-      // Redirect to admin
-      window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/?admin-auth=true`;
+  // Redirect to admin
+  const { frontendBasePath = "/ocsm" } = await (await import("../../utils/config")).getConfig();
+  window.location.href = `${frontendBasePath}/?admin-auth=true`;
     } catch (err) {
       console.error("Reset password failed:", err);
       Swal.fire({

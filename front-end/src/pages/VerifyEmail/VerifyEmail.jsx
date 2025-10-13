@@ -24,7 +24,7 @@ function VerifyPage() {
 
       try {
         const res = await axios.get(
-          `http://10.14.77.107:5000/api/auth/verify?token=${token}&email=${email}`
+          `/api/auth/verify?token=${token}&email=${email}`
         );
 
         Swal.fire({

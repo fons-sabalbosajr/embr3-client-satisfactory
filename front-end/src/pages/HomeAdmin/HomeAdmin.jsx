@@ -8,8 +8,7 @@ import { BulbOutlined, BulbFilled } from "@ant-design/icons";
 import { FloatButton } from "antd";
 import { signUp, login, forgotPassword } from "../../services/api";
 import CryptoJS from "crypto-js";
-
-const secretKey = import.meta.env.VITE_SECRET_KEY;
+import { getConfig } from "../../utils/config";
 
 function HomeAdmin({ toggleColorScheme, colorScheme }) {
   const [activeTab, setActiveTab] = useState("login");
@@ -32,6 +31,7 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
     try {
       const res = await login({ username, password });
 
+      const { secretKey = "" } = await getConfig();
       const encryptedUser = CryptoJS.AES.encrypt(
         JSON.stringify(res.data.user),
         secretKey
@@ -41,7 +41,8 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
       localStorage.setItem("user", encryptedUser);
 
       // ✅ Full reload to properly apply auth state and avoid blinking
-      window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/admin`;
+  const { frontendBasePath = "/ocsm" } = await getConfig();
+  window.location.href = `${frontendBasePath}/admin`;
     } catch (err) {
       console.error("Login error:", err);
       Swal.fire({

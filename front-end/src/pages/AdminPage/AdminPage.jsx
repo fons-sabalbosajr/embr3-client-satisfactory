@@ -22,6 +22,7 @@ import {
   MailOutlined,
 } from "@ant-design/icons";
 import CryptoJS from "crypto-js";
+import { getCachedConfig } from "../../utils/config";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import EMBLogo from "../../assets/emblogo.svg";
 import AdminMenu from "../../components/AdminMenu/AdminMenu";
@@ -31,8 +32,7 @@ const { Header, Sider, Content, Footer } = Layout;
 const { Title, Text } = Typography;
 const { defaultAlgorithm, darkAlgorithm } = theme;
 
-const secretKey =
-  import.meta.env.VITE_SECRET_KEY || "default-secret-key-for-dev";
+const { secretKey = "" } = getCachedConfig();
 
 function AdminPage() {
   const navigate = useNavigate();

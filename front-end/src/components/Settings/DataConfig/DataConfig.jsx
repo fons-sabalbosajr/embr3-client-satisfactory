@@ -30,7 +30,8 @@ import "./dataconfig.css";
 
 const { Option } = Select;
 
-const SOCKET_SERVER_URL = "http://10.14.77.107:5000";
+// Use same-origin socket in dev with Vite proxy, prod same host
+const SOCKET_SERVER_URL = "/";
 
 function DataConfig() {
   const [questions, setQuestions] = useState([]);
@@ -65,8 +66,10 @@ function DataConfig() {
   useEffect(() => {
     fetchQuestions();
 
-    const fetchedUser = getCurrentUserFullname();
-    setCurrentUser(fetchedUser);
+    (async () => {
+      const fetchedUser = await getCurrentUserFullname();
+      setCurrentUser(fetchedUser);
+    })();
     console.log("Fetched Current User:", fetchedUser);
 
     socket.current = io(SOCKET_SERVER_URL);
