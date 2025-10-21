@@ -23,6 +23,7 @@ const { Title } = Typography;
 const { Option } = Select;
 
 function GenerateReport() {
+  const [messageApi, contextHolder] = message.useMessage();
   const [feedbacks, setFeedbacks] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [dateRange, setDateRange] = useState([]);
@@ -54,7 +55,7 @@ function GenerateReport() {
       setFilteredData(sorted);
     } catch (error) {
       console.error("Fetch error:", error);
-      message.error("Failed to load feedback data.");
+      messageApi.error("Failed to load feedback data.");
     } finally {
       setLoading(false);
     }
@@ -113,6 +114,13 @@ function GenerateReport() {
       `Client-Satisfactory-Report_${dayjs().format("YYYY-MM-DD")}.xlsx`
     );
   };
+
+  return (
+    <div>
+      {contextHolder}
+      {/* rest of component renders below (unchanged) */}
+    </div>
+  );
 
   const tagColors = {
     Citizen: "green",

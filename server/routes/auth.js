@@ -138,6 +138,8 @@ router.get("/verify", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   const { username, password } = req.body; // <-- use username
+  // Diagnostic: log incoming login attempt username only (avoid logging password)
+  console.debug("Login attempt for username:", username);
 
   try {
     const user = await User.findOne({ username }); // <-- find by username
@@ -253,40 +255,76 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-// Update user (admin/accounts management)
-router.put(
-  "/users/:id",
-  authMiddleware,
-  requirePermission("canManageUsers"),
-  async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { fullname, username, privilege } = req.body;
-      const user = await User.findById(id);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      user.fullname = fullname ?? user.fullname;
-      user.username = username ?? user.username;
-      user.privilege = privilege ?? user.privilege;
-      // Accept permissions object
-      if (req.body.permissions) {
-        user.permissions = {
-          canCreate: !!req.body.permissions.canCreate,
-          canEdit: !!req.body.permissions.canEdit,
-          canDelete: !!req.body.permissions.canDelete,
-          canManageUsers: !!req.body.permissions.canManageUsers,
-          canManageAnnouncements: !!req.body.permissions.canManageAnnouncements,
-        };
-      }
-      await user.save();
-      res.json({ message: "User updated successfully", user });
-    } catch (err) {
-      console.error("Update user error:", err);
-      res.status(500).json({ message: "Server error" });
+// Update user (allow self-update; admins can update any user)
+router.put("/users/:id", authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Fetch the requester to inspect permissions
+    const requester = await User.findById(req.user.id);
+    if (!requester) {
+      return res.status(401).json({ message: "Requester not found" });
     }
+
+    const isSelf = requester._id.toString() === id;
+    const isAdmin = !!requester.permissions?.canManageUsers;
+
+    if (!isSelf && !isAdmin) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: insufficient permissions to update user" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Allow updating common fields
+    const { fullname, username, privilege, password } = req.body;
+    if (fullname !== undefined) user.fullname = fullname;
+    if (username !== undefined) user.username = username;
+
+    // Only admins may change privilege
+    if (privilege !== undefined && isAdmin) user.privilege = privilege;
+
+    // Handle password change (self or admin)
+    if (password !== undefined) {
+      if (typeof password !== "string" || password.length < 6) {
+        return res
+          .status(400)
+          .json({ message: "Password must be at least 6 characters." });
+      }
+      user.password = await bcrypt.hash(password, 12);
+    }
+
+    // Only admins may set permissions
+    if (req.body.permissions && isAdmin) {
+      user.permissions = {
+        canCreate: !!req.body.permissions.canCreate,
+        canEdit: !!req.body.permissions.canEdit,
+        canDelete: !!req.body.permissions.canDelete,
+        canManageUsers: !!req.body.permissions.canManageUsers,
+        canManageAnnouncements: !!req.body.permissions.canManageAnnouncements,
+      };
+    }
+
+    await user.save();
+    // Do not return sensitive fields
+    const safeUser = {
+      id: user._id,
+      fullname: user.fullname,
+      username: user.username,
+      email: user.email,
+      position: user.position,
+      privilege: user.privilege,
+    };
+    res.json({ message: "User updated successfully", user: safeUser });
+  } catch (err) {
+    console.error("Update user error:", err);
+    res.status(500).json({ message: "Server error" });
   }
-);
+});
 
 // Get current user's preferences
 router.get("/preferences", authMiddleware, async (req, res) => {

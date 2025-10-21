@@ -98,4 +98,76 @@ router.post(
   }
 );
 
+// GET /api/admin/db/collections
+router.get(
+  "/db/collections",
+  authMiddleware,
+  requirePermission("canManageUsers"),
+  async (req, res) => {
+    try {
+      const db = mongoose.connection.db;
+      if (!db) return res.status(500).json({ message: "Database not available" });
+      const cols = await db.listCollections().toArray();
+      const names = cols.map((c) => c.name).sort();
+      res.json({ collections: names });
+    } catch (err) {
+      console.error("Error listing collections:", err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// GET /api/admin/db/export?collection=NAME&format=json|csv
+router.get(
+  "/db/export",
+  authMiddleware,
+  requirePermission("canManageUsers"),
+  async (req, res) => {
+    try {
+      const { collection, format = "json" } = req.query;
+      if (!collection) return res.status(400).json({ message: "collection query param is required" });
+
+      const db = mongoose.connection.db;
+      if (!db) return res.status(500).json({ message: "Database not available" });
+
+      const docs = await db.collection(collection).find({}).toArray();
+
+      if ((format || "").toLowerCase() === "csv") {
+        // Build union of keys
+        const keys = Array.from(new Set(docs.flatMap((d) => Object.keys(d))));
+        // CSV header
+        const header = keys.join(",") + "\n";
+        const rows = docs
+          .map((doc) =>
+            keys
+              .map((k) => {
+                let v = doc[k];
+                if (v === undefined || v === null) return "";
+                if (typeof v === "object") v = JSON.stringify(v);
+                // escape quotes
+                const s = String(v).replace(/"/g, '""');
+                // wrap fields containing comma/newline/quote in quotes
+                return /[",\n]/.test(s) ? `"${s}"` : s;
+              })
+              .join(",")
+          )
+          .join("\n");
+
+        const csv = header + rows;
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", `attachment; filename="${collection}.csv"`);
+        return res.send(csv);
+      }
+
+      // Default: JSON
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader("Content-Disposition", `attachment; filename="${collection}.json"`);
+      return res.send(JSON.stringify(docs, null, 2));
+    } catch (err) {
+      console.error("Error exporting collection:", err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 export default router;

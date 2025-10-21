@@ -8,6 +8,7 @@ import './announcement.css';
 const { RangePicker } = DatePicker;
 
 export default function Announcement() {
+  const [messageApi, contextHolder] = message.useMessage();
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -34,7 +35,7 @@ export default function Announcement() {
       // Quick auth guard: ensure token exists before attempting a protected API call
       const token = getOpaqueItem('token');
       if (!token) {
-        message.error('Not authenticated. Please sign in as an admin before creating announcements.');
+        messageApi.error('Not authenticated. Please sign in as an admin before creating announcements.');
         return;
       }
       const values = await form.validateFields();
@@ -49,28 +50,28 @@ export default function Announcement() {
 
       if (editing) {
         await updateAnnouncement(editing._id, payload);
-        message.success('Announcement updated');
+        messageApi.success('Announcement updated');
       } else {
         await createAnnouncement(payload);
-        message.success('Announcement created');
+        messageApi.success('Announcement created');
       }
       setModalOpen(false);
       fetch();
     } catch (err) {
       console.error('Save announcement failed', err);
-      message.error('Failed to save announcement');
+      messageApi.error('Failed to save announcement');
     }
   };
 
   const handleDelete = async (id) => {
     try {
       const token = getOpaqueItem('token');
-      if (!token) return message.error('Not authenticated. Please sign in as an admin.');
+      if (!token) return messageApi.error('Not authenticated. Please sign in as an admin.');
       await deleteAnnouncement(id);
-      message.success('Deleted');
+      messageApi.success('Deleted');
       fetch();
     } catch (err) {
-      message.error('Delete failed');
+      messageApi.error('Delete failed');
     }
   };
 
@@ -128,7 +129,8 @@ export default function Announcement() {
 
   // Admin manager view
   return (
-    <div className="announcements-admin">
+      <div className="announcements-admin">
+        {contextHolder}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
         <h3>Announcements Manager</h3>
         <div>
@@ -163,7 +165,7 @@ export default function Announcement() {
       />
 
       <Modal title={editing ? 'Edit Announcement' : 'New Announcement'} open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)}>
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" initialValues={{ target: 'both', active: true }}>
           <Form.Item name="title" label="Title" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
@@ -171,13 +173,17 @@ export default function Announcement() {
             <Input.TextArea rows={4} />
           </Form.Item>
           <Form.Item name="target" label="Target">
-            <Select defaultValue="both"><Select.Option value="both">Both</Select.Option><Select.Option value="client">Client</Select.Option><Select.Option value="admin">Admin</Select.Option></Select>
+            <Select>
+              <Select.Option value="both">Both</Select.Option>
+              <Select.Option value="client">Client</Select.Option>
+              <Select.Option value="admin">Admin</Select.Option>
+            </Select>
           </Form.Item>
           <Form.Item name="range" label="Active Range">
             <RangePicker />
           </Form.Item>
           <Form.Item name="active" label="Active" valuePropName="checked">
-            <Switch defaultChecked />
+            <Switch />
           </Form.Item>
         </Form>
       </Modal>
