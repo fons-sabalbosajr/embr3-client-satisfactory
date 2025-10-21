@@ -16,10 +16,17 @@ import announcementsRoute from "./routes/announcements.js";
 
 dotenv.config();
 
-const HOST = process.env.SERVER_HOST || "0.0.0.0";
+// Host selection: prefer explicit SERVER_HOST, otherwise bind to 0.0.0.0
+const REQUESTED_HOST = process.env.SERVER_HOST;
+const DEFAULT_HOST = "0.0.0.0";
 // Prefer standard PORT, fallback to SERVER_PORT, then default
 const PORT = Number(process.env.PORT || process.env.SERVER_PORT || 5001);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5174";
+const IS_PROD = process.env.NODE_ENV === "production";
+
+// The host we'll attempt to bind to. If it fails with EADDRNOTAVAIL we'll
+// fall back to DEFAULT_HOST.
+let attemptingHost = REQUESTED_HOST || DEFAULT_HOST;
 
 const app = express();
 
@@ -27,25 +34,46 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: {
-    origin: CLIENT_ORIGIN,
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
+  cors: IS_PROD
+    ? {
+        origin: CLIENT_ORIGIN,
+        methods: ["GET", "POST"],
+        credentials: true,
+      }
+    : {
+        // during development allow any origin (helps when frontend is proxied)
+        origin: true,
+        methods: ["GET", "POST"],
+        credentials: true,
+      },
 });
 
 // Middleware
 app.use(
-  cors({
-    origin: CLIENT_ORIGIN,
-    credentials: true,
-  })
+  cors(
+    IS_PROD
+      ? {
+          origin: CLIENT_ORIGIN,
+          credentials: true,
+        }
+      : { origin: true, credentials: true }
+  )
 );
 app.use(express.json());
 
 const activeFeedbacks = new Map();
 
 io.on("connection", (socket) => {
+  console.log(`Socket connected: id=${socket.id}, handshake=${JSON.stringify(socket.handshake.address)}`);
+  socket.on("error", (err) => {
+    console.error(`Socket error (id=${socket.id}):`, err);
+  });
+  socket.conn.on("error", (err) => {
+    console.error(`Socket conn error (id=${socket.id}):`, err);
+  });
+  socket.conn.on("timeout", () => {
+    console.warn(`Socket conn timeout (id=${socket.id})`);
+  });
   socket.on("joinRoom", (room) => {
     socket.join(room);
   });
@@ -96,8 +124,12 @@ app.use("/api/announcements", announcementsRoute);
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
-    server.listen(PORT, HOST, () => {
-      console.log(`Server + Socket.IO running at http://${HOST}:${PORT}`);
+    // attempt to listen on the requested host first
+    server.listen(PORT, attemptingHost, () => {
+      const addr = server.address();
+      const host = addr && addr.address ? addr.address : attemptingHost;
+      const port = addr && addr.port ? addr.port : PORT;
+      console.log(`Server + Socket.IO running at http://${host}:${port}`);
     });
   })
   .catch((err) => {
@@ -105,13 +137,51 @@ mongoose
   });
 
 // Provide clearer error message when port is already in use
+// Enhanced error handling: support automatic fallback when the configured
+// host address isn't available (EADDRNOTAVAIL). Also provide clear tips
+// for EADDRINUSE.
 server.on("error", (err) => {
-  if (err && err.code === "EADDRINUSE") {
+  if (!err) return;
+
+  if (err.code === "EADDRNOTAVAIL") {
+    console.warn(
+      `Address not available: ${attemptingHost}:${PORT}. ` +
+        `Attempting to fall back to ${DEFAULT_HOST}:${PORT}...`
+    );
+
+    // If we're already trying the default host, just log and stop.
+    if (attemptingHost === DEFAULT_HOST) {
+      console.error(
+        `Address ${DEFAULT_HOST} is not available. Server cannot start.`
+      );
+      return;
+    }
+
+    // Try to listen on the default host now.
+    attemptingHost = DEFAULT_HOST;
+    try {
+      server.listen(PORT, attemptingHost, () => {
+        const addr = server.address();
+        const host = addr && addr.address ? addr.address : attemptingHost;
+        const port = addr && addr.port ? addr.port : PORT;
+        console.log(
+          `Server + Socket.IO running at http://${host}:${port} (fallback)`
+        );
+      });
+    } catch (listenErr) {
+      console.error("Failed to bind on fallback host:", listenErr);
+    }
+
+    return;
+  }
+
+  if (err.code === "EADDRINUSE") {
     console.error(
-      `Port ${PORT} on ${HOST} is already in use. Another process is listening there.\n` +
+      `Port ${PORT} on ${attemptingHost} is already in use. Another process is listening there.\n` +
         `Tips: close the other process or change PORT/SERVER_PORT in server/.env.`
     );
-  } else {
-    console.error("Server error:", err);
+    return;
   }
+
+  console.error("Server error:", err);
 });

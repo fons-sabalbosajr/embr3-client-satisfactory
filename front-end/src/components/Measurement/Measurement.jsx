@@ -11,6 +11,7 @@ import socket from "../../utils/socket"; // Ensure this path is correct
 const { RangePicker } = DatePicker;
 
 function Measurement() {
+  const [messageApi, contextHolder] = message.useMessage?.() || [{}, null];
   const [data, setData] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -100,11 +101,12 @@ function Measurement() {
     setData(updatedData);
     setFiltered(updatedData);
     closeModal();
-    message.success("Entry updated successfully.");
+    (messageApi && messageApi.success) ? messageApi.success("Entry updated successfully.") : null;
   };
 
   return (
     <Card title="Client Measurement Data">
+      {contextHolder}
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={8}>
           <Input.Search

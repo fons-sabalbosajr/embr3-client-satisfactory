@@ -102,32 +102,49 @@ function AdminPage() {
   }, []);
   // Effect for handling user authentication check
   useEffect(() => {
-    let failed = false;
     try {
       const decryptedDataString = getDecryptedItem("user");
-      if (!decryptedDataString) throw new Error("No decrypted user data.");
+      if (!decryptedDataString) {
+        // Not an exceptional error - user simply not signed in or data cleared
+        console.info("No decrypted user data found; redirecting to login.");
+        removeOpaqueItem("user");
+        removeOpaqueItem("token");
+        removeOpaqueItem("darkMode");
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("darkMode");
+        navigate("/admin");
+        return;
+      }
+
       const decryptedData = JSON.parse(decryptedDataString);
       if (
         !decryptedData ||
         typeof decryptedData !== "object" ||
         !decryptedData.fullname
       ) {
-        throw new Error("Decrypted data missing expected fields.");
+        console.warn("Decrypted user data missing expected fields; clearing and redirecting.");
+        removeOpaqueItem("user");
+        removeOpaqueItem("token");
+        removeOpaqueItem("darkMode");
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("darkMode");
+        navigate("/admin");
+        return;
       }
+
       setUserName(decryptedData.fullname || "Admin");
     } catch (e) {
-      console.error("Decryption failed:", e);
-      failed = true;
-    }
-    if (failed) {
-      // Clear corrupted data and redirect
+      // Keep this lightweight; likely parsing error or corrupt data.
+      console.warn("Decryption/parsing issue for stored user; clearing storage and redirecting.", e?.message || e);
       removeOpaqueItem("user");
       removeOpaqueItem("token");
       removeOpaqueItem("darkMode");
       localStorage.removeItem("user");
       localStorage.removeItem("token");
       localStorage.removeItem("darkMode");
-  navigate("/admin");
+      navigate("/admin");
     }
   }, [navigate]);
 
