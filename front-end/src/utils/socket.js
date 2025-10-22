@@ -29,9 +29,12 @@ if (ENV?.VITE_SOCKET_URL) {
 }
 
 const socket = io(SOCKET_URL, {
-  transports: ["websocket"],
+  transports: ["websocket", "polling"],
   withCredentials: true,
-  reconnectionAttempts: 5,
+  reconnectionAttempts: 8,
+  timeout: 10000,
+  pingTimeout: 20000,
+  pingInterval: 25000,
 });
 
 socket.on("connect_error", (err) => {
