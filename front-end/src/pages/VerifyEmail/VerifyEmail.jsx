@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
-import axios from "axios";
+import { verifyEmail } from "../../services/api";
 
 function VerifyPage() {
   const [searchParams] = useSearchParams();
@@ -23,16 +23,14 @@ function VerifyPage() {
       }
 
       try {
-        const res = await axios.get(
-          `/api/auth/verify?token=${token}&email=${email}`
-        );
+        const res = await verifyEmail({ token, email });
 
         Swal.fire({
           icon: "success",
           title: "Email Verified",
           text: res.data.message || "You may now log in.",
         }).then(() => {
-          navigate("/"); // redirect to HomeAdmin.jsx
+          navigate("/admin");
         });
       } catch (err) {
         console.error("Verification failed:", err);
@@ -43,7 +41,7 @@ function VerifyPage() {
             err.response?.data?.message ||
             "Something went wrong. Please try again.",
         }).then(() => {
-          navigate("/");
+          navigate("/admin");
         });
       }
     };
