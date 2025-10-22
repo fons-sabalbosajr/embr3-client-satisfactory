@@ -6,7 +6,7 @@ import AgencyHeader from "./AgencyHeader";
 import Swal from "sweetalert2";
 import { BulbOutlined, BulbFilled } from "@ant-design/icons";
 import { FloatButton } from "antd";
-import { signUp, login, forgotPassword } from "../../services/api";
+import { signUp, login, forgotPassword, resendVerification } from "../../services/api";
 import CryptoJS from "crypto-js";
 import { getConfig } from "../../utils/config";
 import { setOpaqueItem } from "../../utils/encryptedStorage";
@@ -38,8 +38,8 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
   // Store user data encrypted using setEncryptedItem for compatibility
   setEncryptedItem("user", JSON.stringify(res.data.user));
 
-    // ✅ Full reload to properly apply auth state and avoid blinking
-  window.location.href = "/admin";
+    // Navigate to admin without full reload to avoid static host 404 flash
+    navigate("/admin");
     } catch (err) {
       console.error("Login error:", err);
       Swal.fire({
@@ -69,13 +69,35 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
       setActiveTab("login"); // Switch to login tab
     } catch (err) {
       console.error("Signup error:", err);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text:
-          err.response?.data?.message ||
-          "Something went wrong. Please try again.",
-      });
+      const msg = err.response?.data?.message || "";
+      // Live backend may create user but fail sending email. Auto-resend to reduce friction.
+      if (msg.includes("User created, but failed to send verification email")) {
+        try {
+          await resendVerification({ email });
+          Swal.fire({
+            icon: "success",
+            title: "Verification Email Re-sent",
+            text: "We sent a new verification link to your email. Please check your inbox.",
+          });
+          signupForm.resetFields();
+          setActiveTab("login");
+        } catch (resendErr) {
+          console.error("Resend verification failed:", resendErr);
+          Swal.fire({
+            icon: "error",
+            title: "Email Delivery Issue",
+            text:
+              resendErr.response?.data?.message ||
+              "We couldn't send the verification email right now. Please try again later or contact support.",
+          });
+        }
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: msg || "Something went wrong. Please try again.",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -223,6 +245,7 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
                         name="email"
                         rules={[
                           { required: true, message: "Email is required" },
+                          { type: "email", message: "Please enter a valid email" },
                         ]}
                       >
                         <Input placeholder="Enter your email" />
@@ -232,6 +255,7 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
                         name="password"
                         rules={[
                           { required: true, message: "Password is required" },
+                          { min: 8, message: "Password must be at least 8 characters" },
                         ]}
                       >
                         <Input.Password placeholder="Enter your password" />
