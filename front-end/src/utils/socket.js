@@ -1,8 +1,20 @@
 import { io } from "socket.io-client";
 
 // In production (separate services), set VITE_SOCKET_URL to your backend origin (e.g., https://your-server.onrender.com)
-// Otherwise, default to same-origin "/" which works in dev via Vite proxy or when backend serves the SPA
-const SOCKET_URL = import.meta?.env?.VITE_SOCKET_URL || "/";
+// Otherwise, if VITE_API_BASE is set, derive the origin from it; finally, default to same-origin "/".
+let SOCKET_URL = "/";
+const ENV = typeof import.meta !== "undefined" ? import.meta.env : undefined;
+if (ENV?.VITE_SOCKET_URL) {
+  SOCKET_URL = ENV.VITE_SOCKET_URL;
+} else if (ENV?.VITE_API_BASE) {
+  try {
+    const u = new URL(ENV.VITE_API_BASE, window.location.origin);
+    SOCKET_URL = u.origin;
+  } catch (_) {
+    // ignore and keep default
+  }
+}
+
 const socket = io(SOCKET_URL, {
   transports: ["websocket"],
   withCredentials: true,
