@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: embr3-server
+    env: node
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: npm start
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+  - type: static
+    name: embr3-frontend
+    rootDir: front-end
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE
+        sync: false
+      - key: VITE_SOCKET_URL
+        sync: false

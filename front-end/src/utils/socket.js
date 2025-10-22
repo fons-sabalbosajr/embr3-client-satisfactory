@@ -1,7 +1,9 @@
 import { io } from "socket.io-client";
 
-// Connect to same-origin Socket.IO server. In dev, Vite proxy will forward to backend.
-const socket = io("/", {
+// In production (separate services), set VITE_SOCKET_URL to your backend origin (e.g., https://your-server.onrender.com)
+// Otherwise, default to same-origin "/" which works in dev via Vite proxy or when backend serves the SPA
+const SOCKET_URL = import.meta?.env?.VITE_SOCKET_URL || "/";
+const socket = io(SOCKET_URL, {
   transports: ["websocket"],
   withCredentials: true,
   reconnectionAttempts: 5,
