@@ -17,10 +17,16 @@ function FeedbackTable({ questions, language }) {
   const cc1Answer = Form.useWatch(`answer_${q7?._id}`, { form });
   const cc2Answer = Form.useWatch(`answer_${q8?._id}`, { form });
 
-  const isQ8Skipped = cc1Answer?.toLowerCase().includes("no");
-  const isQ9Skipped =
-    cc1Answer?.toLowerCase().includes("no") ||
-    cc2Answer?.toLowerCase().includes("no");
+  // Business rules:
+  // - If CC1 (Q7) == "I don't know" -> disable CC2 (Q8) and CC3 (Q9)
+  // - If CC2 (Q8) == "Not Applicable" -> disable CC3 (Q9)
+  const cc1Str = (cc1Answer || "").toString();
+  const cc2Str = (cc2Answer || "").toString();
+  const cc1IsDontKnow = /don\s*'?t\s*know/i.test(cc1Str);
+  const cc2IsNotApplicable = /not\s*applicable/i.test(cc2Str);
+
+  const isQ8Skipped = cc1IsDontKnow;
+  const isQ9Skipped = cc1IsDontKnow || cc2IsNotApplicable;
 
   useEffect(() => {
     if (isQ8Skipped && q8) {
