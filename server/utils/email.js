@@ -25,13 +25,13 @@ const getTransport = () => {
     });
   }
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-    // Try Gmail SMTP directly (more reliable than service:"gmail" in some hosts)
+    // Try Gmail SMTP directly (default to STARTTLS on 587 for broader compatibility)
     const useGmailSmtp = /@gmail\.com$|@googlemail\.com$/i.test(process.env.EMAIL_USER || "");
     if (useGmailSmtp) {
       return nodemailer.createTransport({
         host: "smtp.gmail.com",
-        port: Number(process.env.GMAIL_SMTP_PORT || 465),
-        secure: String(process.env.GMAIL_SMTP_SECURE || "true").toLowerCase() === "true",
+        port: Number(process.env.GMAIL_SMTP_PORT || 587),
+        secure: String(process.env.GMAIL_SMTP_SECURE || "false").toLowerCase() === "true",
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS,
@@ -42,6 +42,7 @@ const getTransport = () => {
         connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 20000),
         socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 20000),
         greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 20000),
+        logger: String(process.env.EMAIL_DEBUG || "false").toLowerCase() === "true",
       });
     }
     // Generic fallback using service
@@ -57,6 +58,7 @@ const getTransport = () => {
       connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 20000),
       socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 20000),
       greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 20000),
+      logger: String(process.env.EMAIL_DEBUG || "false").toLowerCase() === "true",
     });
   }
   console.warn("Email transport is not configured: missing EMAIL_USER/EMAIL_PASS or SMTP_HOST.");

@@ -57,16 +57,39 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
     try {
       const res = await signUp({ fullname, username, email, password });
 
-      Swal.fire({
+      const result = await Swal.fire({
         icon: "success",
         title: "Success",
         text:
           res.data.message ||
           "Verification email sent. Please check your inbox.",
+        showDenyButton: true,
+        confirmButtonText: "Open Gmail",
+        denyButtonText: "Resend Email",
       });
 
-      signupForm.resetFields(); // Clear the signup form
-      setActiveTab("login"); // Switch to login tab
+      if (result.isConfirmed) {
+        window.open("https://mail.google.com", "_blank");
+      } else if (result.isDenied) {
+        try {
+          await resendVerification({ email });
+          await Swal.fire({
+            icon: "success",
+            title: "Verification Email Re-sent",
+            text: "We sent a new verification link to your email.",
+          });
+        } catch (resendErr) {
+          console.error("Resend verification failed:", resendErr);
+          await Swal.fire({
+            icon: "error",
+            title: "Email Delivery Issue",
+            text: resendErr.response?.data?.message || "We couldn't send the verification email right now.",
+          });
+        }
+      }
+
+      signupForm.resetFields();
+      setActiveTab("login");
     } catch (err) {
       console.error("Signup error:", err);
       const msg = err.response?.data?.message || "";
