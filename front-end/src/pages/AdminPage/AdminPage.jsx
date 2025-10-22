@@ -113,7 +113,12 @@ function AdminPage() {
             localStorage.removeItem("user");
             localStorage.removeItem("token");
             localStorage.removeItem("darkMode");
-            window.location.href = "http://10.14.77.107:5174/admin";
+            try {
+              const { origin } = window.location;
+              window.location.href = `${origin}/admin`;
+            } catch {
+              window.location.reload();
+            }
           },
         });
         // Fallback: force redirect after 10s if modal not confirmed
@@ -124,7 +129,12 @@ function AdminPage() {
           localStorage.removeItem("user");
           localStorage.removeItem("token");
           localStorage.removeItem("darkMode");
-          window.location.href = "http://10.14.77.107:5174/admin";
+          try {
+            const { origin } = window.location;
+            window.location.href = `${origin}/admin`;
+          } catch {
+            window.location.reload();
+          }
         }, 10000);
       }, 300000);
     };
