@@ -29,7 +29,18 @@ const IS_PROD = process.env.NODE_ENV === "production";
 
 // The host we'll attempt to bind to. If it fails with EADDRNOTAVAIL we'll
 // fall back to DEFAULT_HOST.
-let attemptingHost = REQUESTED_HOST || DEFAULT_HOST;
+// Guard against accidental values like "https://domain" being used as a host.
+let attemptingHost = DEFAULT_HOST;
+if (REQUESTED_HOST) {
+  if (/^https?:\/\//i.test(REQUESTED_HOST)) {
+    console.warn(
+      `Ignoring SERVER_HOST='${REQUESTED_HOST}' because it looks like a URL. ` +
+        `Binding to ${DEFAULT_HOST} instead.`
+    );
+  } else {
+    attemptingHost = REQUESTED_HOST;
+  }
+}
 
 const app = express();
 
