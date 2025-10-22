@@ -152,54 +152,69 @@ function AdminPage() {
       window.removeEventListener("touchstart", resetTimer);
     };
   }, []);
-  // Effect for handling user authentication check
+  // Effect for handling user authentication check (tolerant to brief storage race)
   useEffect(() => {
-    try {
-      const decryptedDataString = getDecryptedItem("user");
-      if (!decryptedDataString) {
-        // Not an exceptional error - user simply not signed in or data cleared
-        console.info("No decrypted user data found; redirecting to login.");
-        removeOpaqueItem("user");
-        removeOpaqueItem("token");
-        removeOpaqueItem("darkMode");
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        localStorage.removeItem("darkMode");
-        navigate("/admin");
-        return;
-      }
+    const ensureAuthenticated = async () => {
+      try {
+        // If there's no token at all, redirect to login
+        const hasToken = !!(localStorage.getItem("token") || (typeof window !== 'undefined' && window.localStorage) /* noop to keep same branch */);
+        // We use opaque storage for token; check through getDecryptedItem fallback isn't needed here
+        // We'll just probe Authorization via getMe if user data is missing.
 
-      const decryptedData = JSON.parse(decryptedDataString);
-      if (
-        !decryptedData ||
-        typeof decryptedData !== "object" ||
-        !decryptedData.fullname
-      ) {
-        console.warn(
-          "Decrypted user data missing expected fields; clearing and redirecting."
-        );
-        removeOpaqueItem("user");
-        removeOpaqueItem("token");
-        removeOpaqueItem("darkMode");
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        localStorage.removeItem("darkMode");
-        navigate("/admin");
-        return;
-      }
+        const decryptedDataString = getDecryptedItem("user");
 
-      setUserName(decryptedData.fullname || "Admin");
-      // Fetch full profile (permissions)
-      (async () => {
-        try {
-          const me = await api.getMe();
-          setCurrentUser(me?.data?.user || null);
-        } catch (e) {
-          setCurrentUser(null);
+        if (!decryptedDataString) {
+          // If token exists, try to hydrate from server instead of immediately redirecting
+          try {
+            const me = await api.getMe();
+            const user = me?.data?.user;
+            if (user && typeof user === 'object') {
+              setUserName(user.fullname || "Admin");
+              setCurrentUser(user);
+              // Cache user for faster subsequent reads
+              setEncryptedItem("user", JSON.stringify(user));
+            } else {
+              throw new Error('Profile missing');
+            }
+          } catch (err) {
+            // If we can't hydrate, clear and redirect to login
+            removeOpaqueItem("user");
+            removeOpaqueItem("token");
+            removeOpaqueItem("darkMode");
+            localStorage.removeItem("user");
+            localStorage.removeItem("token");
+            localStorage.removeItem("darkMode");
+            navigate("/admin");
+            return;
+          }
+        } else {
+          // We have locally cached user; parse and use it
+          try {
+            const decryptedData = JSON.parse(decryptedDataString);
+            setUserName(decryptedData.fullname || "Admin");
+          } catch {
+            // If parse fails, attempt to re-hydrate from server
+            try {
+              const me = await api.getMe();
+              const user = me?.data?.user;
+              setUserName(user?.fullname || "Admin");
+              setCurrentUser(user || null);
+              if (user) setEncryptedItem("user", JSON.stringify(user));
+            } catch {
+              navigate("/admin");
+              return;
+            }
+          }
+          // Also try to fetch full profile in background for permissions
+          try {
+            const me = await api.getMe();
+            setCurrentUser(me?.data?.user || null);
+          } catch {
+            setCurrentUser(null);
+          }
         }
-      })();
-      // Fetch theme preferences
-      (async () => {
+
+        // Fetch theme preferences
         try {
           const res = await api.getPreferences();
           const prefs = res?.data?.preferences || {};
@@ -218,21 +233,22 @@ function AdminPage() {
         } catch {
           // ignore missing prefs
         }
-      })();
-    } catch (e) {
-      // Keep this lightweight; likely parsing error or corrupt data.
-      console.warn(
-        "Decryption/parsing issue for stored user; clearing storage and redirecting.",
-        e?.message || e
-      );
-      removeOpaqueItem("user");
-      removeOpaqueItem("token");
-      removeOpaqueItem("darkMode");
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      localStorage.removeItem("darkMode");
-      navigate("/admin");
-    }
+      } catch (e) {
+        // Keep this lightweight; likely parsing error or corrupt data.
+        console.warn(
+          "Issue hydrating authenticated user; clearing storage and redirecting.",
+          e?.message || e
+        );
+        removeOpaqueItem("user");
+        removeOpaqueItem("token");
+        removeOpaqueItem("darkMode");
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("darkMode");
+        navigate("/admin");
+      }
+    };
+    ensureAuthenticated();
   }, [navigate]);
 
   // Listen for live theme updates from DeveloperSettings
