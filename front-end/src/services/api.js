@@ -3,8 +3,22 @@ import { getDecryptedItem, getOpaqueItem } from "../utils/encryptedStorage";
 
 // Base URL strategy:
 // - Prefer VITE_API_BASE when deploying frontend and backend on different domains (e.g., Render multi-service)
+// - If missing, try to infer backend from current hostname (Render: remove "-measurement" suffix)
 // - Fallback to same-origin "/api" (works in dev with Vite proxy and when backend serves the SPA)
-const baseURL = import.meta?.env?.VITE_API_BASE || "/api";
+function inferBackendApiBase() {
+  try {
+    if (typeof window === "undefined") return null;
+    const host = window.location.hostname;
+    // Heuristic: front-end static site is "*-measurement.onrender.com"; backend is same without "-measurement"
+    if (host.endsWith(".onrender.com") && host.includes("-measurement.")) {
+      const backendHost = host.replace("-measurement.", ".");
+      return `https://${backendHost}/api`;
+    }
+  } catch (_) {}
+  return null;
+}
+
+const baseURL = import.meta?.env?.VITE_API_BASE || inferBackendApiBase() || "/api";
 const API = axios.create({ baseURL });
 
 // Add request interceptor to include auth token

@@ -13,6 +13,19 @@ if (ENV?.VITE_SOCKET_URL) {
   } catch (_) {
     // ignore and keep default
   }
+} else {
+  // Try to infer backend origin from current hostname (Render pattern: remove "-measurement")
+  try {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (host.endsWith(".onrender.com") && host.includes("-measurement.")) {
+        const backendHost = host.replace("-measurement.", ".");
+        SOCKET_URL = `https://${backendHost}`;
+      }
+    }
+  } catch (_) {
+    // keep default
+  }
 }
 
 const socket = io(SOCKET_URL, {
