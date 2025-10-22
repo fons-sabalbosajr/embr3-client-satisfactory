@@ -197,21 +197,7 @@ function Survey({ toggleColorScheme }) {
 
   const handleSubmit = async (formValues) => {
     try {
-      const response = await fetch(`/api/client-satisfactory/submit`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          answers: formValues,
-          deviceId,
-        }),
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit feedback");
-      }
+      await submitFeedback({ answers: formValues, deviceId });
 
       Swal.fire({
         icon: "success",
@@ -226,6 +212,7 @@ function Survey({ toggleColorScheme }) {
         icon: "error",
         title: t("summary.submissionFailed") || "Submission Failed",
         text:
+          error?.response?.data?.message ||
           error.message ||
           t("summary.submissionError") ||
           "An error occurred while submitting feedback.",
