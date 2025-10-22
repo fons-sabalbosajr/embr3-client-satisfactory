@@ -25,6 +25,14 @@ const questionSchema = new mongoose.Schema({
       return this.questionType === 'dropdown' || this.questionType === 'radio';
     },
   },
+  // Optional classification for Services Availed questions
+  serviceType: {
+    type: String,
+    enum: ['internal', 'external'],
+    required: false,
+    default: undefined,
+    index: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

@@ -175,9 +175,12 @@ function MeasurementViewModal({ visible, onClose, record }) {
               </Card>
             </Col>
             <Col span={6}>
-              <Card title="Neutral" variant="plain" size="small">
-                <Title level={3} style={{ margin: 0, color: "#1677ff" }}>
-                  {Object.entries(record.answersLabeled || {}).filter(([q, a]) => sqdKeywords.some((k) => q.toLowerCase().includes(k)) && a.toLowerCase() === "satisfactory").length}
+              <Card title="Neither Agree nor Disagree" variant="plain" size="small">
+                <Title level={3} style={{ margin: 0, color: "#fa8c16" }}>
+                  {Object.entries(record.answersLabeled || {}).filter(([q, a]) => {
+                    const al = (a || '').toLowerCase();
+                    return sqdKeywords.some((k) => q.toLowerCase().includes(k)) && (al === 'satisfactory' || al === 'neither agree nor disagree');
+                  }).length}
                 </Title>
               </Card>
             </Col>

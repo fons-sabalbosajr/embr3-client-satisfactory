@@ -2,6 +2,11 @@ import Question from '../models/Question.js'; // Assuming your Mongoose model is
 
 export const createQuestion = async (req, res, ioInstance) => { // Added ioInstance
   try {
+    // Sanitize serviceType if present
+    const allowedServiceTypes = ['internal', 'external'];
+    if (typeof req.body.serviceType !== 'undefined' && !allowedServiceTypes.includes(req.body.serviceType)) {
+      delete req.body.serviceType;
+    }
     const newQuestion = new Question(req.body);
     await newQuestion.save();
     res.status(201).json(newQuestion);
@@ -41,6 +46,11 @@ export const getQuestionById = async (req, res) => {
 export const updateQuestion = async (req, res, ioInstance) => { // Added ioInstance
   try {
     const { id } = req.params;
+    // Sanitize serviceType if present
+    const allowedServiceTypes = ['internal', 'external'];
+    if (typeof req.body.serviceType !== 'undefined' && !allowedServiceTypes.includes(req.body.serviceType)) {
+      delete req.body.serviceType;
+    }
     const updatedQuestion = await Question.findByIdAndUpdate(id, req.body, { new: true });
     if (!updatedQuestion) {
       return res.status(404).json({ message: 'Question not found' });

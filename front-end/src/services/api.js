@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getOpaqueItem } from "../utils/encryptedStorage";
+import { getDecryptedItem, getOpaqueItem } from "../utils/encryptedStorage";
 
 // Use a relative base URL so it works in dev (via Vite proxy) and prod (same origin)
 const API = axios.create({
@@ -8,7 +8,8 @@ const API = axios.create({
 
 // Add request interceptor to include auth token
 API.interceptors.request.use((config) => {
-  const token = getOpaqueItem("token");
+  // Prefer encrypted token; fallback to legacy opaque/plain for backward compatibility
+  const token = getDecryptedItem("token") || getOpaqueItem("token") || localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -44,6 +45,7 @@ export const forgotPassword = (email) =>
 export const resetPassword = (payload) =>
   API.post("/auth/reset-password", payload);
 export const updateUser = (id, updatedUser) => API.put(`/auth/users/${id}`, updatedUser);
+export const getMe = () => API.get('/auth/me');
 
 // Preferences API (per-user settings)
 export const getPreferences = () => API.get(`/auth/preferences`);
@@ -58,3 +60,12 @@ export const getAnnouncements = (params) => API.get('/announcements', { params }
 export const createAnnouncement = (payload) => API.post('/announcements', payload);
 export const updateAnnouncement = (id, payload) => API.put(`/announcements/${id}`, payload);
 export const deleteAnnouncement = (id) => API.delete(`/announcements/${id}`);
+
+// Service Categories (for Services Availed)
+export const getServiceCategories = () => API.get('/service-categories');
+export const createServiceCategory = (payload) => API.post('/service-categories', payload);
+export const updateServiceCategory = (id, payload) => API.put(`/service-categories/${id}`, payload);
+export const deleteServiceCategory = (id) => API.delete(`/service-categories/${id}`);
+
+// Admin utility: sync Q5 services from env on server
+export const syncServicesFromEnv = () => API.post('/question/sync-services-from-env');

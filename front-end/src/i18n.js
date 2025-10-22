@@ -59,6 +59,17 @@ i18n
           selectAnswerPlaceholder: "Select Answer",
           selectRequired: "This field is required",
 
+          // Assisted personnel and service groups
+          assistPersonnel: {
+            label: "Assisted Personnel Name",
+            placeholder: "Enter name of personnel who assisted you",
+          },
+          serviceGroups: {
+            internal: "Internal Services",
+            external: "External Services",
+            other: "Other Services",
+          },
+
           gender: {
             Male: "Male",
             Female: "Female",
@@ -117,7 +128,6 @@ i18n
               options: {
                 StronglyAgree: "Strongly Agree",
                 Agree: "Agree",
-                Satisfactory: "Walang Kinikilingan",
                 Satisfactory: "Neither Agree nor Disagree",
                 Disagree: "Disagree",
                 StronglyDisagree: "Strongly Disagree",
@@ -232,6 +242,7 @@ i18n
             gender: "Gender",
             age: "Age",
             serviceAvailed: "Service Availed",
+            assistPersonnel: "Assisted Personnel",
           },
 
           summary: {
@@ -302,6 +313,17 @@ i18n
             "Ang rehiyon at ahensya ay awtomatikong nang nakalagda.",
           selectAnswerPlaceholder: "Pumili ng Sagot",
           selectRequired: "Ang bahaging ito ay kailangang punan.",
+
+          // Assisted personnel and service groups (Filipino)
+          assistPersonnel: {
+            label: "Pangalan ng Kawani na Tumulong",
+            placeholder: "Ilagay ang pangalan ng kawani na tumulong sa iyo",
+          },
+          serviceGroups: {
+            internal: "Panloob na Serbisyo",
+            external: "Panlabas na Serbisyo",
+            other: "Iba pang Serbisyo",
+          },
 
           step: {
             primaryInfo: "Pangunahing Impormasyon",
@@ -476,6 +498,7 @@ i18n
             gender: "Gender",
             age: "Age",
             serviceAvailed: "Service Availed",
+            assistPersonnel: "Kawani na Tumulong",
           },
 
           summary: {

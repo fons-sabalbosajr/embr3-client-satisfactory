@@ -1,13 +1,15 @@
 // src/page-survey/components/ClientInfoCard.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Form, Input, Radio, Select, Space, Row, Col, Typography } from "antd";
 import socket from "../../utils/socket";
 import "./stylesclientinfocard.css";
 import { useTranslation } from "react-i18next";
 import { isEqual } from "lodash";
+import { categorizeServices } from "../../utils/serviceCategories";
+import { getDecryptedItem, setEncryptedItem } from "../../utils/encryptedStorage";
 
-function ClientInfoCard({ formItemName, form, options, language }) {
-  let { genderOptions, region, agency, serviceOptions } = options;
+function ClientInfoCard({ formItemName, form, options }) {
+  let { genderOptions, serviceOptions } = options;
   // Ensure 'RatherNotSay' is always present
   if (!genderOptions.includes('RatherNotSay')) {
     genderOptions = [...genderOptions, 'RatherNotSay'];
@@ -54,6 +56,35 @@ function ClientInfoCard({ formItemName, form, options, language }) {
   }, [form, formItemName]);
 
   const customerType = form.getFieldValue(`${formItemName}_customerType`);
+
+  // Group service options into Internal / External / Other for the dropdown
+  const groupedServiceOptions = useMemo(() => {
+    const { internal, external, other } = categorizeServices(serviceOptions || []);
+    const toOptions = (list) => (list || []).map((s) => ({ label: s, value: s }));
+    const groups = [];
+    if (internal.length)
+      groups.push({ label: t('serviceGroups.internal') || 'Internal Services', options: toOptions(internal) });
+    if (external.length)
+      groups.push({ label: t('serviceGroups.external') || 'External Services', options: toOptions(external) });
+    if (other.length)
+      groups.push({ label: t('serviceGroups.other') || 'Other Services', options: toOptions(other) });
+    return groups;
+  }, [serviceOptions, t]);
+
+  // Prefill and persist assisted personnel name across sessions
+  useEffect(() => {
+    try {
+      const saved = getDecryptedItem("assistPersonnelName");
+      const fieldKey = `${formItemName}_assistPersonnel`;
+      const current = form.getFieldValue(fieldKey);
+      if (saved && !current) {
+        form.setFieldsValue({ [fieldKey]: saved });
+      }
+    } catch {
+      // ignore
+    }
+  }, [form, formItemName]);
+
   return (
     <Space direction="vertical" className="client-info-card-space">
       <Form.Item
@@ -152,7 +183,25 @@ function ClientInfoCard({ formItemName, form, options, language }) {
       </Row>
 
       <Row gutter={16}>
-        <Col xs={24} sm={24}>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name={`${formItemName}_assistPersonnel`}
+            label={t('assistPersonnel.label') || 'Assisted Personnel Name'}
+            rules={[{ required: false }]}
+          >
+            <Input
+              placeholder={t('assistPersonnel.placeholder') || 'Enter name of personnel who assisted you'}
+              onChange={(e) => {
+                try {
+                  setEncryptedItem("assistPersonnelName", e.target.value || "");
+                } catch {
+                  // ignore
+                }
+              }}
+            />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12}>
           <Form.Item
             name={`${formItemName}_serviceAvailed`}
             label={t("serviceAvailedLabel")}
@@ -162,13 +211,10 @@ function ClientInfoCard({ formItemName, form, options, language }) {
               placeholder={t("selectServicePlaceholder")}
               mode="multiple"
               allowClear
-            >
-              {serviceOptions.map((service) => (
-                <Select.Option key={service} value={service}>
-                  {service}
-                </Select.Option>
-              ))}
-            </Select>
+              options={groupedServiceOptions}
+              showSearch
+              optionFilterProp="label"
+            />
           </Form.Item>
         </Col>
       </Row>

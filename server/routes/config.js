@@ -6,6 +6,11 @@ const router = express.Router();
 // Note: Values used in the browser are inherently public.
 router.get("/", (req, res) => {
   try {
+    const parseList = (s) =>
+      (s || "")
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean);
     res.json({
       // Keys used by frontend-only crypto (not secure, just obfuscation)
       menuSecretKey: process.env.MENU_SECRET_KEY || "",
@@ -15,6 +20,10 @@ router.get("/", (req, res) => {
 
       // Helpful hints for client
       frontendBasePath: process.env.FRONTEND_BASE_PATH || "/",
+
+      // Service lists for dynamic configuration
+      externalServices: parseList(process.env.EXTERNAL_SERVICES),
+      internalServices: parseList(process.env.INTERNAL_SERVICES),
     });
   } catch (err) {
     console.error("Error while handling /api/config:", err);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Button, Modal, Form, Input, DatePicker, Select, Switch, message } from 'antd';
+import { Card, Table, Button, Modal, Form, Input, DatePicker, Select, Switch, message, theme } from 'antd';
 import { getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement } from '../../services/api';
 import { getOpaqueItem } from '../../utils/encryptedStorage';
 import dayjs from 'dayjs';
@@ -9,6 +9,7 @@ const { RangePicker } = DatePicker;
 
 export default function Announcement() {
   const [messageApi, contextHolder] = message.useMessage();
+  const { token } = theme.useToken();
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -142,7 +143,18 @@ export default function Announcement() {
       <Table
         loading={loading}
         rowKey={(r) => r._id || r.id}
-        rowClassName={(r) => (isClosed(r) ? 'announcement-closed' : '')}
+        // Use theme tokens for closed rows so it looks good in light and dark modes
+        onRow={(record) => {
+          if (isClosed(record)) {
+            return {
+              style: {
+                color: token.colorTextQuaternary,
+                background: token.colorFillAlter,
+              },
+            };
+          }
+          return {};
+        }}
         dataSource={announcements}
         columns={[
           { title: 'Title', dataIndex: 'title', key: 'title', render: (t, r) => (<div><strong>{t}</strong>{r.status !== 'active' && <span style={{ marginLeft: 8, color: '#888' }}>({r.status})</span>}</div>) },

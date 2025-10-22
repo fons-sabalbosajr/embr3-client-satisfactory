@@ -354,4 +354,26 @@ router.put("/preferences", authMiddleware, async (req, res) => {
   }
 });
 
+// Get current user's profile (including permissions)
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id, "_id fullname username email position privilege permissions");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({
+      user: {
+        id: user._id,
+        fullname: user.fullname,
+        username: user.username,
+        email: user.email,
+        position: user.position,
+        privilege: user.privilege,
+        permissions: user.permissions || {},
+      },
+    });
+  } catch (err) {
+    console.error("Get /auth/me error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 export default router;

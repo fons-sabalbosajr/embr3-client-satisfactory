@@ -92,6 +92,8 @@ function Survey({ toggleColorScheme }) {
           (q) => q.questionText === "Service Availed:"
         );
 
+        // Use DB-provided options for Service Availed (Q5) as the source of truth.
+
         const ccQs = questionsArray.filter((q) =>
           ["Q7", "Q8", "Q9"].includes(q.questionCode)
         );
