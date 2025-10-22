@@ -3,7 +3,17 @@ let cachedConfig = {};
 
 export function preloadConfig() {
   if (!configPromise) {
-    const API_BASE = (typeof import.meta !== "undefined" && import.meta?.env?.VITE_API_BASE) || "/api";
+    // Prefer explicit VITE_API_BASE; if missing, but VITE_SOCKET_URL is set, derive API base from it; finally fallback to same-origin /api
+    const ENV = typeof import.meta !== "undefined" ? import.meta.env : undefined;
+    let API_BASE = ENV?.VITE_API_BASE || "/api";
+    if (!ENV?.VITE_API_BASE && ENV?.VITE_SOCKET_URL) {
+      try {
+        const u = new URL(ENV.VITE_SOCKET_URL, window.location.origin);
+        API_BASE = `${u.origin}/api`;
+      } catch (_) {
+        // keep default
+      }
+    }
     const url = `${API_BASE.replace(/\/$/, "")}/config`;
     configPromise = fetch(url, { credentials: "include" })
       .then((r) => {
