@@ -24,6 +24,7 @@ import Swal from "sweetalert2";
 import io from "socket.io-client";
 import Highlighter from "react-highlight-words";
 import * as api from "../../../services/api";
+import { categorizeServices } from "../../../utils/serviceCategories";
 import { getCurrentUserFullname } from "../../../services/authService";
 import { getDecryptedItem } from "../../../utils/encryptedStorage";
 import "./dataconfig.css";
@@ -43,6 +44,8 @@ function DataConfig() {
   const [currentUser, setCurrentUser] = useState("");
   const [addQuestionType, setAddQuestionType] = useState("text");
   const [editQuestionType, setEditQuestionType] = useState("text");
+  const [quickExternalName, setQuickExternalName] = useState("");
+  const [quickExternalLoading, setQuickExternalLoading] = useState(false);
 
   const [globalSearchText, setGlobalSearchText] = useState("");
   const [columnSearchText, setColumnSearchText] = useState("");
@@ -64,9 +67,15 @@ function DataConfig() {
   });
 
   const socket = useRef(null);
+  const [svcCategories, setSvcCategories] = useState({ internal: [], external: [] });
+  const [catModalOpen, setCatModalOpen] = useState(false);
+  const [catForm] = Form.useForm();
+  const [catLoading, setCatLoading] = useState(false);
+  const [catItems, setCatItems] = useState([]);
 
   useEffect(() => {
     fetchQuestions();
+  fetchCategories();
 
     const fetchedUser = getCurrentUserFullname();
     setCurrentUser(fetchedUser);
@@ -75,19 +84,27 @@ function DataConfig() {
     try {
       const raw = getDecryptedItem("user");
       const parsed = raw ? JSON.parse(raw) : null;
-      if (parsed && parsed.permissions) {
-        setPerms({
-          canCreate: !!parsed.permissions.canCreate,
-          canEdit: !!parsed.permissions.canEdit,
-          canDelete: !!parsed.permissions.canDelete,
-        });
-      } else if (parsed && parsed.privilege) {
-        const priv = parsed.privilege.toLowerCase();
-        setPerms({
-          canCreate: priv === "admin" || priv === "developer",
-          canEdit: priv === "admin" || priv === "developer",
-          canDelete: priv === "admin" || priv === "developer",
-        });
+      if (parsed) {
+        const priv = (parsed.privilege || "").toLowerCase();
+        const pos = (parsed.position || "").toLowerCase();
+        const isDeveloper = priv === "developer" || pos === "developer";
+
+        if (isDeveloper) {
+          // Developer override: full access
+          setPerms({ canCreate: true, canEdit: true, canDelete: true });
+        } else if (parsed.permissions) {
+          setPerms({
+            canCreate: !!parsed.permissions.canCreate,
+            canEdit: !!parsed.permissions.canEdit,
+            canDelete: !!parsed.permissions.canDelete,
+          });
+        } else if (priv) {
+          setPerms({
+            canCreate: priv === "admin",
+            canEdit: priv === "admin",
+            canDelete: priv === "admin",
+          });
+        }
       }
     } catch (e) {
       console.warn("Failed to parse user permissions:", e);
@@ -141,7 +158,22 @@ function DataConfig() {
 
     const uniqueUsers = [...new Set(questions.map((q) => q.user))].sort();
     setUserFilters(uniqueUsers.map((user) => ({ text: user, value: user })));
+
   }, [questions, globalSearchText]);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await api.getServiceCategories();
+      const list = res.data?.data || [];
+      setCatItems(list);
+      const internal = list.filter((x) => x.type === 'internal').map((x) => x.name);
+      const external = list.filter((x) => x.type === 'external').map((x) => x.name);
+      setSvcCategories({ internal, external });
+    } catch (e) {
+      // non-fatal; fallback to static if any
+      console.warn('Failed to fetch service categories', e);
+    }
+  };
 
   const fetchQuestions = async () => {
     setLoading(true);
@@ -386,6 +418,7 @@ function DataConfig() {
       width: "15%",
       ...getColumnSearchProps("questionCode"),
     },
+    // Note: Service categories apply to 'Services Availed' OPTIONS, not per-question.
     {
       title: "Type",
       dataIndex: "questionType",
@@ -412,19 +445,73 @@ function DataConfig() {
       ...getColumnSearchProps("options"),
       render: (options, record) => {
         if (!options || options.length === 0) return "N/A";
-        let displayText =
-          record.questionType === "dropdown" || record.questionType === "radio"
-            ? options.join(",\n")
-            : options.join(", ");
-        const textToHighlight = displayText ? displayText.toString() : "";
+        // Prefer dynamic categories from server; fallback to static helper
+        const toKey = (s) => String(s || "").trim().toLowerCase();
+        const intSet = new Set((svcCategories.internal || []).map(toKey));
+        const extSet = new Set((svcCategories.external || []).map(toKey));
+        let internal = [];
+        let external = [];
+        let other = [];
+        if (intSet.size || extSet.size) {
+          options.forEach((opt) => {
+            const k = toKey(opt);
+            if (intSet.has(k)) internal.push(opt);
+            else if (extSet.has(k)) external.push(opt);
+            else other.push(opt);
+          });
+        } else {
+          const grouped = categorizeServices(options);
+          internal = grouped.internal;
+          external = grouped.external;
+          other = grouped.other;
+        }
+
+        // If none matched known services, fall back to previous simple rendering
+        const matchedCount = internal.length + external.length;
+        if (matchedCount === 0) {
+          let displayText =
+            record.questionType === "dropdown" || record.questionType === "radio"
+              ? options.join(",\n")
+              : options.join(", ");
+          const textToHighlight = displayText ? displayText.toString() : "";
+          return (
+            <span style={{ whiteSpace: "pre-wrap" }}>
+              {searchedColumn === "options" && columnSearchText ? (
+                <Highlighter
+                  highlightStyle={{ backgroundColor: "#ffc069", padding: 0 }}
+                  searchWords={[columnSearchText]}
+                  autoEscape
+                  textToHighlight={textToHighlight}
+                />
+              ) : (
+                textToHighlight
+              )}
+            </span>
+          );
+        }
+
+        // Render grouped services
         return (
-          <span style={{ whiteSpace: "pre-wrap" }}>
-            {searchedColumn === "options" && columnSearchText ? (
-              <Highlighter highlightStyle={{ backgroundColor: "#ffc069", padding: 0 }} searchWords={[columnSearchText]} autoEscape textToHighlight={textToHighlight} />
-            ) : (
-              textToHighlight
+          <div style={{ whiteSpace: "pre-wrap" }}>
+            {internal.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <strong>Internal Services</strong>
+                <div>{internal.join(", ")}</div>
+              </div>
             )}
-          </span>
+            {external.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <strong>External Services</strong>
+                <div>{external.join(", ")}</div>
+              </div>
+            )}
+            {other.length > 0 && (
+              <div>
+                <strong>Other</strong>
+                <div>{other.join(", ")}</div>
+              </div>
+            )}
+          </div>
         );
       },
       width: "30%",
@@ -481,9 +568,12 @@ function DataConfig() {
 
       <Space className="table-controls" style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }}>
         <Input placeholder="Search questions by code, text, type, or user..." prefix={<SearchOutlined />} value={globalSearchText} onChange={(e) => setGlobalSearchText(e.target.value)} className="search-input" allowClear />
-        <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal} disabled={!perms.canCreate} title={!perms.canCreate ? "You don't have permission to add questions" : undefined}>
-          Add New Question
-        </Button>
+        <Space>
+          <Button onClick={() => setCatModalOpen(true)} icon={<BookOutlined />}>Manage Service Categories</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal} disabled={!perms.canCreate} title={!perms.canCreate ? "You don't have permission to add questions" : undefined}>
+            Add New Question
+          </Button>
+        </Space>
       </Space>
 
       <Table columns={columns} dataSource={filteredQuestions} rowKey="_id" loading={loading} pagination={{ pageSize: 10, position: ["topRight"] }} bordered className="questions-table-compact" size="small" />
@@ -496,6 +586,7 @@ function DataConfig() {
           <Form.Item name="questionText" label="Question Text" rules={[{ required: true, message: "Please input the question text!" }]}> 
             <Input.TextArea rows={4} placeholder="Enter the full question text" />
           </Form.Item>
+          {/* Service categories are defined per option for Services Availed, not per question */}
           <Form.Item name="questionType" label="Question Type" rules={[{ required: true, message: "Please select a question type!" }]}> 
             <Select placeholder="Select question type" onChange={(value) => setAddQuestionType(value)}> 
               <Option value="text">Text</Option>
@@ -522,6 +613,7 @@ function DataConfig() {
           <Form.Item name="questionText" label="Question Text" rules={[{ required: true, message: "Please input the question text!" }]}> 
             <Input.TextArea rows={4} placeholder="Enter the full question text" />
           </Form.Item>
+          {/* Service categories are defined per option for Services Availed, not per question */}
           <Form.Item name="questionType" label="Question Type" rules={[{ required: true, message: "Please select a question type!" }]}> 
             <Select placeholder="Select question type" onChange={(value) => setEditQuestionType(value)}> 
               <Option value="text">Text</Option>
@@ -534,10 +626,127 @@ function DataConfig() {
               <Input.TextArea rows={2} placeholder="e.g., Yes, No, Maybe" />
             </Form.Item>
           )}
+          {(editQuestionType === "dropdown" || editQuestionType === "radio") && (
+            <Space align="start" style={{ width: '100%', marginBottom: 12 }}>
+              <Input
+                placeholder="Quick add External Service (e.g., ECC Online)"
+                value={quickExternalName}
+                onChange={(e) => setQuickExternalName(e.target.value)}
+                style={{ minWidth: 260 }}
+              />
+              <Button
+                loading={quickExternalLoading}
+                onClick={async () => {
+                  const name = (quickExternalName || '').trim();
+                  if (!name) return;
+                  try {
+                    setQuickExternalLoading(true);
+                    await api.createServiceCategory({ name, type: 'external' });
+                    setQuickExternalName('');
+                    await fetchCategories();
+                    // Append to options field if not present yet
+                    const cur = editForm.getFieldValue('options') || '';
+                    const parts = cur.split(',').map((s) => s.trim()).filter(Boolean);
+                    if (!parts.some((p) => p.toLowerCase() === name.toLowerCase())) {
+                      parts.push(name);
+                      editForm.setFieldsValue({ options: parts.join(', ') });
+                    }
+                  } catch (e) {
+                    console.error('Quick add external service failed', e);
+                  } finally {
+                    setQuickExternalLoading(false);
+                  }
+                }}
+              >
+                Add as External Service
+              </Button>
+            </Space>
+          )}
           <Form.Item name="user" label="Modified By User" rules={[{ required: true, message: "Please input the user who modified this question!" }]}> 
             <Input placeholder="Enter user name" disabled />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Manage Service Categories Modal */}
+      <Modal
+        title="Manage Service Categories"
+        open={catModalOpen}
+        onCancel={() => setCatModalOpen(false)}
+        footer={null}
+        width={700}
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Form
+            form={catForm}
+            layout="inline"
+            onFinish={async (values) => {
+              try {
+                setCatLoading(true);
+                await api.createServiceCategory({ name: values.name, type: values.type });
+                catForm.resetFields();
+                fetchCategories();
+              } catch (e) {
+                console.error('Create category failed', e);
+              } finally {
+                setCatLoading(false);
+              }
+            }}
+          >
+            <Form.Item name="name" rules={[{ required: true, message: 'Name required' }]}>
+              <Input placeholder="Service name (e.g., ECC Online)" />
+            </Form.Item>
+            <Form.Item name="type" rules={[{ required: true, message: 'Type required' }]}>
+              <Select placeholder="Type" style={{ width: 160 }}>
+                <Option value="internal">Internal</Option>
+                <Option value="external">External</Option>
+              </Select>
+            </Form.Item>
+            <Form.Item>
+              <Button htmlType="submit" type="primary" loading={catLoading}>Add</Button>
+            </Form.Item>
+          </Form>
+
+          <Table
+            size="small"
+            rowKey="_id"
+            dataSource={catItems}
+            columns={[
+              { title: 'Name', dataIndex: 'name', key: 'name' },
+              { title: 'Type', dataIndex: 'type', key: 'type', render: (t) => t === 'internal' ? <Tag color="geekblue">Internal</Tag> : <Tag color="green">External</Tag> },
+              {
+                title: 'Actions', key: 'actions', align: 'right',
+                render: (_, rec) => (
+                  <Space>
+                    <Button size="small" onClick={async () => {
+                      const newType = rec.type === 'internal' ? 'external' : 'internal';
+                      try {
+                        setCatLoading(true);
+                        await api.updateServiceCategory(rec._id, { type: newType });
+                        fetchCategories();
+                      } catch (e) {
+                        console.error('Update category failed', e);
+                      } finally {
+                        setCatLoading(false);
+                      }
+                    }}>Toggle Type</Button>
+                    <Button size="small" danger onClick={async () => {
+                      try {
+                        setCatLoading(true);
+                        await api.deleteServiceCategory(rec._id);
+                        fetchCategories();
+                      } catch (e) {
+                        console.error('Delete category failed', e);
+                      } finally {
+                        setCatLoading(false);
+                      }
+                    }}>Delete</Button>
+                  </Space>
+                )
+              }
+            ]}
+          />
+        </Space>
       </Modal>
     </div>
   );

@@ -1,3 +1,5 @@
+// Early warning filter: silence known noisy deprecations from dependencies (e.g., util._extend / DEP0060)
+import "./warnings.js";
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -13,6 +15,7 @@ import clientSatisfactoryRoutes from "./routes/clientSatisfactory.js";
 import configRoute from "./routes/config.js";
 import adminRoute from "./routes/admin.js";
 import announcementsRoute from "./routes/announcements.js";
+import serviceCategoriesRoute from "./routes/serviceCategories.js";
 
 dotenv.config();
 
@@ -64,7 +67,7 @@ app.use(express.json());
 const activeFeedbacks = new Map();
 
 io.on("connection", (socket) => {
-  console.log(`Socket connected: id=${socket.id}, handshake=${JSON.stringify(socket.handshake.address)}`);
+  //console.log(`Socket connected: id=${socket.id}, handshake=${JSON.stringify(socket.handshake.address)}`);
   socket.on("error", (err) => {
     console.error(`Socket error (id=${socket.id}):`, err);
   });
@@ -119,6 +122,7 @@ app.use("/api/client-satisfactory", clientSatisfactoryRoutes(io));
 app.use("/api/config", configRoute);
 app.use("/api/admin", adminRoute);
 app.use("/api/announcements", announcementsRoute);
+app.use("/api/service-categories", serviceCategoriesRoute);
 
 // DB Connection and start server
 mongoose

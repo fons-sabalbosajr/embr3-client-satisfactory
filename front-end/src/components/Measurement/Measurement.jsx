@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Card, Input, DatePicker, Row, Col, Tooltip } from "antd";
+import { Button, Card, Input, DatePicker, Row, Col, Tooltip, message } from "antd";
 import { ExportOutlined } from "@ant-design/icons";
 import MeasurementTable from "../Measurement/components/MeasurementTable";
 import MeasurementFormModal from "../Measurement/components/MeasurementFormModal";
@@ -11,7 +11,7 @@ import socket from "../../utils/socket"; // Ensure this path is correct
 const { RangePicker } = DatePicker;
 
 function Measurement() {
-  const [messageApi, contextHolder] = message.useMessage?.() || [{}, null];
+  const [messageApi, contextHolder] = message.useMessage();
   const [data, setData] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");

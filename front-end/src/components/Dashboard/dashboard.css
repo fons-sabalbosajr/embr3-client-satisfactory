@@ -63,6 +63,18 @@
   color: #8c8c8c;
 }
 
+/* Tile header visuals */
+.tile-header-code {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.tile-description {
+  font-size: 11px;
+  color: #8c8c8c;
+  margin-top: 2px;
+}
+
 /* Responsive adjustments for smaller screens */
 @media (max-width: 767px) {
   .dashboard-container {

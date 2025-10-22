@@ -9,11 +9,4 @@
   border-left: 4px solid #1677ff;
 }
 
-.announcement-closed td {
-  color: #9a9a9a !important;
-  background: #fafafa !important;
-}
-
-.announcement-closed strong {
-  color: #777 !important;
-}
+/* Colors for closed rows now come from Ant Design theme tokens via onRow() styles */

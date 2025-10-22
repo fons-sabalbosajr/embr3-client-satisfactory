@@ -1,3 +1,10 @@
+// Suppress only the noisy Node DEP0060 (util._extend) warning from transitive deps during Vite dev
+process.on("warning", (w) => {
+  if (w && w.code === "DEP0060") return;
+  // Pass through everything else
+  console.warn(`${w.name}: ${w.message}`);
+});
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";

@@ -1,436 +1,947 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Card,
-  Button,
-  DatePicker,
   Table,
-  Typography,
   Space,
-  Select,
+  Typography,
+  Button,
   Tag,
   message,
-  Pagination,
-  Tooltip,
+  Form,
+  DatePicker,
+  Select,
+  Divider,
 } from "antd";
-import { DownloadOutlined, FileSearchOutlined } from "@ant-design/icons";
+import * as api from "../../../services/api";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import dayjs from "dayjs";
-import { getFeedbacks } from "../../../services/api";
+import { useTranslation } from "react-i18next";
+import {
+  categorizeServices,
+  EXTERNAL_SERVICES,
+  INTERNAL_SERVICES,
+} from "../../../utils/serviceCategories";
 import "./generatereport.css";
 
-const { RangePicker } = DatePicker;
-const { Title } = Typography;
-const { Option } = Select;
+const { Title, Text } = Typography;
 
-function GenerateReport() {
-  const [messageApi, contextHolder] = message.useMessage();
-  const [feedbacks, setFeedbacks] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [dateRange, setDateRange] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    region: null,
-    agency: null,
-    customerType: null,
+// Service classification will reuse the shared categorizeServices utility,
+// which reads Vite env lists and falls back gracefully.
+
+// Normalizers from Dashboard patterns
+function normalizeCcAnswer(val) {
+  if (!val || typeof val !== "string") return null;
+  const s = val.trim().toLowerCase();
+  if (s === "yes" || s === "y" || /\byes\b/i.test(val)) return "Yes";
+  if (s === "no" || s === "n" || /\bno\b/i.test(val)) return "No";
+  const cleaned = s.replace(/[^a-z]/g, "");
+  if (cleaned === "na" || cleaned === "notapplicable") return "N/A";
+  if (s === "n/a" || s === "n.a" || s === "n a") return "N/A";
+  if (s.includes("skip question")) return "N/A";
+  return null;
+}
+
+function normalizeSqdAnswer(val) {
+  if (!val || typeof val !== "string") return null;
+  const s = val.trim();
+  if (/^satisfactory$/i.test(s)) return "Neutral";
+  if (/^neither\s+agree\s+nor\s+disagree$/i.test(s)) return "Neutral";
+  if (/^n\/?a$/i.test(s)) return "N/A";
+  return s;
+}
+
+// Export helpers
+function exportToExcel(filename, rows) {
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Report");
+  XLSX.writeFile(wb, filename);
+}
+
+function exportToPdf(title, headers, bodyRows, filename) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text(title, 40, 40);
+  autoTable(doc, {
+    startY: 60,
+    head: [headers],
+    body: bodyRows,
+    styles: { font: "helvetica", fontSize: 9, cellPadding: 6 },
+    headStyles: {
+      fillColor: [22, 119, 255],
+      textColor: 255,
+      fontStyle: "bold",
+    },
+    alternateRowStyles: { fillColor: [245, 248, 255] },
+    theme: "grid",
+    margin: { left: 40, right: 40 },
   });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  doc.save(filename);
+}
+
+export default function GenerateReport() {
+  const { t, i18n } = useTranslation();
+  const [loading, setLoading] = useState(false);
+  const [surveys, setSurveys] = useState([]);
+  const [filters, setFilters] = useState({
+    dateRange: null, // [dayjs, dayjs]
+    regions: [], // multi
+    customerTypes: [], // multi
+    agencies: [], // multi
+    services: [], // multi
+  });
 
   useEffect(() => {
-    fetchFeedbacks();
+    const fetchAll = async () => {
+      setLoading(true);
+      try {
+        const res = await api.getClientSatisfactoryData();
+        const data = Array.isArray(res?.data) ? res.data : [];
+        setSurveys(data);
+      } catch (e) {
+        console.error("Failed to load survey data for report:", e);
+        message.error("Failed to load data for Generate Report");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
   }, []);
 
-  const fetchFeedbacks = async () => {
-    try {
-      setLoading(true);
-      const res = await getFeedbacks();
-      const data = Array.isArray(res.data) ? res.data : res;
-
-      // Sort by submittedAt descending
-      const sorted = [...data].sort(
-        (a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)
-      );
-
-      setFeedbacks(sorted);
-      setFilteredData(sorted);
-    } catch (error) {
-      console.error("Fetch error:", error);
-      messageApi.error("Failed to load feedback data.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getUniqueValues = (key) => {
-    return [
-      ...new Set(
-        feedbacks.map((f) => f.answersLabeled?.[key]?.trim()).filter(Boolean)
-      ),
-    ];
-  };
-
-  const handleFilter = () => {
-    let filtered = [...feedbacks];
-
-    if (dateRange.length) {
-      const [start, end] = dateRange;
-      filtered = filtered.filter((item) => {
-        const submitted = dayjs(item.submittedAt);
-        return submitted.isAfter(start) && submitted.isBefore(end);
+  // Derive unique option lists for filters
+  const { regionOptions, customerTypeOptions, agencyOptions, serviceOptions } =
+    useMemo(() => {
+      const regions = new Set();
+      const customerTypes = new Set();
+      const agencies = new Set();
+      const services = new Set();
+      surveys.forEach((entry) => {
+        const labeled = entry.answersLabeled || {};
+        const region = labeled["Region"]; if (region) regions.add(region);
+        const ct = labeled["Customer Type"]; if (ct) customerTypes.add(ct);
+        const agency =
+          labeled["Company Name"] ||
+          labeled["Unknown Question (merged_customer_age_gender_question_agencyName)"] ||
+          labeled["Agency"] ||
+          null;
+        if (agency) agencies.add(agency);
+        const svc = Array.isArray(labeled["Service Availed"]) ? labeled["Service Availed"] : [];
+        svc.forEach((s) => { if (s) services.add(s); });
       });
-    }
+      return {
+        regionOptions: Array.from(regions).sort(),
+        customerTypeOptions: Array.from(customerTypes).sort(),
+        agencyOptions: Array.from(agencies).sort(),
+        serviceOptions: Array.from(services).sort(),
+      };
+    }, [surveys]);
 
-    if (filters.region)
-      filtered = filtered.filter(
-        (item) => item.answersLabeled?.Region === filters.region
-      );
-
-    if (filters.agency)
-      filtered = filtered.filter(
-        (item) => item.answersLabeled?.Agency === filters.agency
-      );
-
-    if (filters.customerType)
-      filtered = filtered.filter(
-        (item) =>
-          item.answersLabeled?.["Customer Type"] === filters.customerType
-      );
-
-    setFilteredData(filtered);
-    setCurrentPage(1);
+  // Helper to get agency/company label
+  const getAgency = (entry) => {
+    const labeled = entry.answersLabeled || {};
+    return (
+      labeled["Company Name"] ||
+      labeled["Unknown Question (merged_customer_age_gender_question_agencyName)"] ||
+      labeled["Agency"] ||
+      "—"
+    );
   };
 
-  const exportToExcel = () => {
-    const flatData = filteredData.map(({ answersLabeled, submittedAt }) => ({
-      ...answersLabeled,
-      "Submitted At": dayjs(submittedAt).format("YYYY-MM-DD HH:mm"),
-    }));
+  // Apply filters to surveys
+  const filteredSurveys = useMemo(() => {
+    const { dateRange, regions, customerTypes, agencies, services } = filters;
+    return surveys.filter((entry) => {
+      const labeled = entry.answersLabeled || {};
+      // Date filter
+      if (dateRange && Array.isArray(dateRange) && dateRange[0] && dateRange[1]) {
+        const d = dayjs(entry.submittedAt);
+        if (!d.isValid()) return false;
+        // inclusive range
+        const start = dateRange[0].startOf("day");
+        const end = dateRange[1].endOf("day");
+        if (d.isBefore(start) || d.isAfter(end)) return false;
+      }
+      // Region
+      if (regions?.length) {
+        const region = labeled["Region"];
+        if (!region || !regions.includes(region)) return false;
+      }
+      // Customer Type
+      if (customerTypes?.length) {
+        const ct = labeled["Customer Type"];
+        if (!ct || !customerTypes.includes(ct)) return false;
+      }
+      // Agency/Company
+      if (agencies?.length) {
+        const ag = getAgency(entry);
+        if (!ag || !agencies.includes(ag)) return false;
+      }
+      // Service Availed (any match)
+      if (services?.length) {
+        const svcArr = Array.isArray(labeled["Service Availed"]) ? labeled["Service Availed"] : [];
+        if (!svcArr.some((s) => services.includes(s))) return false;
+      }
+      return true;
+    });
+  }, [surveys, filters]);
 
-    const ws = XLSX.utils.json_to_sheet(flatData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
-    XLSX.writeFile(
-      wb,
-      `Client-Satisfactory-Report_${dayjs().format("YYYY-MM-DD")}.xlsx`
+  // CC keys (align with Dashboard mapping)
+  const ccKeys = useMemo(
+    () => ({
+      CC1: "answer_6870a4056988ee91c469a5e9",
+      CC2: "answer_6870a4396988ee91c469a5f2",
+      CC3: "answer_6870a4646988ee91c469a5fa",
+    }),
+    []
+  );
+  const ccMapMeta = useMemo(
+    () => ({
+      CC1: { code: "Q7", id: ccKeys.CC1 },
+      CC2: { code: "Q8", id: ccKeys.CC2 },
+      CC3: { code: "Q9", id: ccKeys.CC3 },
+    }),
+    [ccKeys]
+  );
+
+  // Try to map CC answers to option index using numeric prefix or keyword heuristics
+  const mapCcAnswerToIndex = (qCode, answer, optionsEN, optionsFIL, optionsCurrent) => {
+    if (!answer || typeof answer !== "string") return -1;
+    const s = answer.trim();
+    const m = s.match(/^\s*(\d+)\s*[\.)-]/); // e.g., "1.", "2)"
+    if (m) {
+      const n = parseInt(m[1], 10);
+      const optsLen = Array.isArray(optionsCurrent) ? optionsCurrent.length : 0;
+      if (n >= 1 && n <= optsLen) return n - 1;
+    }
+    // Fallback: try exact match across languages
+    const idxEN = Array.isArray(optionsEN) ? optionsEN.indexOf(s) : -1;
+    if (idxEN !== -1) return idxEN;
+    const idxFIL = Array.isArray(optionsFIL) ? optionsFIL.indexOf(s) : -1;
+    if (idxFIL !== -1) return idxFIL;
+    const idxCur = Array.isArray(optionsCurrent) ? optionsCurrent.indexOf(s) : -1;
+    if (idxCur !== -1) return idxCur;
+
+    // Heuristic keywords per CC
+    const low = s.toLowerCase();
+    if (qCode === "Q7") {
+      if (low.includes("do not know") || low.includes("hindi ko alam")) return 3; // option 4
+      if (low.includes("only when") || low.includes("nalaman ko lang")) return 2; // option 3
+      if (low.includes("did not see") || low.includes("hindi ko ito nakita")) return 1; // option 2
+      if (low.includes("saw it") || low.includes("nakita ko ito") || low.includes("aware")) return 0; // option 1
+    }
+    if (qCode === "Q8") {
+      if (low.includes("not applicable")) return 4; // N/A
+      if (low.includes("not visible")) return 3;
+      if (low.includes("difficult")) return 2;
+      if (low.includes("somewhat")) return 1;
+      if (low.includes("easy")) return 0;
+    }
+    if (qCode === "Q9") {
+      if (low.includes("not applicable")) return 3; // N/A
+      if (low.includes("did not help")) return 2;
+      if (low.includes("somewhat")) return 1;
+      if (low.includes("help very much") || low.includes("lubos")) return 0;
+    }
+    return -1;
+  };
+
+  const sqdKeys = useMemo(
+    () => ({
+      SQD0: "answer_6870a4e26988ee91c469a604",
+      SQD1: "answer_6870a52d6988ee91c469a60d",
+      SQD2: "answer_6870a5436988ee91c469a611",
+      SQD3: "answer_6870a58e6988ee91c469a615",
+      SQD4: "answer_6870a5c66988ee91c469a61e",
+      SQD5: "answer_6870a5dd6988ee91c469a622",
+      SQD6: "answer_6870a6556988ee91c469a634",
+      SQD7: "answer_6870a66a6988ee91c469a638",
+      SQD8: "answer_6870a67b6988ee91c469a63c",
+    }),
+    []
+  );
+
+  // 1) Citizens Charter Results rows
+  const { ccGroups, ccRows } = useMemo(() => {
+    const groups = {};
+    const flatRows = [];
+    ["CC1", "CC2", "CC3"].forEach((sec) => {
+      const meta = ccMapMeta[sec];
+      if (!meta) return;
+      const qCode = meta.code;
+      const key = meta.id;
+      const questionText = t(`questions.${qCode}.text`);
+      const optsCurrent = t(`questions.${qCode}.options`, { returnObjects: true });
+      const optsEN = t(`questions.${qCode}.options`, { lng: "en", returnObjects: true });
+      const optsFIL = t(`questions.${qCode}.options`, { lng: "fil", returnObjects: true });
+      const options = Array.isArray(optsCurrent) ? optsCurrent : [];
+      const counts = new Array(options.length).fill(0);
+
+      filteredSurveys.forEach((s) => {
+        const ans = s.answers?.[key];
+        const idx = mapCcAnswerToIndex(qCode, ans, optsEN, optsFIL, optsCurrent);
+        if (idx >= 0 && idx < counts.length) counts[idx] += 1;
+      });
+      const total = counts.reduce((a, b) => a + b, 0);
+      const rows = options.map((opt, i) => ({
+        key: `${sec}-${i}`,
+        item: `${i + 1}. ${opt}`,
+        count: counts[i] || 0,
+        percentage: total ? Number(((counts[i] / total) * 100).toFixed(1)) : 0,
+      }));
+      groups[sec] = { questionText, rows, total };
+
+      // build export rows with section + question context
+      rows.forEach((r, i) => {
+        flatRows.push({
+          key: r.key,
+          item: `${sec}: ${questionText}\n${r.item}`,
+          count: r.count,
+          percentage: r.percentage,
+        });
+      });
+    });
+    return { ccGroups: groups, ccRows: flatRows };
+  }, [filteredSurveys, ccMapMeta, t, i18n.language]);
+
+  // 2) SQD results rows
+  const sqdRows = useMemo(() => {
+    const rows = [];
+    const order = [
+      "Strongly Agree",
+      "Agree",
+      "Neutral",
+      "Disagree",
+      "Strongly Disagree",
+    ];
+    Object.entries(sqdKeys).forEach(([code, key]) => {
+      const counts = {
+        "Strongly Agree": 0,
+        Agree: 0,
+        Neutral: 0,
+        Disagree: 0,
+        "Strongly Disagree": 0,
+        "N/A": 0,
+      };
+      filteredSurveys.forEach((s) => {
+        const a = normalizeSqdAnswer(s.answers?.[key]);
+        if (!a) return;
+        if (Object.prototype.hasOwnProperty.call(counts, a)) counts[a] += 1;
+      });
+      const total = order.reduce((acc, k) => acc + counts[k], 0);
+      const pctScore = total
+        ? ((counts["Strongly Agree"] + counts["Agree"]) / total) * 100
+        : 0;
+      rows.push({
+        key: code,
+        type: code,
+        sa: counts["Strongly Agree"],
+        a: counts["Agree"],
+        n: counts["Neutral"],
+        d: counts["Disagree"],
+        sd: counts["Strongly Disagree"],
+        na: counts["N/A"],
+        total,
+        percentage: Number(pctScore.toFixed(1)),
+      });
+    });
+    return rows;
+  }, [filteredSurveys, sqdKeys]);
+
+  // 3) Score Per Service Availed
+  const serviceRows = useMemo(() => {
+    const counter = new Map();
+    let totalMentions = 0;
+    filteredSurveys.forEach((s) => {
+      const labeled = s.answersLabeled || {};
+      const services = Array.isArray(labeled["Service Availed"])
+        ? labeled["Service Availed"]
+        : [];
+      services.forEach((name) => {
+        const key = String(name || "").trim();
+        if (!key) return;
+        totalMentions += 1;
+        counter.set(key, (counter.get(key) || 0) + 1);
+      });
+    });
+    const rows = Array.from(counter.entries()).map(([name, count]) => ({
+      key: name,
+      service: name,
+      count,
+      percentage: totalMentions
+        ? Number(((count / totalMentions) * 100).toFixed(1))
+        : 0,
+    }));
+    // sort by count desc
+    rows.sort((a, b) => b.count - a.count);
+    return rows;
+  }, [filteredSurveys]);
+
+  // 4) Respondents Profile: Gender/Sex and Customer Type
+  const classifyWithFallback = (services) => {
+    const base = categorizeServices(services);
+    const noEnvConfigured =
+      (EXTERNAL_SERVICES?.length ?? 0) === 0 &&
+      (INTERNAL_SERVICES?.length ?? 0) === 0;
+    const bothEmpty =
+      (!base.external || base.external.length === 0) &&
+      (!base.internal || base.internal.length === 0);
+    if (services?.length && (noEnvConfigured || bothEmpty)) {
+      // Heuristic fallback: treat common online system names as external services
+      const extRegex =
+        /\b(ecc|cnc|opms|hwms|cmr|coc|elr|pcl|pcp|pmpin|crs|smr|pco|pcb|online)\b/i;
+      const intRegex = /\b(provision|technical|training|internal)\b/i;
+      const external = [];
+      const internal = [];
+      (services || []).forEach((s) => {
+        if (extRegex.test(s)) external.push(s);
+        else if (intRegex.test(s)) internal.push(s);
+      });
+      return { external, internal, other: [] };
+    }
+    return base;
+  };
+  const profileGenderRows = useMemo(() => {
+    const map = new Map();
+    filteredSurveys.forEach((s) => {
+      const labeled = s.answersLabeled || {};
+      const sex =
+        labeled["Sex/Gender"] ||
+        labeled["Gender"] ||
+        labeled["Sex"] ||
+        "Unknown";
+      const services = Array.isArray(labeled["Service Availed"])
+        ? labeled["Service Availed"]
+        : [];
+      const { external = [], internal = [] } = classifyWithFallback(services);
+      const hasExternal = (external || []).length > 0;
+      const hasInternal = (internal || []).length > 0;
+      const rec = map.get(sex) || {
+        key: sex,
+        gender: sex,
+        external: 0,
+        internal: 0,
+      };
+      if (hasExternal) rec.external += 1;
+      if (hasInternal) rec.internal += 1;
+      map.set(sex, rec);
+    });
+    return Array.from(map.values());
+  }, [filteredSurveys]);
+
+  const profileCustomerRows = useMemo(() => {
+    const map = new Map();
+    filteredSurveys.forEach((s) => {
+      const labeled = s.answersLabeled || {};
+      const customerType = labeled["Customer Type"] || "Unknown";
+      const services = Array.isArray(labeled["Service Availed"])
+        ? labeled["Service Availed"]
+        : [];
+      const { external = [], internal = [] } = classifyWithFallback(services);
+      const hasExternal = (external || []).length > 0;
+      const hasInternal = (internal || []).length > 0;
+      const rec = map.get(customerType) || {
+        key: customerType,
+        customerType,
+        external: 0,
+        internal: 0,
+      };
+      if (hasExternal) rec.external += 1;
+      if (hasInternal) rec.internal += 1;
+      map.set(customerType, rec);
+    });
+    return Array.from(map.values());
+  }, [filteredSurveys]);
+
+  // Columns
+  const ccGroupColumns = [
+    {
+      title: "Citizens Answers",
+      dataIndex: "item",
+      key: "item",
+      onHeaderCell: () => ({ style: { width: "50%" } }),
+      onCell: () => ({ style: { width: "50%" } }),
+      render: (txt) => <div style={{ whiteSpace: "pre-wrap" }}>{txt}</div>,
+    },
+    {
+      title: "Response Count",
+      dataIndex: "count",
+      key: "count",
+      onHeaderCell: () => ({ style: { width: "25%" } }),
+      onCell: () => ({ style: { width: "25%" } }),
+      align: "center"
+    },
+    {
+      title: "Percentage",
+      dataIndex: "percentage",
+      key: "percentage",
+      onHeaderCell: () => ({ style: { width: "25%" } }),
+      onCell: () => ({ style: { width: "25%" } }),
+      render: (v) => `${v}%`,
+      align: "center"
+    },
+  ];
+
+  const sqdColumns = [
+    {
+      title: "SQD Type",
+      dataIndex: "type",
+      key: "type",
+      render: (t) => <Text strong>{t}</Text>,
+    },
+    {
+      title: "Strongly Agree",
+      dataIndex: "sa",
+      key: "sa",
+      render: (v) => <Tag color="blue">{v}</Tag>,
+    },
+    {
+      title: "Agree",
+      dataIndex: "a",
+      key: "a",
+      render: (v) => <Tag color="green">{v}</Tag>,
+    },
+    {
+      title: "Neither Agree nor Disagree",
+      dataIndex: "n",
+      key: "n",
+      render: (v) => <Tag color="orange">{v}</Tag>,
+    },
+    {
+      title: "Disagree",
+      dataIndex: "d",
+      key: "d",
+      render: (v) => <Tag color="red">{v}</Tag>,
+    },
+    {
+      title: "Strongly Disagree",
+      dataIndex: "sd",
+      key: "sd",
+      render: (v) => <Tag color="magenta">{v}</Tag>,
+    },
+    { title: "N/A", dataIndex: "na", key: "na" },
+    { title: "Total Response", dataIndex: "total", key: "total" },
+    {
+      title: "Percentage Score",
+      dataIndex: "percentage",
+      key: "percentage",
+      render: (v) => <Text strong>{v}%</Text>,
+    },
+  ];
+
+  const serviceColumns = [
+    { title: "Type of Service", dataIndex: "service", key: "service" },
+    { title: "Response Count", dataIndex: "count", key: "count" },
+    {
+      title: "Percentage Score",
+      dataIndex: "percentage",
+      key: "percentage",
+      render: (v) => `${v}%`,
+    },
+  ];
+
+  const profileGenderColumns = [
+    { title: "Respondent Sex/Gender", dataIndex: "gender", key: "gender" },
+    {
+      title: "External Service Availed Response Count",
+      dataIndex: "external",
+      key: "external",
+    },
+    {
+      title: "Internal Service Availed Response Count",
+      dataIndex: "internal",
+      key: "internal",
+    },
+  ];
+
+  const profileCustomerColumns = [
+    { title: "Customer Type", dataIndex: "customerType", key: "customerType" },
+    {
+      title: "External Service Availed Response Count",
+      dataIndex: "external",
+      key: "external",
+    },
+    {
+      title: "Internal Service Availed Response Count",
+      dataIndex: "internal",
+      key: "internal",
+    },
+  ];
+
+  // Export handlers per section
+  const onExportCcExcel = () =>
+    exportToExcel(
+      `cc-results-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      ccRows
+    );
+  const onExportSqdExcel = () =>
+    exportToExcel(
+      `sqd-results-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      sqdRows.map((r) => ({
+        "SQD Type": r.type,
+        "Strongly Agree": r.sa,
+        Agree: r.a,
+        "Neither Agree nor Disagree": r.n,
+        Disagree: r.d,
+        "Strongly Disagree": r.sd,
+        "N/A": r.na,
+        "Total Response": r.total,
+        "Percentage Score": `${r.percentage}%`,
+      }))
+    );
+  const onExportServicesExcel = () =>
+    exportToExcel(
+      `services-results-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      serviceRows.map((r) => ({
+        "Type of Service": r.service,
+        "Response Count": r.count,
+        "Percentage Score": `${r.percentage}%`,
+      }))
+    );
+  const onExportGenderExcel = () =>
+    exportToExcel(
+      `respondents-gender-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      profileGenderRows.map((r) => ({
+        "Respondent Sex/Gender": r.gender,
+        "External Service Availed Response Count": r.external,
+        "Internal Service Availed Response Count": r.internal,
+      }))
+    );
+  const onExportCustomerExcel = () =>
+    exportToExcel(
+      `respondents-customer-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      profileCustomerRows.map((r) => ({
+        "Customer Type": r.customerType,
+        "External Service Availed Response Count": r.external,
+        "Internal Service Availed Response Count": r.internal,
+      }))
+    );
+
+  const onExportCcPdf = () => {
+    exportToPdf(
+      "Citizen's Charter Results",
+      ["Answer", "Response Count", "Percentage"],
+      ccRows.map((r) => [r.item, r.count, `${r.percentage}%`]),
+      `cc-results-${new Date().toISOString().slice(0, 10)}.pdf`
+    );
+  };
+
+  const onExportSqdPdf = () => {
+    exportToPdf(
+      "9 Service Quality Dimension Results",
+      [
+        "SQD Type",
+        "Strongly Agree",
+        "Agree",
+        "Neither Agree nor Disagree",
+        "Disagree",
+        "Strongly Disagree",
+        "N/A",
+        "Total Response",
+        "Percentage Score",
+      ],
+      sqdRows.map((r) => [
+        r.type,
+        r.sa,
+        r.a,
+        r.n,
+        r.d,
+        r.sd,
+        r.na,
+        r.total,
+        `${r.percentage}%`,
+      ]),
+      `sqd-results-${new Date().toISOString().slice(0, 10)}.pdf`
+    );
+  };
+
+  const onExportServicesPdf = () => {
+    exportToPdf(
+      "Score Per Service Availed",
+      ["Type of Service", "Response Count", "Percentage Score"],
+      serviceRows.map((r) => [r.service, r.count, `${r.percentage}%`]),
+      `services-results-${new Date().toISOString().slice(0, 10)}.pdf`
+    );
+  };
+
+  const onExportGenderPdf = () => {
+    exportToPdf(
+      "Respondents Profile (Gender/Sex)",
+      ["Respondent Sex/Gender", "External Count", "Internal Count"],
+      profileGenderRows.map((r) => [r.gender, r.external, r.internal]),
+      `respondents-gender-${new Date().toISOString().slice(0, 10)}.pdf`
+    );
+  };
+
+  const onExportCustomerPdf = () => {
+    exportToPdf(
+      "Respondents Profile (Customer Type)",
+      ["Customer Type", "External Count", "Internal Count"],
+      profileCustomerRows.map((r) => [r.customerType, r.external, r.internal]),
+      `respondents-customer-${new Date().toISOString().slice(0, 10)}.pdf`
     );
   };
 
   return (
-    <div>
-      {contextHolder}
-      {/* rest of component renders below (unchanged) */}
-    </div>
-  );
-
-  const tagColors = {
-    Citizen: "green",
-    Business: "blue",
-    Government: "geekblue",
-    Others: "magenta",
-  };
-
-  const serviceColors = {
-    "ECC Online": "#0b5f74",
-    "CNC Online": "#bc6e00",
-    "OPMS Online": "#4a2250",
-    "HWMS Online": "#415e20",
-    "CMR Online": "#542c14",
-    "COC Online": "#607d8b",
-    "ELR Online": "#9c27b0",
-    "Importation Clearance": "#5d4037",
-    "PCB Online": "#37474f",
-    "PCL Online": "#795548",
-    "PMPIN Online": "#3e2723",
-    "CRS Online": "#33691e",
-    "SMR Online": "#1a237e",
-    "PCO Online": "#263238",
-  };
-
-  const sqdColorMap = {
-    "Strongly Agree": "green",
-    Agree: "blue",
-    Neutral: "orange",
-    Disagree: "volcano",
-    "Strongly Disagree": "red",
-  };
-
-  const columns = [
-    {
-      title: "Region",
-      dataIndex: ["answersLabeled", "Region"],
-      key: "region",
-    },
-    {
-      title: "Agency",
-      dataIndex: ["answersLabeled", "Agency"],
-      key: "agency",
-    },
-    {
-      title: "Service Availed",
-      dataIndex: ["answersLabeled", "Service Availed"],
-      key: "service",
-      filters: Object.keys(serviceColors).map((s) => ({
-        text: s,
-        value: s,
-      })),
-      onFilter: (value, record) =>
-        record.answersLabeled?.["Service Availed"]?.includes(value),
-      sorter: (a, b) => {
-        const aCount = a.answersLabeled?.["Service Availed"]?.length || 0;
-        const bCount = b.answersLabeled?.["Service Availed"]?.length || 0;
-        return bCount - aCount;
-      },
-      render: (services) =>
-        Array.isArray(services)
-          ? services.map((s, i) => (
-              <Tag key={i} color={serviceColors[s] || "default"}>
-                {s}
-              </Tag>
-            ))
-          : "-",
-    },
-    {
-      title: "Customer Type",
-      dataIndex: ["answersLabeled", "Customer Type"],
-      key: "customerType",
-      render: (type) => <Tag color={tagColors[type] || "default"}>{type}</Tag>,
-    },
-    {
-      title: "Age",
-      dataIndex: ["answersLabeled", "Age"],
-      key: "age",
-    },
-    {
-      title: "Gender",
-      dataIndex: ["answersLabeled", "Gender"],
-      key: "gender",
-    },
-    {
-      title: "Citizens Charter",
-      key: "ccGroup",
-      render: (_, record) => {
-        const a = record.answers || {};
-        const ccTags = [
-          { label: "CC1", key: "answer_6870a4056988ee91c469a5e9" },
-          { label: "CC2", key: "answer_6870a4396988ee91c469a5f2" },
-          { label: "CC3", key: "answer_6870a4646988ee91c469a5fa" },
-        ];
-
-        const cleanCCResponse = (response = "") => {
-          // Remove anything inside parentheses (e.g., "(Skip questions CC2 and CC3)")
-          return response.replace(/\s*\(.*?\)\s*/gi, "").trim();
-        };
-
-        return (
-          <div style={{ whiteSpace: "pre-line" }}>
-            {ccTags
-              .filter(({ key }) => a[key])
-              .map(({ label, key }) => {
-                const raw = a[key];
-                const cleaned = cleanCCResponse(raw);
-                const isYes = cleaned.toLowerCase().includes("yes");
-                const isNo = cleaned.toLowerCase().includes("no");
-                const color = isYes ? "green" : isNo ? "volcano" : "default";
-
-                return (
-                  <div key={key}>
-                    <Tag color={color}>
-                      {label}: {cleaned}
-                    </Tag>
-                  </div>
-                );
-              })}
-          </div>
-        );
-      },
-    },
-
-    {
-      title: "Service Quality Dimensions",
-      key: "sqdGroup",
-      render: (_, record) => {
-        const a = record.answers || {};
-        const sqdMap = {
-          answer_6870a4e26988ee91c469a604:
-            "I am satisfied with the service that I availed.",
-          answer_6870a52d6988ee91c469a60d:
-            "I spent a reasonable amount of time for my transaction. (Responsiveness)",
-          answer_6870a5436988ee91c469a611:
-            "The office accurately informed and followed the transaction's requirements and steps. (Reliability)",
-          answer_6870a58e6988ee91c469a615:
-            "My online transaction (including steps and payment) was simple and convenient. (Access and Facilities)",
-          answer_6870a5c66988ee91c469a61e:
-            "I easily found information about my transaction from the office or its website. (Communication)",
-          answer_6870a5dd6988ee91c469a622:
-            "I paid an acceptable amount of fees for my transaction. (Costs)",
-          answer_6870a6556988ee91c469a634:
-            "I am confident my online transaction was secure. (Integrity)",
-          answer_6870a66a6988ee91c469a638:
-            "The office's online support was available, or (if asked questions) online support was quick to respond. (Assurance)",
-          answer_6870a67b6988ee91c469a63c:
-            "I got what I needed from the government office. (Outcome)",
-        };
-
-        const tagColorMap = {
-          "Strongly Agree": "green",
-          Agree: "blue",
-          Neutral: "orange",
-          Disagree: "red",
-          "Strongly Disagree": "volcano",
-        };
-
-        const tooltipBgColorMap = {
-          "Strongly Agree": "#52c41a",
-          Agree: "#1890ff",
-          Neutral: "#faad14",
-          Disagree: "#ff4d4f",
-          "Strongly Disagree": "#a8071a",
-        };
-
-        return (
-          <div style={{ whiteSpace: "pre-line" }}>
-            {Object.entries(sqdMap).map(([key, question], index) => {
-              const response = a[key];
-              if (!response) return null;
-
-              return (
-                <div key={key}>
-                  <Tooltip
-                    title={question}
-                    styles={{
-                      body: {
-                        backgroundColor: tooltipBgColorMap[response] || "#d9d9d9",
-                        color: "#fff",
-                        borderRadius: "6px",
-                        fontWeight: 500,
-                      },
-                    }}
-                  >
-                    <Tag color={tagColorMap[response] || "default"}>
-                      SQD {index}: {response}
-                    </Tag>
-                  </Tooltip>
-                </div>
-              );
-            })}
-          </div>
-        );
-      },
-    },
-    {
-      title: "Remarks",
-      dataIndex: ["answers", "answer_687604cc768f4175c4364582"],
-      key: "remarks",
-      render: (text) => <Tag color="purple">{text}</Tag>,
-    },
-    {
-      title: "Submitted At",
-      dataIndex: "submittedAt",
-      key: "submittedAt",
-      sorter: (a, b) => new Date(b.submittedAt) - new Date(a.submittedAt),
-      render: (date) => dayjs(date).format("MM/DD/YYYY hh:mm A"),
-    },
-  ];
-
-  return (
-    <div className="generate-report-container">
-      <Card>
-        <Title level={4} className="generate-report-title">
-          <FileSearchOutlined /> Generate Client Satisfaction Report
+    <Space direction="vertical" style={{ width: "100%" }} size={16}>
+      <Card className="gr-card">
+        <Title level={3} className="gr-title">
+          Generate Report
         </Title>
-
-        <div className="filter-pagination-row">
-          <div className="filters-left">
-            <Space wrap>
-              <RangePicker onChange={(dates) => setDateRange(dates)} />
-              <Select
-                allowClear
-                placeholder="Select Region"
-                style={{ width: 150 }}
-                onChange={(value) => setFilters({ ...filters, region: value })}
-              >
-                {getUniqueValues("Region").map((r) => (
-                  <Option key={r} value={r}>
-                    {r}
-                  </Option>
-                ))}
-              </Select>
-
-              <Select
-                allowClear
-                placeholder="Select Agency"
-                style={{ width: 150 }}
-                onChange={(value) => setFilters({ ...filters, agency: value })}
-              >
-                {getUniqueValues("Agency").map((a) => (
-                  <Option key={a} value={a}>
-                    {a}
-                  </Option>
-                ))}
-              </Select>
-
-              <Select
-                allowClear
-                placeholder="Customer Type"
-                style={{ width: 150 }}
-                onChange={(value) =>
-                  setFilters({ ...filters, customerType: value })
-                }
-              >
-                {getUniqueValues("Customer Type").map((ct) => (
-                  <Option key={ct} value={ct}>
-                    {ct}
-                  </Option>
-                ))}
-              </Select>
-
-              <Button type="primary" onClick={handleFilter}>
-                Filter
-              </Button>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={exportToExcel}
-                disabled={!filteredData.length}
-              >
-                Export to Excel
-              </Button>
-            </Space>
-          </div>
-
-          <div className="pagination-right">
-            <Pagination
-              size="small"
-              simple
-              current={currentPage}
-              pageSize={pageSize}
-              total={filteredData.length}
-              showSizeChanger
-              pageSizeOptions={["5", "10", "20", "50", "100"]}
-              onChange={(page, size) => {
-                setCurrentPage(page);
-                setPageSize(size);
-              }}
+        <Text type="secondary">
+          Download report tables as Excel or PDF. Styled to match the dashboard
+          color accents.
+        </Text>
+        <Divider style={{ margin: "12px 0" }} />
+        <Form
+          layout="inline"
+          onFinish={() => {}}
+          style={{ rowGap: 12 }}
+          onReset={() =>
+            setFilters({ dateRange: null, regions: [], customerTypes: [], agencies: [], services: [] })
+          }
+        >
+          <Form.Item label="Date Range">
+            <DatePicker.RangePicker
+              allowEmpty={[true, true]}
+              value={filters.dateRange}
+              onChange={(v) => setFilters((f) => ({ ...f, dateRange: v }))}
             />
-          </div>
-        </div>
-
-        <div className="table-responsive">
-          <Table
-            rowKey="_id"
-            columns={columns}
-            dataSource={filteredData.slice(
-              (currentPage - 1) * pageSize,
-              currentPage * pageSize
-            )}
-            loading={loading}
-            bordered
-            pagination={false}
-            scroll={{ x: 1200 }}
-          />
-        </div>
+          </Form.Item>
+          <Form.Item label="Region">
+            <Select
+              mode="multiple"
+              allowClear
+              showSearch
+              placeholder="All"
+              value={filters.regions}
+              onChange={(v) => setFilters((f) => ({ ...f, regions: v }))}
+              options={regionOptions.map((r) => ({ value: r, label: r }))}
+              style={{ minWidth: 180 }}
+            />
+          </Form.Item>
+          <Form.Item label="Customer Type">
+            <Select
+              mode="multiple"
+              allowClear
+              showSearch
+              placeholder="All"
+              value={filters.customerTypes}
+              onChange={(v) => setFilters((f) => ({ ...f, customerTypes: v }))}
+              options={customerTypeOptions.map((r) => ({ value: r, label: r }))}
+              style={{ minWidth: 200 }}
+            />
+          </Form.Item>
+          <Form.Item label="Agency/Company">
+            <Select
+              mode="multiple"
+              allowClear
+              showSearch
+              placeholder="All"
+              value={filters.agencies}
+              onChange={(v) => setFilters((f) => ({ ...f, agencies: v }))}
+              options={agencyOptions.map((r) => ({ value: r, label: r }))}
+              style={{ minWidth: 220 }}
+            />
+          </Form.Item>
+          <Form.Item label="Service Availed">
+            <Select
+              mode="multiple"
+              allowClear
+              showSearch
+              placeholder="All"
+              value={filters.services}
+              onChange={(v) => setFilters((f) => ({ ...f, services: v }))}
+              options={serviceOptions.map((r) => ({ value: r, label: r }))}
+              style={{ minWidth: 220 }}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button htmlType="reset">Reset</Button>
+            </Space>
+          </Form.Item>
+        </Form>
       </Card>
-    </div>
+
+      {/* 1. Citizens Charter Results */}
+      <Card
+        className="gr-card"
+        loading={loading}
+        title={<span>1. Citizen's Charter Results</span>}
+        extra={
+          <Space>
+            <Button onClick={onExportCcExcel}>Export Excel</Button>
+            <Button type="primary" onClick={onExportCcPdf}>
+              Export PDF
+            </Button>
+          </Space>
+        }
+      >
+        {["CC1", "CC2", "CC3"].map((sec, idx) => {
+          const group = ccGroups?.[sec];
+          if (!group) return null;
+          return (
+            <div key={sec} style={{ marginBottom: idx < 2 ? 16 : 0 }}>
+              <Title level={5} style={{ marginBottom: 8 }}>{`${sec}: ${group.questionText}`}</Title>
+              <Table
+                dataSource={group.rows}
+                columns={ccGroupColumns}
+                rowKey="key"
+                pagination={false}
+                size="small"
+                tableLayout="fixed"
+              />
+              {idx < 2 ? <Divider style={{ margin: "12px 0" }} /> : null}
+            </div>
+          );
+        })}
+      </Card>
+
+      {/* 2. 9 Service Quality Dimension Results */}
+      <Card
+        className="gr-card"
+        loading={loading}
+        title={<span>2. 9 Service Quality Dimension Results (SQD)</span>}
+        extra={
+          <Space>
+            <Button onClick={onExportSqdExcel}>Export Excel</Button>
+            <Button type="primary" onClick={onExportSqdPdf}>
+              Export PDF
+            </Button>
+          </Space>
+        }
+      >
+        <Table
+          dataSource={sqdRows}
+          columns={sqdColumns}
+          rowKey="key"
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: true }}
+          size="small"
+        />
+      </Card>
+
+      {/* 3. Score Per Service Availed */}
+      <Card
+        className="gr-card"
+        loading={loading}
+        title={<span>3. Score Per Service Availed</span>}
+        extra={
+          <Space>
+            <Button onClick={onExportServicesExcel}>Export Excel</Button>
+            <Button type="primary" onClick={onExportServicesPdf}>
+              Export PDF
+            </Button>
+          </Space>
+        }
+      >
+        <Table
+          dataSource={serviceRows}
+          columns={serviceColumns}
+          rowKey="key"
+          pagination={{ pageSize: 10 }}
+          size="small"
+        />
+      </Card>
+
+      {/* 4. Respondents Profile (Gender/Sex) */}
+      <Card
+        className="gr-card"
+        loading={loading}
+        title={<span>4. Respondents Profile (Gender/Sex)</span>}
+        extra={
+          <Space>
+            <Button onClick={onExportGenderExcel}>Export Excel</Button>
+            <Button type="primary" onClick={onExportGenderPdf}>
+              Export PDF
+            </Button>
+          </Space>
+        }
+      >
+        <Table
+          dataSource={profileGenderRows}
+          columns={profileGenderColumns}
+          rowKey="key"
+          pagination={{ pageSize: 10 }}
+          size="small"
+          summary={(data) => {
+            const totals = data.reduce(
+              (acc, r) => {
+                acc.external += r.external || 0;
+                acc.internal += r.internal || 0;
+                return acc;
+              },
+              { external: 0, internal: 0 }
+            );
+            return (
+              <Table.Summary>
+                <Table.Summary.Row>
+                  <Table.Summary.Cell index={0}>
+                    <Text strong>Total</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={1}>
+                    <Text strong>{totals.external}</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2}>
+                    <Text strong>{totals.internal}</Text>
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              </Table.Summary>
+            );
+          }}
+        />
+      </Card>
+
+      {/* 5. Respondents Profile (Customer Type) */}
+      <Card
+        className="gr-card"
+        loading={loading}
+        title={<span>5. Respondents Profile (Customer Type)</span>}
+        extra={
+          <Space>
+            <Button onClick={onExportCustomerExcel}>Export Excel</Button>
+            <Button type="primary" onClick={onExportCustomerPdf}>
+              Export PDF
+            </Button>
+          </Space>
+        }
+      >
+        <Table
+          dataSource={profileCustomerRows}
+          columns={profileCustomerColumns}
+          rowKey="key"
+          pagination={{ pageSize: 10 }}
+          size="small"
+          summary={(data) => {
+            const totals = data.reduce(
+              (acc, r) => {
+                acc.external += r.external || 0;
+                acc.internal += r.internal || 0;
+                return acc;
+              },
+              { external: 0, internal: 0 }
+            );
+            return (
+              <Table.Summary>
+                <Table.Summary.Row>
+                  <Table.Summary.Cell index={0}>
+                    <Text strong>Total</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={1}>
+                    <Text strong>{totals.external}</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2}>
+                    <Text strong>{totals.internal}</Text>
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              </Table.Summary>
+            );
+          }}
+        />
+      </Card>
+    </Space>
   );
 }
-
-export default GenerateReport;

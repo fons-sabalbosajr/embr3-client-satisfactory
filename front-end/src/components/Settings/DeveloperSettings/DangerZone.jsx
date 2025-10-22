@@ -54,6 +54,18 @@ export default function DangerZone() {
     // TODO: Call API to enable/disable maintenance mode
   };
 
+  const handleSyncServices = async () => {
+    setLoading(true);
+    try {
+      await api.syncServicesFromEnv();
+      await fetchDbStatus();
+    } catch (err) {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Card style={{ border: "1px solid #ff4d4f" }}>
       <Title level={4} style={{ color: "#cf1322" }}>
@@ -104,6 +116,9 @@ export default function DangerZone() {
               </Button>
               <Button onClick={fetchDbStatus} loading={loading}>
                 Refresh
+              </Button>
+              <Button onClick={handleSyncServices} loading={loading}>
+                Sync Services (from .env)
               </Button>
             </Space>
           </Space>
