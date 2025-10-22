@@ -2,6 +2,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { requirePermission } from "../middleware/permission.js";
+import { getEmailHealth } from "../utils/email.js";
 
 const router = express.Router();
 
@@ -171,3 +172,19 @@ router.get(
 );
 
 export default router;
+
+// Email transport health check (admin only)
+router.get(
+  "/email/health",
+  authMiddleware,
+  requirePermission("canManageUsers"),
+  async (req, res) => {
+    try {
+      const health = await getEmailHealth();
+      res.json({ ok: !!health.ok, error: health.error || null });
+    } catch (err) {
+      console.error("Email health check error:", err);
+      res.status(500).json({ ok: false, error: err.message || String(err) });
+    }
+  }
+);
