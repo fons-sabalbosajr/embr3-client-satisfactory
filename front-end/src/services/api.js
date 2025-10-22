@@ -1,10 +1,11 @@
 import axios from "axios";
 import { getDecryptedItem, getOpaqueItem } from "../utils/encryptedStorage";
 
-// Use a relative base URL so it works in dev (via Vite proxy) and prod (same origin)
-const API = axios.create({
-  baseURL: "/api",
-});
+// Base URL strategy:
+// - Prefer VITE_API_BASE when deploying frontend and backend on different domains (e.g., Render multi-service)
+// - Fallback to same-origin "/api" (works in dev with Vite proxy and when backend serves the SPA)
+const baseURL = import.meta?.env?.VITE_API_BASE || "/api";
+const API = axios.create({ baseURL });
 
 // Add request interceptor to include auth token
 API.interceptors.request.use((config) => {
