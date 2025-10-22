@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Prefer explicit SMTP config if provided; fallback to Gmail service
+// Prefer explicit SMTP config if provided; fallback to Gmail SMTP if EMAIL_USER/PASS are set
 const getTransport = () => {
   if (process.env.SMTP_HOST) {
     const port = Number(process.env.SMTP_PORT || 587);
@@ -16,22 +16,81 @@ const getTransport = () => {
         user: process.env.SMTP_USER || process.env.EMAIL_USER,
         pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
       },
+      pool: true,
+      maxConnections: Number(process.env.SMTP_MAX_CONNECTIONS || 3),
+      maxMessages: Number(process.env.SMTP_MAX_MESSAGES || 100),
+      connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 20000),
+      socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 20000),
+      greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 20000),
     });
   }
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    // Try Gmail SMTP directly (more reliable than service:"gmail" in some hosts)
+    const useGmailSmtp = /@gmail\.com$|@googlemail\.com$/i.test(process.env.EMAIL_USER || "");
+    if (useGmailSmtp) {
+      return nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: Number(process.env.GMAIL_SMTP_PORT || 465),
+        secure: String(process.env.GMAIL_SMTP_SECURE || "true").toLowerCase() === "true",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+        pool: true,
+        maxConnections: Number(process.env.SMTP_MAX_CONNECTIONS || 3),
+        maxMessages: Number(process.env.SMTP_MAX_MESSAGES || 100),
+        connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 20000),
+        socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 20000),
+        greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 20000),
+      });
+    }
+    // Generic fallback using service
+    return nodemailer.createTransport({
+      service: process.env.EMAIL_SERVICE || "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      pool: true,
+      maxConnections: Number(process.env.SMTP_MAX_CONNECTIONS || 3),
+      maxMessages: Number(process.env.SMTP_MAX_MESSAGES || 100),
+      connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 20000),
+      socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 20000),
+      greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 20000),
+    });
+  }
+  console.warn("Email transport is not configured: missing EMAIL_USER/EMAIL_PASS or SMTP_HOST.");
+  return nodemailer.createTransport({ jsonTransport: true });
 };
 
 const transporter = getTransport();
 
+let lastVerify = { ok: false, error: "not-verified" };
+// Verify transporter asynchronously on startup
+(async () => {
+  try {
+    await transporter.verify();
+    lastVerify = { ok: true };
+    console.log("Mail transporter verified and ready.");
+  } catch (err) {
+    lastVerify = { ok: false, error: err?.message || String(err) };
+    console.error("Mail transporter verification failed:", err?.message || err);
+  }
+})();
+
+export const getEmailHealth = async () => {
+  try {
+    await transporter.verify();
+    lastVerify = { ok: true };
+  } catch (err) {
+    lastVerify = { ok: false, error: err?.message || String(err) };
+  }
+  return lastVerify;
+};
+
 export const sendVerificationEmail = async (to, name, link) => {
   return transporter.sendMail({
-    from: `"EMB Region III Online CSM Portal" <${process.env.EMAIL_USER}>`,
+    from: `${process.env.EMAIL_FROM || "EMB Region III Online CSM Portal"} <${process.env.EMAIL_USER}>`,
     to,
     subject: "Verify your email address",
     html: `
@@ -71,7 +130,7 @@ export const sendVerificationEmail = async (to, name, link) => {
 
 export const sendResetPasswordEmail = async (to, name, resetLink) => {
   return transporter.sendMail({
-    from: `"EMB Region III Online CSM Portal" <${process.env.EMAIL_USER}>`,
+    from: `${process.env.EMAIL_FROM || "EMB Region III Online CSM Portal"} <${process.env.EMAIL_USER}>`,
     to,
     subject: "Password Reset Request",
     html: `
