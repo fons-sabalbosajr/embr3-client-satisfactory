@@ -17,13 +17,49 @@ function FeedbackTable({ questions, language }) {
   const cc1Answer = Form.useWatch(`answer_${q7?._id}`, { form });
   const cc2Answer = Form.useWatch(`answer_${q8?._id}`, { form });
 
-  // Business rules:
-  // - If CC1 (Q7) == "I don't know" -> disable CC2 (Q8) and CC3 (Q9)
-  // - If CC2 (Q8) == "Not Applicable" -> disable CC3 (Q9)
+  // Business rules (multi-language aware):
+  // - If CC1 (Q7) equals the localized "I do not know what a Citizen's Charter is" -> disable CC2 (Q8) and CC3 (Q9)
+  // - If CC2 (Q8) equals the localized "Not Applicable" -> disable CC3 (Q9)
   const cc1Str = (cc1Answer || "").toString();
   const cc2Str = (cc2Answer || "").toString();
-  const cc1IsDontKnow = /don\s*'?t\s*know/i.test(cc1Str);
-  const cc2IsNotApplicable = /not\s*applicable/i.test(cc2Str);
+
+  // Pull localized option lists (fallback to provided options)
+  const q7LocalizedOptions = i18n.t(`questions.Q7.options`, {
+    returnObjects: true,
+    defaultValue: q7?.options || [],
+  });
+  const q8LocalizedOptions = i18n.t(`questions.Q8.options`, {
+    returnObjects: true,
+    defaultValue: q8?.options || [],
+  });
+
+  // Known patterns across languages
+  const DONT_KNOW_PATTERNS = [
+    /i\s+do\s+not\s+know\s+what\s+a\s+citizen'?s\s+charter\s+is\.?/i, // EN exact
+    /don\s*'?t\s*know/i, // EN contraction
+    /hindi\s+ko\s+alam/i, // FIL
+  ];
+  const NA_PATTERNS = [
+    /not\s*applicable/i, // EN
+    /\(\s*N\/?A\s*\)/i, // (N/A)
+    /hindi\s+naa+angkop/i, // FIL with multi 'a'
+  ];
+
+  const cc1IsDontKnow =
+    (Array.isArray(q7LocalizedOptions) &&
+      q7LocalizedOptions.some((opt) =>
+        DONT_KNOW_PATTERNS.some((rx) => rx.test(String(opt)))
+      ) &&
+      DONT_KNOW_PATTERNS.some((rx) => rx.test(cc1Str))) ||
+    DONT_KNOW_PATTERNS.some((rx) => rx.test(cc1Str));
+
+  const cc2IsNotApplicable =
+    (Array.isArray(q8LocalizedOptions) &&
+      q8LocalizedOptions.some((opt) =>
+        NA_PATTERNS.some((rx) => rx.test(String(opt)))
+      ) &&
+      NA_PATTERNS.some((rx) => rx.test(cc2Str))) ||
+    NA_PATTERNS.some((rx) => rx.test(cc2Str));
 
   const isQ8Skipped = cc1IsDontKnow;
   const isQ9Skipped = cc1IsDontKnow || cc2IsNotApplicable;
