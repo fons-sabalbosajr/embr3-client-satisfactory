@@ -124,6 +124,11 @@ app.use("/api/admin", adminRoute);
 app.use("/api/announcements", announcementsRoute);
 app.use("/api/service-categories", serviceCategoriesRoute);
 
+// Lightweight health endpoint for Render/uptime checks
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // DB Connection and start server
 mongoose
   .connect(process.env.MONGO_URI)
