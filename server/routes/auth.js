@@ -61,14 +61,37 @@ router.post("/signup", async (req, res) => {
   const { fullname, username, email, password } = req.body;
 
   try {
-    const existing = await User.findOne({ $or: [{ email }, { username }] });
-
-    if (existing && existing.isVerified) {
-      return res
-        .status(400)
-        .json({ message: "Email or username already exists" });
+    // Basic validation
+    if (!fullname || !username || !email || !password) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Please enter a valid email address." });
+    }
+    if (typeof password !== "string" || password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters." });
     }
 
+    const existing = await User.findOne({ $or: [{ email }, { username }] });
+
+    // If an account exists
+  if (existing) {
+      // For verified accounts, block duplicates
+      if (existing.isVerified) {
+        return res.status(400).json({ message: "Email or username already exists." });
+      }
+      // For unverified accounts, refresh token and resend verification email
+      existing.verificationToken = crypto.randomBytes(32).toString("hex");
+      await existing.save();
+      const verificationLink = `${getFrontendUrl(req)}/verify?token=${existing.verificationToken}&email=${encodeURIComponent(email)}`;
+      // Fire-and-forget email sending to reduce latency
+      sendVerificationEmail(email, existing.fullname || fullname, verificationLink)
+        .catch((emailErr) => console.error("❌ Resend verification email failed:", emailErr));
+      return res.status(200).json({ message: "We re-sent your verification email. Please check your inbox." });
+    }
+
+    // Create new unverified user
     const hashedPassword = await bcrypt.hash(password, 12);
     const verificationToken = crypto.randomBytes(32).toString("hex");
 
@@ -80,24 +103,44 @@ router.post("/signup", async (req, res) => {
       verificationToken,
     });
 
-    const verificationLink = `${getFrontendUrl(
-      req
-    )}/verify?token=${verificationToken}&email=${email}`;
+    const verificationLink = `${getFrontendUrl(req)}/verify?token=${verificationToken}&email=${encodeURIComponent(email)}`;
 
-    try {
-      await sendVerificationEmail(email, fullname, verificationLink);
-
-      return res.status(201).json({
-        message: "Verification email sent. Please check your inbox.",
-      });
-    } catch (emailErr) {
-      console.error("❌ Email sending failed:", emailErr);
-      return res.status(500).json({
-        message: "User created, but failed to send verification email.",
-      });
-    }
+    // Fire-and-forget email sending to reduce latency
+    sendVerificationEmail(email, fullname, verificationLink)
+      .catch((emailErr) => console.error("❌ Email sending failed after user creation:", emailErr));
+    return res.status(201).json({ message: "Verification email sent. Please check your inbox." });
   } catch (err) {
+    // Handle duplicate key error explicitly (race conditions)
+    if (err && err.code === 11000) {
+      return res.status(400).json({ message: "Email or username already exists." });
+    }
     console.error("❌ Signup failed:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Resend verification email
+router.post("/resend-verification", async (req, res) => {
+  const { email, username } = req.body || {};
+  try {
+    const user = await User.findOne(
+      email ? { email } : username ? { username } : null
+    );
+    if (!user) {
+      return res.status(404).json({ message: "No account found." });
+    }
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Account is already verified." });
+    }
+    user.verificationToken = crypto.randomBytes(32).toString("hex");
+    await user.save();
+    const verificationLink = `${getFrontendUrl(req)}/verify?token=${user.verificationToken}&email=${encodeURIComponent(user.email)}`;
+    // Fire-and-forget
+    sendVerificationEmail(user.email, user.fullname, verificationLink)
+      .catch((err) => console.error("❌ Resend verification failed:", err));
+    return res.json({ message: "Verification email sent." });
+  } catch (err) {
+    console.error("Resend verification error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -112,15 +155,25 @@ router.get("/verify", async (req, res) => {
     // console.log("User found:", user);
 
     if (!user) {
+      // Respond JSON for XHR, otherwise send plain text
+      if (req.xhr || req.headers.accept?.includes("application/json")) {
+        return res.status(400).json({ message: "Invalid verification link" });
+      }
       return res.status(400).send("Invalid verification link");
     }
 
     if (user.isVerified) {
-      // Already verified, redirect to admin-auth
-      return res.redirect(`${getFrontendUrl(req)}/admin-auth`);
+      // Already verified
+      if (req.xhr || req.headers.accept?.includes("application/json")) {
+        return res.json({ message: "Email already verified." });
+      }
+      return res.redirect(`${getFrontendUrl(req)}/admin`);
     }
 
     if (user.verificationToken !== token) {
+      if (req.xhr || req.headers.accept?.includes("application/json")) {
+        return res.status(400).json({ message: "Invalid verification token" });
+      }
       return res.status(400).send("Invalid verification token");
     }
 
@@ -128,10 +181,16 @@ router.get("/verify", async (req, res) => {
     user.verificationToken = undefined;
     await user.save();
 
-    // Redirect to admin-auth after successful verification
-    return res.redirect(`${getFrontendUrl(req)}/admin-auth`);
+    // For XHR, return JSON; for direct link, redirect to /admin
+    if (req.xhr || req.headers.accept?.includes("application/json")) {
+      return res.json({ message: "Email verified successfully." });
+    }
+    return res.redirect(`${getFrontendUrl(req)}/admin`);
   } catch (err) {
     console.error("Verification error:", err);
+    if (req.xhr || req.headers.accept?.includes("application/json")) {
+      return res.status(500).json({ message: "Server error" });
+    }
     res.status(500).send("Server error");
   }
 });
