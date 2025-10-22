@@ -9,10 +9,13 @@ import { preloadConfig } from "./utils/config";
 
 //console.log("App is loading...");
 
-window.addEventListener("error", (e) => {
-  console.error("Runtime error:", e);
-  alert("Runtime error: " + e.message);
-});
+if (import.meta && import.meta.env && import.meta.env.DEV) {
+  window.addEventListener("error", (e) => {
+    console.error("Runtime error:", e);
+    // Show alert in dev to surface issues early; avoid noisy alerts in production
+    alert("Runtime error: " + e.message);
+  });
+}
 
 // Preload runtime config, then mount app
 preloadConfig().finally(() => {

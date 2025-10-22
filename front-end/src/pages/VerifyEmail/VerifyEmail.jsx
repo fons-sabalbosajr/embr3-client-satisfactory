@@ -1,14 +1,14 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
-import { verifyEmail } from "../../services/api";
+import { verifyEmail as verifyEmailApi } from "../../services/api";
 
 function VerifyPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const verifyEmail = async () => {
+    const runVerification = async () => {
       const token = searchParams.get("token");
       const email = searchParams.get("email");
 
@@ -23,12 +23,12 @@ function VerifyPage() {
       }
 
       try {
-        const res = await verifyEmail({ token, email });
+        const res = await verifyEmailApi({ token, email });
 
         Swal.fire({
           icon: "success",
           title: "Email Verified",
-          text: res.data.message || "You may now log in.",
+          text: res?.data?.message || "You may now log in.",
         }).then(() => {
           navigate("/admin");
         });
@@ -38,7 +38,7 @@ function VerifyPage() {
           icon: "error",
           title: "Verification Failed",
           text:
-            err.response?.data?.message ||
+            err?.response?.data?.message ||
             "Something went wrong. Please try again.",
         }).then(() => {
           navigate("/admin");
@@ -46,7 +46,7 @@ function VerifyPage() {
       }
     };
 
-    verifyEmail();
+    runVerification();
   }, []);
 
   return null; // No UI, just logic + redirect

@@ -1,7 +1,7 @@
 // src/mainApp.jsx
 import "./utils/devConsolePatch";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { MantineProvider } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
 import { Routes, Route, Navigate } from "react-router-dom"; // Router is provided at root in main.jsx
@@ -82,9 +82,21 @@ const MainApp = () => {
     migrateKey("darkMode");
   }, []);
 
-  const isAuthenticated = !!(
-    getOpaqueItem("token") ?? localStorage.getItem("token")
-  );
+  // React to auth changes (e.g., login/logout) via custom event and storage
+  const [authTick, setAuthTick] = useState(0);
+  useEffect(() => {
+    const onAuthChanged = () => setAuthTick((t) => t + 1);
+    window.addEventListener("auth:changed", onAuthChanged);
+    window.addEventListener("storage", onAuthChanged);
+    return () => {
+      window.removeEventListener("auth:changed", onAuthChanged);
+      window.removeEventListener("storage", onAuthChanged);
+    };
+  }, []);
+
+  const isAuthenticated = useMemo(() => {
+    return !!(getOpaqueItem("token") ?? localStorage.getItem("token"));
+  }, [authTick]);
 
   // Read maintenance mode from localStorage (or API in future)
   const maintenanceMode = localStorage.getItem("maintenanceMode") === "true";

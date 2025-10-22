@@ -38,8 +38,12 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
   // Store user data encrypted using setEncryptedItem for compatibility
   setEncryptedItem("user", JSON.stringify(res.data.user));
 
-    // Navigate to admin without full reload to avoid static host 404 flash
-    navigate("/admin");
+    // Notify app shell that auth state changed, then navigate
+    try {
+      window.dispatchEvent(new Event("auth:changed"));
+    } catch {}
+  // Navigate to admin dashboard without full reload to avoid static host 404 flash
+  navigate("/admin/dashboard", { replace: true });
     } catch (err) {
       console.error("Login error:", err);
       Swal.fire({
