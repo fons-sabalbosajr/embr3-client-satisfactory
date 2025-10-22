@@ -3,7 +3,9 @@ let cachedConfig = {};
 
 export function preloadConfig() {
   if (!configPromise) {
-    configPromise = fetch("/api/config", { credentials: "include" })
+    const API_BASE = (typeof import.meta !== "undefined" && import.meta?.env?.VITE_API_BASE) || "/api";
+    const url = `${API_BASE.replace(/\/$/, "")}/config`;
+    configPromise = fetch(url, { credentials: "include" })
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load config");
         return r.json();
