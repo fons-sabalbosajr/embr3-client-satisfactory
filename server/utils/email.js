@@ -142,9 +142,9 @@ let lastVerify = { ok: false, error: "not-verified" };
       lastVerify = { ok: true };
       const dbg = (String(envStr("SMTP_DEBUG", "")).toLowerCase() === "true") || (String(envStr("EMAIL_DEBUG", "")).toLowerCase() === "true");
       if (dbg) {
-        console.log(`Mail transporter verified (SMTP): host=${transporter.options.host} port=${transporter.options.port} secure=${transporter.options.secure}`);
+        //console.log(`Mail transporter verified (SMTP): host=${transporter.options.host} port=${transporter.options.port} secure=${transporter.options.secure}`);
       } else {
-        console.log("Mail transporter verified and ready (SMTP).");
+        //console.log("Mail transporter verified and ready (SMTP).");
       }
     }
   } catch (err) {

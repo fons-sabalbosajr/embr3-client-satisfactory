@@ -198,7 +198,7 @@ router.get("/verify", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { username, password } = req.body; // <-- use username
   // Diagnostic: log incoming login attempt username only (avoid logging password)
-  console.debug("Login attempt for username:", username);
+  //console.debug("Login attempt for username:", username);
 
   try {
     const user = await User.findOne({ username }); // <-- find by username
