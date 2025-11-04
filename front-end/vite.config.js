@@ -1,4 +1,21 @@
 // Suppress only the noisy Node DEP0060 (util._extend) warning from transitive deps during Vite dev
+// Note: Listening to 'warning' does not suppress Node's default printing. We monkey-patch
+// emitWarning to drop just DEP0060 and allow all others through.
+const __origEmitWarning = process.emitWarning;
+process.emitWarning = function (...args) {
+  try {
+    const [warning, type, code] = args;
+    const msg = typeof warning === "string" ? warning : warning?.message || "";
+    const wCode = (typeof warning === "object" && warning?.code) || code;
+    if (wCode === "DEP0060" || /util\._extend/i.test(msg)) {
+      return; // drop this specific deprecation warning
+    }
+  } catch (_) {
+    // fall through to original
+  }
+  return __origEmitWarning.apply(process, args);
+};
+
 process.on("warning", (w) => {
   if (w && w.code === "DEP0060") return;
   // Pass through everything else
