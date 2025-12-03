@@ -70,13 +70,13 @@ function MeasurementViewModal({ visible, onClose, record }) {
       dataIndex: "answer",
       key: "answer",
       width: "35%",
-      render: (text) => {
-        let color = "default";
-        const lower = (text || "").toLowerCase();
-        if (lower === "yes") color = "green";
-        else if (lower === "no") color = "red";
-        return <Tag color={color}>{text}</Tag>;
-      },
+        render: (text) => {
+          let color = "default";
+          const lower = String(text || "").toLowerCase();
+          if (lower === "yes") color = "green";
+          else if (lower === "no") color = "red";
+          return <Tag color={color}>{Array.isArray(text) ? text.join(", ") : text}</Tag>;
+        },
     },
   ];
 
@@ -125,14 +125,14 @@ function MeasurementViewModal({ visible, onClose, record }) {
       key: "answer",
       width: "25%",
       render: (text) => {
-        const lower = (text || "").toLowerCase();
+        const lower = String(text || "").toLowerCase();
         let color = "default";
         if (["agree"].includes(lower)) color = "green";
         else if (["strongly agree"].includes(lower)) color = "blue";
         else if (["satisfactory"].includes(lower)) color = "orange";
         else if (["disagree"].includes(lower)) color = "red";
         else if (lower === "strongly disagree") color = "maroon";
-        return <Tag color={color}>{text}</Tag>;
+        return <Tag color={color}>{Array.isArray(text) ? text.join(", ") : text}</Tag>;
       },
     },
   ];
@@ -152,7 +152,7 @@ function MeasurementViewModal({ visible, onClose, record }) {
             <Col span={6}>
               <Card title="Positive" variant="plain" size="small">
                 <Title level={3} style={{ margin: 0, color: "#389e0d" }}>
-                  {Object.entries(record.answersLabeled || {}).filter(([q, a]) => q.toLowerCase().includes("citizen") && ["yes", "agree"].some((k) => a.toLowerCase().includes(k))).length}
+                  {Object.entries(record.answersLabeled || {}).filter(([q, a]) => q.toLowerCase().includes("citizen") && ["yes", "agree"].some((k) => String(a || "").toLowerCase().includes(k))).length}
                 </Title>
               </Card>
             </Col>
@@ -178,7 +178,7 @@ function MeasurementViewModal({ visible, onClose, record }) {
               <Card title="Neither Agree nor Disagree" variant="plain" size="small">
                 <Title level={3} style={{ margin: 0, color: "#fa8c16" }}>
                   {Object.entries(record.answersLabeled || {}).filter(([q, a]) => {
-                    const al = (a || '').toLowerCase();
+                    const al = String(a || "").toLowerCase();
                     return sqdKeywords.some((k) => q.toLowerCase().includes(k)) && (al === 'satisfactory' || al === 'neither agree nor disagree');
                   }).length}
                 </Title>
@@ -187,7 +187,7 @@ function MeasurementViewModal({ visible, onClose, record }) {
             <Col span={6}>
               <Card title="Negative" variant="plain" size="small">
                 <Title level={3} style={{ margin: 0, color: "#cf1322" }}>
-                  {Object.entries(record.answersLabeled || {}).filter(([q, a]) => sqdKeywords.some((k) => q.toLowerCase().includes(k)) && ["disagree", "strongly disagree"].includes(a.toLowerCase())).length}
+                  {Object.entries(record.answersLabeled || {}).filter(([q, a]) => sqdKeywords.some((k) => q.toLowerCase().includes(k)) && ["disagree", "strongly disagree"].includes(String(a || "").toLowerCase())).length}
                 </Title>
               </Card>
             </Col>

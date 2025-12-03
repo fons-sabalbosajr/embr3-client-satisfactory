@@ -1,12 +1,14 @@
 .service-tags-container {
   display: flex;
   flex-wrap: wrap;
-   max-width: 200px;
+  /* allow the tag list to flow and wrap within the table cell */
 }
 
 .service-tags-container .ant-tag {
-  //width: calc(33.33% - 6px); /* 3 per line, minus small spacing */
   margin-right: 6px;
   text-align: center;
-  white-space: normal;
+  white-space: nowrap; /* let tag width follow its text content */
+  overflow: visible;
+  display: inline-block;
+  box-sizing: border-box;
 }

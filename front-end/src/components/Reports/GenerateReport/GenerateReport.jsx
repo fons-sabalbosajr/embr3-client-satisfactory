@@ -24,6 +24,52 @@ import {
   INTERNAL_SERVICES,
 } from "../../../utils/serviceCategories";
 import "./generatereport.css";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as ReTooltip,
+  Legend as ReLegend,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  LabelList,
+} from "recharts";
+
+// Small reusable tooltip for Recharts to match Ant Design card styling
+const ChartTooltip = ({ active, payload, label }) => {
+  if (!active || !payload || !payload.length) return null;
+  const p = payload[0];
+  return (
+    <div className="gr-chart-tooltip">
+      <div className="gr-chart-tooltip-label">{label}</div>
+      <div className="gr-chart-tooltip-value">{p.value}</div>
+    </div>
+  );
+};
+
+const roundPx = 6; // small radius for bar corners
+// Color palette for services (distinct, professional colors)
+const SERVICE_PALETTE = [
+  "#1652f0",
+  "#1aa3a3",
+  "#ff7a45",
+  "#9254de",
+  "#ffa940",
+  "#13c2c2",
+  "#52c41a",
+  "#fa8c16",
+  "#1890ff",
+  "#f5222d",
+  "#2f54eb",
+  "#a0d911",
+  "#f759ab",
+  "#722ed1",
+  "#ff85c0",
+];
 
 const { Title, Text } = Typography;
 
@@ -783,9 +829,33 @@ export default function GenerateReport() {
         {["CC1", "CC2", "CC3"].map((sec, idx) => {
           const group = ccGroups?.[sec];
           if (!group) return null;
+          const ccChartData = (group.rows || []).map((r) => ({
+            name: (r.item || "").replace(/^\d+\.\s*/, ""),
+            count: r.count || 0,
+          }));
           return (
             <div key={sec} style={{ marginBottom: idx < 2 ? 16 : 0 }}>
               <Title level={5} style={{ marginBottom: 8 }}>{`${sec}: ${group.questionText}`}</Title>
+              <div style={{ width: "100%", height: 260, marginBottom: 12 }}>
+                <ResponsiveContainer>
+                  <BarChart data={ccChartData} margin={{ left: 8, right: 16 }}>
+                    <defs>
+                      <linearGradient id={`grad-cc-${sec}`} x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor="#69c0ff" stopOpacity={0.95} />
+                        <stop offset="100%" stopColor="#1677ff" stopOpacity={0.9} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis allowDecimals={false} />
+                    <ReTooltip content={ChartTooltip} />
+                    <ReLegend />
+                    <Bar dataKey="count" fill={`url(#grad-cc-${sec})`} radius={[roundPx, roundPx, 4, 4]} animationDuration={800}>
+                      <LabelList dataKey="count" position="top" style={{ fontSize: 12, fill: '#222' }} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
               <Table
                 dataSource={group.rows}
                 columns={ccGroupColumns}
@@ -814,6 +884,29 @@ export default function GenerateReport() {
           </Space>
         }
       >
+        <div style={{ width: "100%", height: 320, marginBottom: 12 }}>
+          <ResponsiveContainer>
+            <BarChart data={sqdRows} margin={{ left: 20, right: 20 }}>
+              <defs>
+                <linearGradient id="grad-sqd-a" x1="0" x2="1" y1="0" y2="0">
+                  <stop offset="0%" stopColor="#0050b3" stopOpacity={0.95} />
+                  <stop offset="100%" stopColor="#2f54eb" stopOpacity={0.9} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="type" />
+              <YAxis allowDecimals={false} />
+              <ReTooltip content={ChartTooltip} />
+              <ReLegend />
+              <Bar dataKey="sa" stackId="a" fill="#003f5c" radius={[roundPx, roundPx, 0, 0]} />
+              <Bar dataKey="a" stackId="a" fill="#2f4b7c" radius={[roundPx, roundPx, 0, 0]} />
+              <Bar dataKey="n" stackId="a" fill="#665191" radius={[roundPx, roundPx, 0, 0]} />
+              <Bar dataKey="d" stackId="a" fill="#a05195" radius={[roundPx, roundPx, 0, 0]} />
+              <Bar dataKey="sd" stackId="a" fill="#d45087" radius={[roundPx, roundPx, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
         <Table
           dataSource={sqdRows}
           columns={sqdColumns}
@@ -838,6 +931,24 @@ export default function GenerateReport() {
           </Space>
         }
       >
+        <div style={{ width: "100%", height: Math.min(520, 60 + serviceRows.length * 32), marginBottom: 12 }}>
+          <ResponsiveContainer>
+            <BarChart data={serviceRows.slice(0, 20)} layout="vertical" margin={{ left: 24, right: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" allowDecimals={false} />
+              {/* Give more width to Y axis so full service names can be displayed */}
+              <YAxis dataKey="service" type="category" width={320} tick={{ fontSize: 13 }} />
+              <ReTooltip content={ChartTooltip} />
+              <Bar dataKey="count" radius={[0, roundPx, roundPx, 0]}>
+                {serviceRows.slice(0, 20).map((entry, i) => (
+                  <Cell key={`cell-${i}`} fill={SERVICE_PALETTE[i % SERVICE_PALETTE.length]} />
+                ))}
+                <LabelList dataKey="count" position="right" style={{ fontSize: 12, fill: '#222' }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
         <Table
           dataSource={serviceRows}
           columns={serviceColumns}
@@ -861,6 +972,24 @@ export default function GenerateReport() {
           </Space>
         }
       >
+        <div style={{ width: "100%", height: 300, marginBottom: 12 }}>
+          <ResponsiveContainer>
+            <BarChart data={profileGenderRows} margin={{ left: 20, right: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="gender" />
+              <YAxis allowDecimals={false} />
+              <ReTooltip content={ChartTooltip} />
+              <ReLegend />
+              <Bar dataKey="external" stackId="b" fill="#52c41a" radius={[roundPx, roundPx, 0, 0]}>
+                <LabelList dataKey="external" position="top" />
+              </Bar>
+              <Bar dataKey="internal" stackId="b" fill="#fa8c16" radius={[roundPx, roundPx, 0, 0]}>
+                <LabelList dataKey="internal" position="top" />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
         <Table
           dataSource={profileGenderRows}
           columns={profileGenderColumns}
@@ -909,6 +1038,24 @@ export default function GenerateReport() {
           </Space>
         }
       >
+        <div style={{ width: "100%", height: 300, marginBottom: 12 }}>
+          <ResponsiveContainer>
+            <BarChart data={profileCustomerRows} margin={{ left: 20, right: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="customerType" />
+              <YAxis allowDecimals={false} />
+              <ReTooltip content={ChartTooltip} />
+              <ReLegend />
+              <Bar dataKey="external" stackId="c" fill="#13c2c2" radius={[roundPx, roundPx, 0, 0]}>
+                <LabelList dataKey="external" position="top" />
+              </Bar>
+              <Bar dataKey="internal" stackId="c" fill="#722ed1" radius={[roundPx, roundPx, 0, 0]}>
+                <LabelList dataKey="internal" position="top" />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
         <Table
           dataSource={profileCustomerRows}
           columns={profileCustomerColumns}
