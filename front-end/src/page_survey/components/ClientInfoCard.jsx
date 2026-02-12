@@ -144,7 +144,7 @@ function ClientInfoCard({ formItemName, form, options }) {
               label={t("genderLabel")}
               rules={[{ required: true, message: t("selectGender") }]}
             >
-              <Select placeholder={t("selectGender")}> 
+              <Select placeholder={t("selectGender")} popupClassName="survey-select-dropdown"> 
                 {genderOptions.map((g) => (
                   <Select.Option key={g} value={g}>
                     {t(`gender.${g}`)}
@@ -214,6 +214,7 @@ function ClientInfoCard({ formItemName, form, options }) {
               options={groupedServiceOptions}
               showSearch
               optionFilterProp="label"
+              popupClassName="survey-select-dropdown"
             />
           </Form.Item>
         </Col>

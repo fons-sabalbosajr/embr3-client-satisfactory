@@ -2,6 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FloatButton, Row, Col, Typography, Button, Select } from "antd";
 import { BulbOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import {
+  IconDeviceMobile,
+  IconLock,
+  IconSparkles,
+  IconBolt,
+  IconChecklist,
+} from "@tabler/icons-react";
 
 import { getFeedbacks } from "../../services/api";
 import EMBLogo from "../../assets/emblogo.svg";
@@ -11,9 +18,11 @@ import "./home.css";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 function Home({ toggleColorScheme }) {
+  const year = new Date().getFullYear();
+
   useEffect(() => {
     // Hide language key for non-authenticated users
     const isAuthenticated = !!(localStorage.getItem("token") || Object.keys(localStorage).find(k => k.includes("token")));
@@ -42,16 +51,41 @@ function Home({ toggleColorScheme }) {
     navigate(`/survey/page1?lang=${language}`);
   };
 
+  const languageOptions = [
+    {
+      value: "en",
+      label: (
+        <span className="lang-option">
+          <span className="lang-flag" aria-hidden="true">
+            🇬🇧
+          </span>
+          <span className="lang-label">English</span>
+        </span>
+      ),
+    },
+    {
+      value: "fil",
+      label: (
+        <span className="lang-option">
+          <span className="lang-flag" aria-hidden="true">
+            🇵🇭
+          </span>
+          <span className="lang-label">Filipino</span>
+        </span>
+      ),
+    },
+  ];
+
   return (
     <>
-      <div className="home-container">
+      <div className="client-home-container">
         {/* Background Circles */}
-        <div className="home-background-circles">
-          <div className="circle circle1" />
-          <div className="circle circle2" />
-          <div className="circle circle3" />
-          <div className="circle circle4" />
-          <div className="circle circle5" />
+        <div className="client-home-background-circles">
+          <div className="client-circle client-circle1" />
+          <div className="client-circle client-circle2" />
+          <div className="client-circle client-circle3" />
+          <div className="client-circle client-circle4" />
+          <div className="client-circle client-circle5" />
         </div>
 
         {/* ✅ Agency Header */}
@@ -77,56 +111,102 @@ function Home({ toggleColorScheme }) {
 
         {/* Hero Section */}
         <Row
-          gutter={[32, 32]}
           align="middle"
+          justify="center"
           className="hero-section"
-          style={{ minHeight: "calc(100vh - 200px)" }}
+          style={{ minHeight: "calc(100vh - var(--client-header-space))" }}
         >
-          <Col xs={24} md={12} className="hero-left">
+          <Col xs={24} md={24} className="hero-left">
             <div className="hero-left-inner">
-              <Title level={1} className="hero-title">
-                {t("csmTitle")}
-              </Title>
-              <Text
-                size="sm"
-                mb="md"
-                className="hero-subtitle"
-                style={{ maxWidth: 600 }}
-              >
-                {t("subtitle")}
-              </Text>
+              <div className="hero-card">
+                <div className="hero-big-slogan">{t("heroBigSlogan")}</div>
 
-              <Button
-                type="primary"
-                icon={<ArrowRightOutlined />}
-                onClick={handleTakeSurveyClick}
-                className="hero-button"
-              >
-                {t("takeSurvey")}
-              </Button>
+                <div className="hero-kicker">
+                  <IconSparkles size={18} />
+                  <span>{t("heroKicker")}</span>
+                </div>
 
-              <div className="language-select-wrapper">
-                <Select
-                  value={language}
-                  onChange={(value) => {
-                    setLanguage(value);
-                    i18n.changeLanguage(value);
-                  }}
-                  options={[
-                    { value: "en", label: "🇬🇧 English" },
-                    { value: "fil", label: "🇵🇭 Filipino" },
-                  ]}
-                  style={{ marginTop: 20, width: 180 }}
-                  placeholder={t("selectLanguage")}
-                />
+                <div className="hero-card-grid">
+                  <div className="hero-card-content">
+                    <Text className="hero-slogan">{t("heroSlogan")}</Text>
+
+                    <Text size="md" mb="md" className="hero-subtitle">
+                      {t("subtitle")}
+                    </Text>
+
+                    <div className="hero-pills" aria-label="Highlights">
+                      <span className="hero-pill">
+                        <IconBolt size={16} />
+                        {t("heroPillFast")}
+                      </span>
+                      <span className="hero-pill">
+                        <IconLock size={16} />
+                        {t("heroPillConfidential")}
+                      </span>
+                      <span className="hero-pill">
+                        <IconDeviceMobile size={16} />
+                        {t("heroPillMobile")}
+                      </span>
+                    </div>
+
+                    <div className="hero-cta-row">
+                      <Button
+                        type="primary"
+                        icon={<ArrowRightOutlined />}
+                        onClick={handleTakeSurveyClick}
+                        className="hero-button"
+                        size="large"
+                      >
+                        {t("takeSurvey")}
+                      </Button>
+
+                      <div className="language-select-wrapper">
+                        <Select
+                          value={language}
+                          onChange={(value) => {
+                            setLanguage(value);
+                            i18n.changeLanguage(value);
+                          }}
+                          options={languageOptions}
+                          className="hero-language-select"
+                          popupClassName="hero-language-dropdown"
+                          optionLabelProp="label"
+                          placeholder={t("selectLanguage")}
+                        />
+                      </div>
+                    </div>
+
+                    {!!feedbacks?.length && (
+                      <Text className="hero-social-proof">
+                        <IconChecklist size={16} />
+                        {feedbacks.length.toLocaleString()} response
+                        {feedbacks.length === 1 ? "" : "s"} recorded
+                      </Text>
+                    )}
+                  </div>
+
+                  <div className="hero-card-visual" aria-hidden="true">
+                    <div className="hero-visual-blob" />
+                    <img
+                      src={Survey}
+                      alt=""
+                      className="hero-image hero-image-in-card"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </Col>
-
-          <Col xs={24} md={12} className="hero-image-wrapper">
-            <img src={Survey} alt="Survey Graphic" className="hero-image" />
-          </Col>
         </Row>
+
+        <footer className="client-cover-footer" aria-label="Cover footer">
+          <div className="client-cover-footer-inner">
+            <span className="client-cover-footer-title">{t("csmTitle")}</span>
+            <span className="client-cover-footer-meta">© {year} EMB Region III. All rights reserved.</span>
+          </div>
+        </footer>
       </div>
 
       {/* Theme Toggle Button */}

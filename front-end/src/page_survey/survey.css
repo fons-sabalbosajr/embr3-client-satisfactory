@@ -18,6 +18,8 @@
   transition: background-color 0.3s ease, color 0.3s ease;
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
   justify-content: space-between;
 }
 
@@ -129,14 +131,25 @@ body[data-mantine-color-scheme="dark"] .address-text {
 /* === Survey Card === */
 .survey-page-content.ant-card {
   margin: 0 auto 40px auto;
-  max-width: 1200px;
+  max-width: 1180px;
+  width: min(1180px, calc(100% - 24px));
+  padding: 26px;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(2, 8, 23, 0.22);
+  border: 1px solid rgba(2, 6, 23, 0.12);
+  background: rgba(255, 255, 255, 0.86);
+  color: rgba(2, 6, 23, 0.90);
+  backdrop-filter: blur(10px);
+  transition: background-color 220ms ease, color 220ms ease,
+    border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
 
-  width: 100%;
-  box-shadow: 0 5px 15px rgba(4, 184, 16, 0.1);
-  padding: 24px;
-  background-color: #ffffff;
-  color: #000000;
-  transition: background-color 0.3s ease, color 0.3s ease;
+body[data-mantine-color-scheme="dark"] .survey-page-content.ant-card {
+  background: rgba(2, 6, 23, 0.70);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.55);
 }
 
 .survey-page-content .ant-typography {
@@ -147,14 +160,380 @@ body[data-mantine-color-scheme="dark"] .address-text {
   margin-bottom: 2px;
 }
 
+/* Corporate typography + readable controls */
+.survey-page-content .ant-form-item-label > label {
+  font-size: 16px;
+  font-weight: 700;
+  color: inherit;
+}
+
+.survey-page-content .ant-input,
+.survey-page-content .ant-input-affix-wrapper,
+.survey-page-content .ant-select-selector,
+.survey-page-content textarea {
+  font-size: 16px;
+  border-radius: 12px !important;
+  transition: border-color 160ms ease, box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.survey-page-content .ant-input,
+.survey-page-content .ant-input-affix-wrapper,
+.survey-page-content textarea {
+  padding: 10px 12px;
+}
+
+.survey-page-content .ant-select-selector {
+  height: 46px !important;
+  align-items: center;
+  padding: 0 12px !important;
+}
+
+.survey-page-content .ant-select-selection-item,
+.survey-page-content .ant-select-selection-placeholder {
+  line-height: 44px !important;
+}
+
+.survey-page-content .ant-radio-wrapper {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.survey-page-content .ant-form-item-control-input-content {
+  transition: transform 160ms ease;
+}
+
+.survey-page-content .ant-input:focus,
+.survey-page-content .ant-input-focused,
+.survey-page-content .ant-select-focused .ant-select-selector,
+.survey-page-content textarea:focus {
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.18) !important;
+  border-color: rgba(14, 165, 233, 0.65) !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-input,
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-input-affix-wrapper,
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-selector,
+body[data-mantine-color-scheme="dark"] .survey-page-content textarea {
+  background: rgba(2, 6, 23, 0.36) !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* Fix AntD components that don't reliably inherit color in dark mode */
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-radio-wrapper,
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-radio-wrapper span {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-steps-item-title,
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-steps-item-title * {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-steps-item-icon,
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-steps-item-icon * {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+/* For plain HTML inputs used by renderQuestionInput fallback */
+body[data-mantine-color-scheme="dark"] .survey-page-content input {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(2, 6, 23, 0.36);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+/* Multiple-select tags (Service Availed) */
+.survey-page-content .ant-select-multiple .ant-select-selection-item {
+  border-radius: 999px;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-multiple .ant-select-selection-item {
+  background: rgba(56, 189, 248, 0.14) !important;
+  border-color: rgba(56, 189, 248, 0.28) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-multiple .ant-select-selection-item-remove {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+/* Scoped Select dropdown popup styling for Survey selects */
+.survey-select-dropdown.ant-select-dropdown {
+  border-radius: 14px;
+  padding: 8px;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-select-dropdown.ant-select-dropdown {
+  background: rgba(2, 6, 23, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-select-dropdown .ant-select-item {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-select-dropdown .ant-select-item-option-active,
+body[data-mantine-color-scheme="dark"] .survey-select-dropdown .ant-select-item-option-selected {
+  background: rgba(56, 189, 248, 0.18);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-selection-placeholder {
+  color: rgba(255, 255, 255, 0.62) !important;
+}
+
+body[data-mantine-color-scheme="light"] .survey-page-content .ant-select-selection-placeholder {
+  color: rgba(2, 6, 23, 0.55) !important;
+}
+
 .survey-page-content .ant-steps-item-title {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .survey-page-content .ant-steps-item-description {
   font-size: 11px;
-  color: #888;
+  color: rgba(2, 6, 23, 0.55);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-steps-item-description {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.survey-step-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.survey-step-icon {
+  color: rgba(14, 165, 233, 0.85);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-step-icon {
+  color: rgba(56, 189, 248, 0.92);
+}
+
+.survey-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.survey-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.survey-title-icon {
+  font-size: 22px;
+  color: rgba(14, 165, 233, 0.90);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-title-icon {
+  color: rgba(56, 189, 248, 0.95);
+}
+
+.survey-title {
+  margin: 0 !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.2px;
+}
+
+.survey-subtitle {
+  margin: 6px 0 0 !important;
+  color: rgba(2, 6, 23, 0.72);
+  font-size: 15px;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-subtitle {
+  color: rgba(255, 255, 255, 0.70);
+}
+
+.survey-section-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(2, 6, 23, 0.14);
+  background: rgba(255, 255, 255, 0.70);
+  color: rgba(2, 6, 23, 0.88);
+  font-weight: 800;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-section-pill {
+  border-color: rgba(148, 163, 184, 0.26);
+  background: rgba(2, 6, 23, 0.34);
+  color: rgba(255, 255, 255, 0.90);
+}
+
+.survey-group-indicator {
+  display: block;
+  margin-top: 8px;
+  font-weight: 700;
+  color: rgba(2, 6, 23, 0.70);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-group-indicator {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.survey-step-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(2, 6, 23, 0.10);
+  background: rgba(255, 255, 255, 0.58);
+  animation: surveyPanelIn 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: background-color 220ms ease, border-color 220ms ease,
+    transform 220ms ease;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-step-panel {
+  border-color: rgba(148, 163, 184, 0.20);
+  background: rgba(2, 6, 23, 0.24);
+}
+
+.survey-section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.survey-section-header-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(14, 165, 233, 0.12);
+  color: rgba(14, 165, 233, 0.95);
+  flex: 0 0 auto;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-section-header-icon {
+  background: rgba(56, 189, 248, 0.16);
+  color: rgba(56, 189, 248, 0.98);
+}
+
+.survey-section-title {
+  margin: 0 !important;
+  font-weight: 800 !important;
+}
+
+.survey-section-desc {
+  display: block;
+  margin-top: 2px;
+  color: rgba(2, 6, 23, 0.70);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-section-desc {
+  color: rgba(255, 255, 255, 0.70);
+}
+
+.survey-actions {
+  position: sticky;
+  bottom: 0;
+  margin-top: 16px;
+  padding: 14px 0 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.92),
+    rgba(255, 255, 255, 0.65)
+  );
+  border-top: 1px solid rgba(2, 6, 23, 0.10);
+  backdrop-filter: blur(10px);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-actions {
+  background: linear-gradient(
+    to top,
+    rgba(2, 6, 23, 0.80),
+    rgba(2, 6, 23, 0.42)
+  );
+  border-top-color: rgba(148, 163, 184, 0.18);
+}
+
+.survey-actions-inner {
+  justify-content: center;
+}
+
+.survey-actions-hint {
+  margin-top: 10px;
+  max-width: 860px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(14, 165, 233, 0.20);
+  background: rgba(14, 165, 233, 0.08);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-actions-hint {
+  border-color: rgba(56, 189, 248, 0.22);
+  background: rgba(56, 189, 248, 0.10);
+}
+
+.survey-actions-hint-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(2, 6, 23, 0.76);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-actions-hint-text {
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.survey-btn.ant-btn {
+  height: 46px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  transition: transform 160ms ease, box-shadow 160ms ease,
+    background-color 160ms ease, border-color 160ms ease;
+}
+
+.survey-btn.ant-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(2, 8, 23, 0.14);
+}
+
+.survey-btn-primary.ant-btn-primary {
+  border: none;
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.96), rgba(34, 197, 94, 0.92));
+}
+
+@keyframes surveyPanelIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-mantine-color-scheme] .survey-page-container {
+    animation: none !important;
+  }
+
+  .survey-step-panel {
+    animation: none !important;
+  }
 }
 
 .survey-footer {
@@ -201,6 +580,26 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
 }
 
 /* === Responsive Fixes === */
+
+@media screen and (max-width: 768px) {
+  .survey-page-content.ant-card {
+    padding: 18px;
+    border-radius: 18px;
+    width: calc(100% - 20px);
+  }
+
+  .survey-title-icon {
+    font-size: 20px;
+  }
+
+  .survey-title {
+    font-size: 26px !important;
+  }
+
+  .survey-step-panel {
+    padding: 14px;
+  }
+}
 
 @media screen and (min-width: 1080px) and (max-width: 1400px){
  .survey-page-content.ant-card {

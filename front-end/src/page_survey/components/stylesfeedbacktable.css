@@ -13,22 +13,37 @@
 }
 
 .feedback-label {
-  font-size: 30px;
-  color: #000;
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(2, 6, 23, 0.92);
+}
+
+body[data-mantine-color-scheme="dark"] .feedback-label {
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .feedback-label.disabled {
-  color: #888;
+  color: rgba(2, 6, 23, 0.45);
+}
+
+body[data-mantine-color-scheme="dark"] .feedback-label.disabled {
+  color: rgba(255, 255, 255, 0.50);
 }
 
 .feedback-select {
-  font-size: 14px;
-  height: 45px;
+  font-size: 16px;
+}
+
+.feedback-select .ant-select-selector {
+  height: 46px !important;
+  border-radius: 12px !important;
+  transition: border-color 160ms ease, box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 
 @media screen and (min-width: 768px) and (max-width: 1080px){
     .feedback-label {
-    font-size: 30px;
+    font-size: 18px;
   }
 }
 

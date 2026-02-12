@@ -28,6 +28,15 @@ import RequirePermission from "./components/auth/RequirePermission";
 import SurveyPage1 from "./page_survey/Survey";
 
 import "@fontsource/poppins";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/montserrat/600.css";
+import "@fontsource/montserrat/700.css";
+import "@fontsource/plus-jakarta-sans/400.css";
+import "@fontsource/plus-jakarta-sans/500.css";
+import "@fontsource/plus-jakarta-sans/600.css";
+import "@fontsource/sora/600.css";
+import "@fontsource/sora/700.css";
 import {
   getDecryptedItem,
   setEncryptedItem,

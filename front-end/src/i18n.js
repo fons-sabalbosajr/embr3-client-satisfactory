@@ -22,6 +22,24 @@ i18n
           csmTitle: "Online Client Satisfaction Measurement",
           feedbackText: "We want your feedback!",
 
+          heroKicker: "Client Feedback Portal",
+          heroBigSlogan: "HELP US TO IMPROVE!",
+          heroSlogan: "Help us improve — share your experience in just a few minutes.",
+          heroPillFast: "2-minute survey",
+          heroPillConfidential: "Confidential",
+          heroPillMobile: "Mobile-friendly",
+          featuresTitle: "Built for better public service",
+          featuresSubtitle:
+            "Your feedback helps us improve service quality, transparency, and response time.",
+          featureQuickTitle: "Quick and simple",
+          featureQuickText: "Answer a short set of questions — no complicated steps.",
+          featureSecureTitle: "Secure and respectful",
+          featureSecureText:
+            "Your responses are handled responsibly and used to improve services.",
+          featureActionTitle: "Actionable improvements",
+          featureActionText:
+            "We review feedback to identify what works and what needs attention.",
+
           // i18n.js extras
           subtitle:
             "This Client Satisfaction Measurement (CSM) tracks the customer experience of government offices. Your feedback on your recently concluded transaction will help this office provide a better service. Personal information shared will be kept confidential and you always have the option not to answer this form.",
@@ -276,9 +294,27 @@ i18n
           csmTitle: "Online Client Satisfaction Measurement",
           feedbackText: "Kailangan namin ang iyong puna!",
 
+          heroKicker: "Client Feedback Portal",
+          heroBigSlogan: "TULUNGAN KAMING MAPABUTI!",
+          heroSlogan: "Tulungan kaming mapabuti — ibahagi ang iyong karanasan sa loob lamang ng ilang minuto.",
+          heroPillFast: "Mabilis na survey",
+          heroPillConfidential: "Kumpidensyal",
+          heroPillMobile: "Mobile-friendly",
+          featuresTitle: "Para sa mas maayos na serbisyo publiko",
+          featuresSubtitle:
+            "Ang inyong feedback ay tumutulong sa pagpapabuti ng kalidad ng serbisyo, transparency, at bilis ng tugon.",
+          featureQuickTitle: "Mabilis at simple",
+          featureQuickText: "Sagutan ang maikling set ng tanong — walang komplikadong proseso.",
+          featureSecureTitle: "Ligtas at may paggalang",
+          featureSecureText:
+            "Pinangangasiwaan nang maayos ang inyong sagot at ginagamit para mapahusay ang serbisyo.",
+          featureActionTitle: "Makatutulong na pagbabago",
+          featureActionText:
+            "Sinusuri ang feedback para malaman ang dapat ipagpatuloy at dapat ayusin.",
+
           // i18n.js extras
           subtitle:
-            "Ang Client Satisfaction Measurement (CSM) ay naglalayong masubaybayan ang karanasan ng taumbayan hinggil sa kanilang pakikipag-transaksyon sa mga tanggapan ng gobyerno. Makatutulong ang inyong kasagutan ukol sa inyong naging karanasan sa kakatpos lamang ng transaksyon, upang mas mapabuti at lalong mapahusay ang aming serbisyo publiko. Ang personal na impormasyon na iyong ibabahagi ay mananatiling kumpidensyal. Maari ring piliin na hindi sagutin ang sarbey na ito.",
+            "Ang Client Satisfaction Measurement (CSM) ay naglalayong masubaybayan ang karanasan ng taumbayan hinggil sa kanilang pakikipag-transaksyon sa mga tanggapan ng gobyerno. Makatutulong ang inyong kasagutan ukol sa inyong naging karanasan sa kakatapos lamang ng transaksyon, upang mas mapabuti at lalong mapahusay ang aming serbisyo publiko. Ang personal na impormasyon na iyong ibabahagi ay mananatiling kumpidensyal. Maari ring piliin na hindi sagutin ang sarbey na ito.",
           takeSurvey: "Sagutan ang Survey",
           selectLanguage: "Piliin ang Wika",
           toggleColor: "I-toggle ang tema",
