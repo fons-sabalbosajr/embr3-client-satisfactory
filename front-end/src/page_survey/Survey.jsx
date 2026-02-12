@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Card,
   Space,
@@ -19,6 +19,10 @@ import {
   BulbOutlined,
   HomeOutlined,
   TranslationOutlined,
+  IdcardOutlined,
+  FileTextOutlined,
+  StarOutlined,
+  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import "./survey.css";
 import { useSearchParams } from "react-router-dom";
@@ -41,7 +45,7 @@ import {
   MERGED_CCSQD_QID,
 } from "./constants/surveyMeta";
 
-const { Title } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const deviceId = uuidv4();
 
 function Survey({ toggleColorScheme }) {
@@ -61,6 +65,8 @@ function Survey({ toggleColorScheme }) {
   const [currentLang, setCurrentLang] = useState(language);
   const { t, i18n } = useTranslation();
   const [originalQuestionData, setOriginalQuestionData] = useState([]);
+
+  const watchedValues = Form.useWatch([], form);
 
   useEffect(() => {
     const fetchQuestionsData = async () => {
@@ -174,13 +180,183 @@ function Survey({ toggleColorScheme }) {
     i18n.changeLanguage(currentLang);
   }, [currentLang]);
 
+  const currentQuestion = allQuestions[currentQuestionIndex] || null;
+
+  useEffect(() => {
+    const cardEl = document.querySelector(".survey-page-content");
+    cardEl?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [currentQuestionIndex, currentSQDGroupIndex]);
+
   const stepItems = [
-    { title: t("step.primaryInfo") },
-    { title: t("step.citizensCharter") },
     {
-      title: isMobile ? t("step.sqdShort") : t("step.sqdFull"),
+      title: (
+        <span className="survey-step-title">
+          <IdcardOutlined className="survey-step-icon" />
+          {t("step.primaryInfo")}
+        </span>
+      ),
+    },
+    {
+      title: (
+        <span className="survey-step-title">
+          <FileTextOutlined className="survey-step-icon" />
+          {t("step.citizensCharter")}
+        </span>
+      ),
+    },
+    {
+      title: (
+        <span className="survey-step-title">
+          <StarOutlined className="survey-step-icon" />
+          {isMobile ? t("step.sqdShort") : t("step.sqdFull")}
+        </span>
+      ),
     },
   ];
+
+  const stepIndex =
+    currentQuestion?._id === MERGED_CUSTOMER_AGE_GENDER_QID
+      ? 0
+      : currentQuestion?._id === MERGED_CCSQD_QID
+      ? 1
+      : 2;
+
+  const stepState = useMemo(() => {
+    const values = { ...(answers || {}), ...(watchedValues || {}) };
+    if (!currentQuestion) {
+      return { canProceed: false, hint: t("loading", { defaultValue: "Loading…" }) };
+    }
+
+    if (currentQuestion._id === MERGED_CUSTOMER_AGE_GENDER_QID) {
+      const base = `answer_${MERGED_CUSTOMER_AGE_GENDER_QID}`;
+      const customerType = values[`${base}_customerType`];
+      const serviceAvailed = values[`${base}_serviceAvailed`];
+      const gender = values[`${base}_gender`];
+      const companyName = values[`${base}_companyName`];
+      const agencyName = values[`${base}_agencyName`];
+
+      if (!customerType) {
+        return {
+          canProceed: false,
+          hint: t("survey.hint.selectClientType", {
+            defaultValue: "Select your client type to continue.",
+          }),
+        };
+      }
+
+      const serviceOk = Array.isArray(serviceAvailed)
+        ? serviceAvailed.length > 0
+        : !!serviceAvailed;
+
+      if (!serviceOk) {
+        return {
+          canProceed: false,
+          hint: t("survey.hint.selectService", {
+            defaultValue: "Select at least one service availed.",
+          }),
+        };
+      }
+
+      if (customerType === "Citizen" && !gender) {
+        return {
+          canProceed: false,
+          hint: t("survey.hint.selectGender", {
+            defaultValue: "Select your gender to continue.",
+          }),
+        };
+      }
+
+      if (customerType === "Business" && !companyName) {
+        return {
+          canProceed: false,
+          hint: t("survey.hint.enterCompany", {
+            defaultValue: "Enter your company name to continue.",
+          }),
+        };
+      }
+
+      if (customerType === "Government" && !agencyName) {
+        return {
+          canProceed: false,
+          hint: t("survey.hint.enterAgency", {
+            defaultValue: "Enter your agency name to continue.",
+          }),
+        };
+      }
+
+      return { canProceed: true, hint: "" };
+    }
+
+    if (currentQuestion._id === MERGED_CCSQD_QID) {
+      const ccKeys = (ccQuestions || []).map((q) => `answer_${q._id}`);
+      const answeredCount = ccKeys.reduce((count, key) => {
+        const val = values[key];
+        return val !== undefined && val !== null && val !== "" ? count + 1 : count;
+      }, 0);
+
+      if (answeredCount < 1) {
+        return {
+          canProceed: false,
+          hint:
+            t("summary.atLeastOneCCRequired") ||
+            "Answer at least one question on this page to continue.",
+        };
+      }
+      return { canProceed: true, hint: "" };
+    }
+
+    if (currentQuestion.questionType === "merged_sqd_table") {
+      const group = currentQuestion.groupedSQD?.[currentSQDGroupIndex] || [];
+      const missing = group.filter((q) => {
+        const v = values[`answer_${q._id}`];
+        return v === undefined || v === null || v === "";
+      });
+      if (missing.length > 0) {
+        return {
+          canProceed: false,
+          hint:
+            t("survey.hint.rateRemaining", {
+              defaultValue: "Please rate the remaining items to continue.",
+            }) +
+            ` (${missing.length})`,
+        };
+      }
+      return { canProceed: true, hint: "" };
+    }
+
+    return { canProceed: true, hint: "" };
+  }, [answers, watchedValues, currentQuestion, currentSQDGroupIndex, ccQuestions, t]);
+
+  const sectionMeta = (() => {
+    if (stepIndex === 0)
+      return {
+        icon: <IdcardOutlined />,
+        title: t("step.primaryInfo"),
+        desc:
+          t("survey.primaryInfoDesc", {
+            defaultValue: "Tell us a bit about your visit so we can serve you better.",
+          }),
+      };
+    if (stepIndex === 1)
+      return {
+        icon: <FileTextOutlined />,
+        title: t("step.citizensCharter"),
+        desc:
+          t("survey.citizensCharterDesc", {
+            defaultValue:
+              "A few quick questions about the Citizen’s Charter and service standards.",
+          }),
+      };
+    return {
+      icon: <StarOutlined />,
+      title: isMobile ? t("step.sqdShort") : t("step.sqdFull"),
+      desc:
+        t("survey.sqdDesc", {
+          defaultValue:
+            "Rate your experience. Your answers help improve public service.",
+        }),
+    };
+  })();
 
   const languageItems = [
     {
@@ -192,8 +368,6 @@ function Survey({ toggleColorScheme }) {
       label: "🇵🇭 Filipino",
     },
   ];
-
-  const currentQuestion = allQuestions[currentQuestionIndex];
 
   const handleSubmit = async (formValues) => {
     try {
@@ -245,14 +419,19 @@ function Survey({ toggleColorScheme }) {
 
   const handleNextQuestion = async () => {
     if (currentQuestion._id === MERGED_CUSTOMER_AGE_GENDER_QID) {
+      const base = `answer_${MERGED_CUSTOMER_AGE_GENDER_QID}`;
+      const values = form.getFieldsValue(true);
+      const customerType = values[`${base}_customerType`];
+      const fieldsToValidate = [
+        `${base}_customerType`,
+        `${base}_serviceAvailed`,
+      ];
+      if (customerType === "Citizen") fieldsToValidate.push(`${base}_gender`);
+      if (customerType === "Business") fieldsToValidate.push(`${base}_companyName`);
+      if (customerType === "Government") fieldsToValidate.push(`${base}_agencyName`);
+
       try {
-        await form.validateFields([
-          `answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_customerType`,
-          `answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_age`,
-          `answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_gender`,
-          `answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_serviceAvailed`,
-          // Optionally add companyName/agencyName if needed
-        ]);
+        await form.validateFields(fieldsToValidate);
       } catch (err) {
         // Validation failed, do not proceed
         return;
@@ -283,6 +462,24 @@ function Survey({ toggleColorScheme }) {
 
     // Check if we're in SQD grouped section
     if (currentQuestion.questionType === "merged_sqd_table") {
+      const formValuesForSQD = form.getFieldsValue(true);
+      const group = currentQuestion.groupedSQD?.[currentSQDGroupIndex] || [];
+      const missing = group.filter((q) => {
+        const v = formValuesForSQD[`answer_${q._id}`];
+        return v === undefined || v === null || v === "";
+      });
+      if (missing.length > 0) {
+        Swal.fire({
+          icon: "warning",
+          title: t("summary.incomplete", { defaultValue: "Incomplete" }),
+          text:
+            t("survey.hint.rateRemaining", {
+              defaultValue: "Please rate the remaining items to continue.",
+            }),
+        });
+        return;
+      }
+
       const isLastSQDGroup =
         currentSQDGroupIndex >= currentQuestion.groupedSQD.length - 1;
 
@@ -384,17 +581,41 @@ function Survey({ toggleColorScheme }) {
         </div>
       </header>
       <Card className="survey-page-content">
+        <div className="survey-intro">
+          <div className="survey-intro-left">
+            <div className="survey-title-row">
+              <SafetyCertificateOutlined className="survey-title-icon" />
+              <Title level={2} className="survey-title">
+                {t("survey.title", {
+                  defaultValue: "Client Satisfaction Survey",
+                })}
+              </Title>
+            </div>
+            <Paragraph className="survey-subtitle">
+              {t("survey.subtitle", {
+                defaultValue:
+                  "Please answer honestly. This form takes about 2–3 minutes.",
+              })}
+            </Paragraph>
+          </div>
+          <div className="survey-intro-right">
+            <div className="survey-section-pill">
+              <span className="survey-section-pill-icon">{sectionMeta.icon}</span>
+              <span className="survey-section-pill-text">{sectionMeta.title}</span>
+            </div>
+            {currentQuestion?.questionType === "merged_sqd_table" && (
+              <Text className="survey-group-indicator">
+                {t("survey.group", { defaultValue: "Group" })} {currentSQDGroupIndex + 1} / {currentQuestion.groupedSQD.length}
+              </Text>
+            )}
+          </div>
+        </div>
+
         <Steps
           progressDot
           direction="horizontal"
           responsive={false}
-          current={
-            currentQuestion._id === MERGED_CUSTOMER_AGE_GENDER_QID
-              ? 0
-              : currentQuestion._id === MERGED_CCSQD_QID
-              ? 1
-              : 2
-          }
+          current={stepIndex}
           items={stepItems}
           className="survey-steps"
         />
@@ -406,44 +627,58 @@ function Survey({ toggleColorScheme }) {
             setAnswers((prev) => ({ ...prev, ...changed }))
           }
         >
-          <Title level={4}>{currentQuestion.questionText}</Title>
+          <div
+            className="survey-step-panel"
+            key={`${currentQuestionIndex}-${currentSQDGroupIndex}-${currentLang}`}
+          >
+            <div className="survey-section-header">
+              <div className="survey-section-header-icon">{sectionMeta.icon}</div>
+              <div className="survey-section-header-text">
+                <Title level={3} className="survey-section-title">
+                  {sectionMeta.title}
+                </Title>
+                <Text className="survey-section-desc">{sectionMeta.desc}</Text>
+              </div>
+            </div>
 
-          {currentQuestion._id === MERGED_CCSQD_QID ? (
-            <FeedbackTable
-              key={currentLang}
-              language={currentLang}
-              questions={currentQuestion.questions}
-              renderInput={renderQuestionInput}
-              form={form}
-              answers={answers}
-            />
-          ) : currentQuestion.questionType === "merged_sqd_table" ? (
-            <SQDTable
-              group={currentQuestion.groupedSQD[currentSQDGroupIndex]}
-              form={form}
-              extraQuestion={
-                currentSQDGroupIndex === currentQuestion.groupedSQD.length - 1
-                  ? currentQuestion.extraQuestion
-                  : null
-              }
-              onAnswerChange={(field, value) =>
-                setAnswers((prev) => ({ ...prev, [field]: value }))
-              }
-              startIndex={currentQuestion.groupedSQD
-                .slice(0, currentSQDGroupIndex)
-                .reduce((sum, group) => sum + group.length, 1)}
-            />
-          ) : (
-            renderQuestionInput(currentQuestion)
-          )}
+            {currentQuestion._id === MERGED_CCSQD_QID ? (
+              <FeedbackTable
+                key={currentLang}
+                language={currentLang}
+                questions={currentQuestion.questions}
+                renderInput={renderQuestionInput}
+                form={form}
+                answers={answers}
+              />
+            ) : currentQuestion.questionType === "merged_sqd_table" ? (
+              <SQDTable
+                group={currentQuestion.groupedSQD[currentSQDGroupIndex]}
+                form={form}
+                extraQuestion={
+                  currentSQDGroupIndex === currentQuestion.groupedSQD.length - 1
+                    ? currentQuestion.extraQuestion
+                    : null
+                }
+                onAnswerChange={(field, value) =>
+                  setAnswers((prev) => ({ ...prev, [field]: value }))
+                }
+                startIndex={currentQuestion.groupedSQD
+                  .slice(0, currentSQDGroupIndex)
+                  .reduce((sum, group) => sum + group.length, 1)}
+              />
+            ) : (
+              renderQuestionInput(currentQuestion)
+            )}
+          </div>
         </Form>
 
-        <div style={{ textAlign: "center", marginTop: 10 }}>
-          <Space size="middle" wrap>
+        <div className="survey-actions">
+          <Space size="middle" wrap className="survey-actions-inner">
             <Button
               onClick={handlePreviousQuestion}
               disabled={currentQuestionIndex === 0}
               icon={<ArrowLeftOutlined />}
+              className="survey-btn"
             >
               {t("back")}
             </Button>
@@ -451,7 +686,9 @@ function Survey({ toggleColorScheme }) {
             <Button
               type="primary"
               onClick={handleNextQuestion}
+              disabled={!stepState.canProceed}
               icon={<ArrowRightOutlined />}
+              className="survey-btn survey-btn-primary"
             >
               {(() => {
                 if (currentQuestion.questionType === "merged_sqd_table") {
@@ -488,10 +725,17 @@ function Survey({ toggleColorScheme }) {
                   }
                 });
               }}
+              className="survey-btn"
             >
               {t("summary.quitSurvey") || "Quit"}
             </Button>
           </Space>
+
+          {!stepState.canProceed && (
+            <div className="survey-actions-hint">
+              <Text className="survey-actions-hint-text">{stepState.hint}</Text>
+            </div>
+          )}
         </div>
       </Card>
 

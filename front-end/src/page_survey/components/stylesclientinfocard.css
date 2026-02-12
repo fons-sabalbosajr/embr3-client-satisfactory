@@ -11,12 +11,13 @@
 .client-info-card-radio-space {
   display: flex;
   flex-direction: column;
+  gap: 10px;
 }
 
 .client-info-card-dynamic-input {
   margin-top: 8px;
-  width: 300px;
-  margin-left: 36px;
+  width: min(420px, 100%);
+  margin-left: 0;
 }
 
 .client-info-card-note {
@@ -24,22 +25,26 @@
 }
 
 .client-info-card-note-text {
-  font-size: 12px;
-  color: gray;
+  font-size: 14px;
+  color: rgba(2, 6, 23, 0.66);
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-card-note-text {
+  color: rgba(255, 255, 255, 0.66);
 }
 
 @media screen and (min-width: 768px) and (max-width: 1080px) {
   .client-info-card-note-text {
-    font-size: 10px;
-    color: gray;
+    font-size: 13px;
+    color: rgba(2, 6, 23, 0.66);
   }
 }
 
 @media screen and (min-width: 440px) and (max-width: 768px) {
   .client-info-card-note-text {
-    font-size: 10px;
-    color: gray;
+    font-size: 13px;
+    color: rgba(2, 6, 23, 0.66);
     display: flex;
-    margin-top: -20px;
+    margin-top: -8px;
   }
 }

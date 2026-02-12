@@ -130,6 +130,7 @@ function FeedbackTable({ questions, language }) {
                   placeholder={t("selectAnswerPlaceholder")}
                   disabled={isDisabled}
                   className="feedback-select"
+                  popupClassName="survey-select-dropdown"
                 >
                   {questionOptions.map((option, idx) => (
                     <Select.Option key={idx} value={option}>
