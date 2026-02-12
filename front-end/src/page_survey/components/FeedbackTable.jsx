@@ -6,7 +6,7 @@ import i18n from "../../i18n";
 
 const { Title, Text } = Typography;
 
-function FeedbackTable({ questions, language }) {
+function FeedbackTable({ questions, language, visibleQuestions }) {
   const form = Form.useFormInstance();
   const { t, i18n } = useTranslation();
 
@@ -85,9 +85,13 @@ function FeedbackTable({ questions, language }) {
     }
   }, [language]);
 
+  const renderQuestions = Array.isArray(visibleQuestions)
+    ? visibleQuestions
+    : questions;
+
   return (
     <Space direction="vertical" className="feedback-table-wrapper">
-      {questions.map((q) => {
+      {renderQuestions.map((q) => {
         const formItemName = `answer_${q._id}`;
         let isDisabled = false;
 

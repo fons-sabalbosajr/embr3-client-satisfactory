@@ -1,10 +1,21 @@
 .feedback-table-wrapper {
   width: 100%;
+  gap: 20px;
 }
 
 .feedback-form-item {
   opacity: 1;
   pointer-events: auto;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(2, 6, 23, 0.06);
+}
+
+.feedback-form-item:last-child {
+  border-bottom: none;
+}
+
+body[data-mantine-color-scheme="dark"] .feedback-form-item {
+  border-bottom-color: rgba(148, 163, 184, 0.10);
 }
 
 .feedback-form-item.disabled {
@@ -13,8 +24,8 @@
 }
 
 .feedback-label {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 500;
   color: rgba(2, 6, 23, 0.92);
 }
 
@@ -41,14 +52,26 @@ body[data-mantine-color-scheme="dark"] .feedback-label.disabled {
     background-color 160ms ease;
 }
 
-@media screen and (min-width: 768px) and (max-width: 1080px){
-    .feedback-label {
-    font-size: 18px;
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .feedback-label {
+    font-size: 15px;
+  }
+
+  .feedback-select .ant-select-selector {
+    height: 40px !important;
   }
 }
 
 /* Responsive fix for mobile dropdown word-wrap */
 @media screen and (max-width: 768px) {
+  .feedback-label {
+    font-size: 14px;
+  }
+
+  .feedback-select .ant-select-selector {
+    height: 38px !important;
+  }
+
   .ant-select-dropdown .ant-select-item-option-content {
     white-space: normal !important;
     word-break: break-word !important;
@@ -64,5 +87,16 @@ body[data-mantine-color-scheme="dark"] .feedback-label.disabled {
   .ant-select-selector {
     white-space: normal !important;
     line-height: 1.4 !important;
+  }
+}
+
+@media screen and (max-width: 440px) {
+  .feedback-label {
+    font-size: 13px;
+  }
+
+  .feedback-select .ant-select-selector {
+    height: 36px !important;
+    border-radius: 8px !important;
   }
 }

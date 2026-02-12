@@ -56,6 +56,7 @@ function Survey({ toggleColorScheme }) {
   const [error, setError] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [currentSQDGroupIndex, setCurrentSQDGroupIndex] = useState(0);
+  const [currentCCPageIndex, setCurrentCCPageIndex] = useState(0);
   const [form] = Form.useForm();
   const [answers, setAnswers] = useState({});
   const navigate = useNavigate();
@@ -120,7 +121,7 @@ function Survey({ toggleColorScheme }) {
         setSQDQuestions(sqdQs);
 
         const q18 = questionsArray.find((q) => q.questionCode === "Q19");
-        const groupedSQD = chunk(sqdQs, 3);
+        const groupedSQD = chunk(sqdQs, 2);
 
         const filteredQuestions = [
           {
@@ -161,7 +162,7 @@ function Survey({ toggleColorScheme }) {
         setLoading(false);
       } catch (err) {
         console.error("Failed to fetch questions:", err);
-        setError("Failed to load questions. Check the API or network.");
+        setError(t("loadError", "Failed to load questions. Check the API or network."));
         setLoading(false);
       }
     };
@@ -181,6 +182,15 @@ function Survey({ toggleColorScheme }) {
   }, [currentLang]);
 
   const currentQuestion = allQuestions[currentQuestionIndex] || null;
+
+  const ccGroups = useMemo(() => chunk(ccQuestions || [], 2), [ccQuestions]);
+
+  useEffect(() => {
+    if (!currentQuestion) return;
+    if (currentQuestion._id !== MERGED_CCSQD_QID) {
+      setCurrentCCPageIndex(0);
+    }
+  }, [currentQuestion?._id]);
 
   useEffect(() => {
     const cardEl = document.querySelector(".survey-page-content");
@@ -238,9 +248,7 @@ function Survey({ toggleColorScheme }) {
       if (!customerType) {
         return {
           canProceed: false,
-          hint: t("survey.hint.selectClientType", {
-            defaultValue: "Select your client type to continue.",
-          }),
+          hint: "",
         };
       }
 
@@ -288,6 +296,11 @@ function Survey({ toggleColorScheme }) {
     }
 
     if (currentQuestion._id === MERGED_CCSQD_QID) {
+      const isLastCCPage = currentCCPageIndex >= (ccGroups.length || 1) - 1;
+      if (!isLastCCPage) {
+        return { canProceed: true, hint: "" };
+      }
+
       const ccKeys = (ccQuestions || []).map((q) => `answer_${q._id}`);
       const answeredCount = ccKeys.reduce((count, key) => {
         const val = values[key];
@@ -325,7 +338,16 @@ function Survey({ toggleColorScheme }) {
     }
 
     return { canProceed: true, hint: "" };
-  }, [answers, watchedValues, currentQuestion, currentSQDGroupIndex, ccQuestions, t]);
+  }, [
+    answers,
+    watchedValues,
+    currentQuestion,
+    currentSQDGroupIndex,
+    ccQuestions,
+    currentCCPageIndex,
+    ccGroups.length,
+    t,
+  ]);
 
   const sectionMeta = (() => {
     if (stepIndex === 0)
@@ -334,7 +356,7 @@ function Survey({ toggleColorScheme }) {
         title: t("step.primaryInfo"),
         desc:
           t("survey.primaryInfoDesc", {
-            defaultValue: "Tell us a bit about your visit so we can serve you better.",
+            defaultValue: "Tell us about your visit.",
           }),
       };
     if (stepIndex === 1)
@@ -343,8 +365,7 @@ function Survey({ toggleColorScheme }) {
         title: t("step.citizensCharter"),
         desc:
           t("survey.citizensCharterDesc", {
-            defaultValue:
-              "A few quick questions about the Citizen’s Charter and service standards.",
+            defaultValue: "Quick questions about service standards.",
           }),
       };
     return {
@@ -352,8 +373,7 @@ function Survey({ toggleColorScheme }) {
       title: isMobile ? t("step.sqdShort") : t("step.sqdFull"),
       desc:
         t("survey.sqdDesc", {
-          defaultValue:
-            "Rate your experience. Your answers help improve public service.",
+          defaultValue: "Rate your experience.",
         }),
     };
   })();
@@ -373,14 +393,54 @@ function Survey({ toggleColorScheme }) {
     try {
       await submitFeedback({ answers: formValues, deviceId });
 
-      Swal.fire({
+      await Swal.fire({
         icon: "success",
         title: t("thankYou"),
         text: t("summary.thankYou") || t("thankYou"),
         confirmButtonText: t("summary.submit"),
-      }).then(() => {
-        navigate("/");
       });
+
+      // Show agency contact info prompt
+      await Swal.fire({
+        html: `
+          <div style="text-align:center;font-family:inherit;">
+            <div style="margin-bottom:14px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <h3 style="margin:0 0 4px;font-size:17px;font-weight:700;color:inherit;">
+              ${t("agencyPrompt.title")}
+            </h3>
+            <p style="margin:0 0 16px;font-size:13px;color:#64748b;">
+              ${t("agencyPrompt.subtitle")}
+            </p>
+            <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+              <a href="https://facebook.com/EMB3Official" target="_blank" rel="noopener noreferrer"
+                style="display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:10px;background:#1877f2;color:#fff;text-decoration:none;font-size:13px;font-weight:600;width:fit-content;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                EMB3Official
+              </a>
+              <a href="https://r3.emb.gov.ph" target="_blank" rel="noopener noreferrer"
+                style="display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:10px;background:linear-gradient(90deg,#0ea5e9,#22c55e);color:#fff;text-decoration:none;font-size:13px;font-weight:600;width:fit-content;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                r3.emb.gov.ph
+              </a>
+              <a href="tel:0459633623"
+                style="display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:10px;background:#f1f5f9;color:#0f172a;text-decoration:none;font-size:13px;font-weight:600;width:fit-content;border:1px solid #e2e8f0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                (045) 963-3623
+              </a>
+            </div>
+          </div>
+        `,
+        confirmButtonText: t("agencyPrompt.close", "Close"),
+        confirmButtonColor: "#0ea5e9",
+        showCloseButton: true,
+        customClass: {
+          popup: "swal-agency-popup",
+        },
+      });
+
+      navigate("/client");
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -410,9 +470,9 @@ function Survey({ toggleColorScheme }) {
     return (
       <Form.Item
         name={formItemName}
-        rules={[{ required: true, message: "Please fill this out." }]}
+        rules={[{ required: true, message: t("pleaseFillOut", "Please fill this out.") }]}
       >
-        <input type="text" placeholder="Answer here..." />
+        <input type="text" placeholder={t("answerHere", "Answer here...")} />
       </Form.Item>
     );
   };
@@ -438,8 +498,14 @@ function Survey({ toggleColorScheme }) {
       }
     }
 
-    // Citizens Charter: at least one answer required
+    // Citizens Charter paging + rule: at least one answer required before leaving CC
     if (currentQuestion._id === MERGED_CCSQD_QID) {
+      const isLastCCPage = currentCCPageIndex >= (ccGroups.length || 1) - 1;
+      if (!isLastCCPage) {
+        setCurrentCCPageIndex((prev) => prev + 1);
+        return;
+      }
+
       const formValues = form.getFieldsValue(true);
       const ccAnswerKeys = ccQuestions.map((q) => `answer_${q._id}`);
       const hasAtLeastOneAnswer = ccAnswerKeys.some((key) => {
@@ -496,6 +562,7 @@ function Survey({ toggleColorScheme }) {
       // Go to next main step
       setCurrentQuestionIndex((prev) => prev + 1);
       setCurrentSQDGroupIndex(0); // Reset group index on step change
+      setCurrentCCPageIndex(0);
       return;
     }
 
@@ -524,6 +591,11 @@ function Survey({ toggleColorScheme }) {
   };
 
   const handlePreviousQuestion = () => {
+    if (currentQuestion._id === MERGED_CCSQD_QID && currentCCPageIndex > 0) {
+      setCurrentCCPageIndex((prev) => prev - 1);
+      return;
+    }
+
     if (
       currentQuestion.questionType === "merged_sqd_table" &&
       currentSQDGroupIndex > 0
@@ -535,6 +607,7 @@ function Survey({ toggleColorScheme }) {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1);
       setCurrentSQDGroupIndex(0);
+      setCurrentCCPageIndex(0);
     }
   };
 
@@ -549,7 +622,7 @@ function Survey({ toggleColorScheme }) {
   if (error) {
     return (
       <div className="survey-page-container flex items-center justify-center min-h-screen">
-        <Alert message="Error" description={error} type="error" showIcon />
+        <Alert message={t("errorLabel", "Error")} description={error} type="error" showIcon />
       </div>
     );
   }
@@ -558,26 +631,22 @@ function Survey({ toggleColorScheme }) {
     <div className="survey-page-container">
       <header className="agency-header-survey">
         <div className="agency-header-inner-survey">
-          <div className="agency-header-top">
-            <div className="agency-header-logos">
-              <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb" />
-              <img src={BPLogo} alt="BP Logo" className="logo-svg-bp" />
-            </div>
-          </div>
+          <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb" />
 
           <div className="agency-header-text">
-            <span className="republic-text">Republic of the Philippines</span>
+            <span className="republic-text">{t("agencyTitle")}</span>
             <span className="department-text">
-              Department of Environment and Natural Resources
+              {t("department")}
             </span>
             <span className="bureau-text">
-              ENVIRONMENTAL MANAGEMENT BUREAU REGION III
+              {t("bureau")}
             </span>
             <span className="address-text">
-              Masinop Corner Matalino St., Diosdado Macapagal Government Center,
-              Maimpis, City of San Fernando, Pampanga
+              {t("address1")}, {t("address2")}
             </span>
           </div>
+
+          <img src={BPLogo} alt="BP Logo" className="logo-svg-bp" />
         </div>
       </header>
       <Card className="survey-page-content">
@@ -594,7 +663,7 @@ function Survey({ toggleColorScheme }) {
             <Paragraph className="survey-subtitle">
               {t("survey.subtitle", {
                 defaultValue:
-                  "Please answer honestly. This form takes about 2–3 minutes.",
+                  "Takes about 2–3 minutes.",
               })}
             </Paragraph>
           </div>
@@ -606,6 +675,11 @@ function Survey({ toggleColorScheme }) {
             {currentQuestion?.questionType === "merged_sqd_table" && (
               <Text className="survey-group-indicator">
                 {t("survey.group", { defaultValue: "Group" })} {currentSQDGroupIndex + 1} / {currentQuestion.groupedSQD.length}
+              </Text>
+            )}
+            {currentQuestion?._id === MERGED_CCSQD_QID && ccGroups.length > 1 && (
+              <Text className="survey-group-indicator">
+                {t("survey.page", { defaultValue: "Page" })} {currentCCPageIndex + 1} / {ccGroups.length}
               </Text>
             )}
           </div>
@@ -646,6 +720,7 @@ function Survey({ toggleColorScheme }) {
                 key={currentLang}
                 language={currentLang}
                 questions={currentQuestion.questions}
+                visibleQuestions={ccGroups[currentCCPageIndex]}
                 renderInput={renderQuestionInput}
                 form={form}
                 answers={answers}
@@ -699,6 +774,13 @@ function Survey({ toggleColorScheme }) {
                     ? t("submitSurvey")
                     : t("next");
                 }
+                if (currentQuestion._id === MERGED_CCSQD_QID) {
+                  const isLastCCPage = currentCCPageIndex >= (ccGroups.length || 1) - 1;
+                  if (!isLastCCPage) return t("next");
+                  return currentQuestionIndex === allQuestions.length - 1
+                    ? t("submitSurvey")
+                    : t("next");
+                }
                 return currentQuestionIndex === allQuestions.length - 1
                   ? t("submitSurvey")
                   : t("next");
@@ -721,7 +803,7 @@ function Survey({ toggleColorScheme }) {
                   cancelButtonText: t("summary.stay") || "Stay",
                 }).then((result) => {
                   if (result.isConfirmed) {
-                    navigate("/");
+                    navigate("/client");
                   }
                 });
               }}
@@ -731,11 +813,6 @@ function Survey({ toggleColorScheme }) {
             </Button>
           </Space>
 
-          {!stepState.canProceed && (
-            <div className="survey-actions-hint">
-              <Text className="survey-actions-hint-text">{stepState.hint}</Text>
-            </div>
-          )}
         </div>
       </Card>
 
@@ -743,7 +820,7 @@ function Survey({ toggleColorScheme }) {
         <FloatButton
           icon={<BulbOutlined />}
           onClick={toggleColorScheme}
-          tooltip={<div>Toggle Theme</div>}
+          tooltip={<div>{t("toggleTheme", "Toggle Theme")}</div>}
         />
 
         <Dropdown
@@ -764,9 +841,7 @@ function Survey({ toggleColorScheme }) {
       </FloatButton.Group>
       <footer className="survey-footer">
         <span>
-          &copy; {new Date().getFullYear()} Environmental Management Bureau
-          Region III Online Customer Satisfaction Measurement. All rights
-          reserved.
+          &copy; {new Date().getFullYear()} {t("surveyFooter")}
         </span>
       </footer>
     </div>

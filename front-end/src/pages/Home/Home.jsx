@@ -9,6 +9,7 @@ import {
   IconBolt,
   IconChecklist,
 } from "@tabler/icons-react";
+import { QRCodeSVG } from "qrcode.react";
 
 import { getFeedbacks } from "../../services/api";
 import EMBLogo from "../../assets/emblogo.svg";
@@ -34,6 +35,11 @@ function Home({ toggleColorScheme }) {
   const [language, setLanguage] = useState("en");
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  const clientUrl = (() => {
+    const base = import.meta.env.VITE_APP_URL || window.location.origin;
+    return `${base.replace(/\/+$/, "")}/client`;
+  })();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,12 +97,7 @@ function Home({ toggleColorScheme }) {
         {/* ✅ Agency Header */}
         <header className="agency-header-home">
           <div className="agency-header-inner-home">
-            <div className="agency-header-top">
-              <div className="agency-header-logos">
-                <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb" />
-                <img src={BPLogo} alt="BP Logo" className="logo-svg-bp" />
-              </div>
-            </div>
+            <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb" />
 
             <div className="agency-header-text">
               <span className="republic-text">{t("agencyTitle")}</span>
@@ -106,6 +107,8 @@ function Home({ toggleColorScheme }) {
                 {t("address1")}, {t("address2")}
               </span>
             </div>
+
+            <img src={BPLogo} alt="BP Logo" className="logo-svg-bp" />
           </div>
         </header>
 
@@ -119,7 +122,26 @@ function Home({ toggleColorScheme }) {
           <Col xs={24} md={24} className="hero-left">
             <div className="hero-left-inner">
               <div className="hero-card">
-                <div className="hero-big-slogan">{t("heroBigSlogan")}</div>
+                <div className="hero-slogan-row">
+                  <div className="hero-big-slogan">{t("heroBigSlogan")}</div>
+
+                  {/* QR Code – desktop only */}
+                  <div className="hero-qr-section">
+                    <div className="hero-qr-wrapper">
+                      <QRCodeSVG
+                        value={clientUrl}
+                        size={130}
+                        level="H"
+                        bgColor="#ffffff"
+                        fgColor="#0b4f6c"
+                        className="hero-qr-code"
+                      />
+                    </div>
+                    <span className="hero-qr-label">
+                      {t("scanQr", "Scan to open on your device")}
+                    </span>
+                  </div>
+                </div>
 
                 <div className="hero-kicker">
                   <IconSparkles size={18} />
@@ -179,10 +201,10 @@ function Home({ toggleColorScheme }) {
                     {!!feedbacks?.length && (
                       <Text className="hero-social-proof">
                         <IconChecklist size={16} />
-                        {feedbacks.length.toLocaleString()} response
-                        {feedbacks.length === 1 ? "" : "s"} recorded
+                        {t("responsesRecorded", { count: feedbacks.length, defaultValue: "{{count}} responses recorded" })}
                       </Text>
                     )}
+
                   </div>
 
                   <div className="hero-card-visual" aria-hidden="true">
@@ -196,17 +218,18 @@ function Home({ toggleColorScheme }) {
                     />
                   </div>
                 </div>
+
+                {/* Footer inside card */}
+                <footer className="client-cover-footer" aria-label="Cover footer">
+                  <div className="client-cover-footer-inner">
+                    <span className="client-cover-footer-title">{t("csmTitle")}</span>
+                    <span className="client-cover-footer-meta">{t("allRightsReserved", { year })}</span>
+                  </div>
+                </footer>
               </div>
             </div>
           </Col>
         </Row>
-
-        <footer className="client-cover-footer" aria-label="Cover footer">
-          <div className="client-cover-footer-inner">
-            <span className="client-cover-footer-title">{t("csmTitle")}</span>
-            <span className="client-cover-footer-meta">© {year} EMB Region III. All rights reserved.</span>
-          </div>
-        </footer>
       </div>
 
       {/* Theme Toggle Button */}
