@@ -51,37 +51,28 @@ body[data-mantine-color-scheme="dark"] .survey-page-container::before {
 
 .agency-header-inner-survey {
   margin: 0 auto;
+  max-width: 1180px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
+  gap: 16px;
   text-align: center;
 }
 
-.agency-header-logos {
+.agency-header-text {
   display: flex;
-  justify-content: center;
-  gap: 1px;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.agency-header-toggle {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 2px;
+  flex: 0 1 auto;
 }
 
 .logo-svg-emb,
 .logo-svg-bp {
-  height: 50px;
-  width: 50px;
+  height: 54px;
+  width: 54px;
   object-fit: contain;
-}
-
-.agency-header-text {
-  margin-top: 0; /* Remove top spacing */
-  display: flex;
-  flex-direction: column;
-  gap: 4px; /* Smaller gap between text elements */
+  flex-shrink: 0;
 }
 
 .republic-text {
@@ -130,10 +121,10 @@ body[data-mantine-color-scheme="dark"] .address-text {
 
 /* === Survey Card === */
 .survey-page-content.ant-card {
-  margin: 0 auto 40px auto;
+  margin: 0 auto 8px auto;
   max-width: 1180px;
   width: min(1180px, calc(100% - 24px));
-  padding: 26px;
+  padding: 18px;
   border-radius: 22px;
   overflow: hidden;
   box-shadow: 0 24px 70px rgba(2, 8, 23, 0.22);
@@ -163,7 +154,7 @@ body[data-mantine-color-scheme="dark"] .survey-page-content.ant-card {
 /* Corporate typography + readable controls */
 .survey-page-content .ant-form-item-label > label {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 500;
   color: inherit;
 }
 
@@ -184,9 +175,22 @@ body[data-mantine-color-scheme="dark"] .survey-page-content.ant-card {
 }
 
 .survey-page-content .ant-select-selector {
-  height: 46px !important;
+  min-height: 46px !important;
+  height: auto !important;
   align-items: center;
   padding: 0 12px !important;
+}
+
+/* Single selects keep exact 46px */
+.survey-page-content .ant-select-single .ant-select-selector {
+  height: 46px !important;
+}
+
+/* Multi-select: let tags wrap and container grow */
+.survey-page-content .ant-select-multiple .ant-select-selector {
+  padding: 4px 12px !important;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .survey-page-content .ant-select-selection-item,
@@ -194,9 +198,16 @@ body[data-mantine-color-scheme="dark"] .survey-page-content.ant-card {
   line-height: 44px !important;
 }
 
+/* Multi-select tags don't need tall line-height */
+.survey-page-content .ant-select-multiple .ant-select-selection-item {
+  line-height: 24px !important;
+  height: auto !important;
+  margin: 0 !important;
+}
+
 .survey-page-content .ant-radio-wrapper {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .survey-page-content .ant-form-item-control-input-content {
@@ -220,7 +231,26 @@ body[data-mantine-color-scheme="dark"] .survey-page-content textarea {
   color: rgba(255, 255, 255, 0.92) !important;
 }
 
+/* Placeholder legibility in dark theme */
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-input::placeholder,
+body[data-mantine-color-scheme="dark"] .survey-page-content textarea::placeholder {
+  color: rgba(255, 255, 255, 0.60) !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-input-affix-wrapper input::placeholder {
+  color: rgba(255, 255, 255, 0.60) !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select .ant-select-selection-placeholder {
+  color: rgba(255, 255, 255, 0.60) !important;
+}
+
 /* Fix AntD components that don't reliably inherit color in dark mode */
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-form-item-label > label,
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-form-item-label > label .ant-form-item-required {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
 body[data-mantine-color-scheme="dark"] .survey-page-content .ant-radio-wrapper,
 body[data-mantine-color-scheme="dark"] .survey-page-content .ant-radio-wrapper span {
   color: rgba(255, 255, 255, 0.92) !important;
@@ -241,6 +271,10 @@ body[data-mantine-color-scheme="dark"] .survey-page-content input {
   color: rgba(255, 255, 255, 0.92);
   background: rgba(2, 6, 23, 0.36);
   border: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-content input::placeholder {
+  color: rgba(255, 255, 255, 0.60);
 }
 
 /* Multiple-select tags (Service Availed) */
@@ -279,6 +313,35 @@ body[data-mantine-color-scheme="dark"] .survey-select-dropdown .ant-select-item-
   background: rgba(56, 189, 248, 0.18);
 }
 
+/* Option group headers (Internal / External / Other) */
+body[data-mantine-color-scheme="dark"] .survey-select-dropdown .ant-select-item-group {
+  color: rgba(255, 255, 255, 0.55) !important;
+  font-weight: 700;
+}
+
+/* Search input inside multi-select dropdown */
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-multiple .ant-select-selection-search-input {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* Select arrow / clear icons */
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-arrow,
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-clear {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* Empty state text in dropdown */
+body[data-mantine-color-scheme="dark"] .survey-select-dropdown .ant-select-item-empty,
+body[data-mantine-color-scheme="dark"] .survey-select-dropdown .ant-empty-description {
+  color: rgba(255, 255, 255, 0.50) !important;
+}
+
+/* Multiple-select overflow count (+N) */
+body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-selection-overflow-item-rest .ant-select-selection-item {
+  background: rgba(56, 189, 248, 0.18) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
 body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-selection-placeholder {
   color: rgba(255, 255, 255, 0.62) !important;
 }
@@ -289,7 +352,7 @@ body[data-mantine-color-scheme="light"] .survey-page-content .ant-select-selecti
 
 .survey-page-content .ant-steps-item-title {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .survey-page-content .ant-steps-item-description {
@@ -341,7 +404,7 @@ body[data-mantine-color-scheme="dark"] .survey-title-icon {
 
 .survey-title {
   margin: 0 !important;
-  font-weight: 800 !important;
+  font-weight: 600 !important;
   letter-spacing: 0.2px;
 }
 
@@ -364,7 +427,7 @@ body[data-mantine-color-scheme="dark"] .survey-subtitle {
   border: 1px solid rgba(2, 6, 23, 0.14);
   background: rgba(255, 255, 255, 0.70);
   color: rgba(2, 6, 23, 0.88);
-  font-weight: 800;
+  font-weight: 600;
 }
 
 body[data-mantine-color-scheme="dark"] .survey-section-pill {
@@ -376,7 +439,7 @@ body[data-mantine-color-scheme="dark"] .survey-section-pill {
 .survey-group-indicator {
   display: block;
   margin-top: 8px;
-  font-weight: 700;
+  font-weight: 500;
   color: rgba(2, 6, 23, 0.70);
 }
 
@@ -385,12 +448,12 @@ body[data-mantine-color-scheme="dark"] .survey-group-indicator {
 }
 
 .survey-step-panel {
-  margin-top: 18px;
-  padding: 18px;
+  margin-top: 14px;
+  padding: 14px;
   border-radius: 18px;
   border: 1px solid rgba(2, 6, 23, 0.10);
   background: rgba(255, 255, 255, 0.58);
-  animation: surveyPanelIn 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: surveyPanelIn 380ms cubic-bezier(0.22, 0.68, 0, 1) both;
   transition: background-color 220ms ease, border-color 220ms ease,
     transform 220ms ease;
 }
@@ -426,7 +489,15 @@ body[data-mantine-color-scheme="dark"] .survey-section-header-icon {
 
 .survey-section-title {
   margin: 0 !important;
-  font-weight: 800 !important;
+  font-weight: 600 !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-section-title {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-title {
+  color: rgba(255, 255, 255, 0.95) !important;
 }
 
 .survey-section-desc {
@@ -448,22 +519,14 @@ body[data-mantine-color-scheme="dark"] .survey-section-desc {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    to top,
-    rgba(255, 255, 255, 0.92),
-    rgba(255, 255, 255, 0.65)
-  );
-  border-top: 1px solid rgba(2, 6, 23, 0.10);
-  backdrop-filter: blur(10px);
+  background: transparent;
+  border-top: none;
+  backdrop-filter: none;
 }
 
 body[data-mantine-color-scheme="dark"] .survey-actions {
-  background: linear-gradient(
-    to top,
-    rgba(2, 6, 23, 0.80),
-    rgba(2, 6, 23, 0.42)
-  );
-  border-top-color: rgba(148, 163, 184, 0.18);
+  background: transparent;
+  border-top-color: transparent;
 }
 
 .survey-actions-inner {
@@ -486,9 +549,9 @@ body[data-mantine-color-scheme="dark"] .survey-actions-hint {
 }
 
 .survey-actions-hint-text {
-  font-size: 14px;
-  font-weight: 700;
-  color: rgba(2, 6, 23, 0.76);
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(2, 6, 23, 0.72);
 }
 
 body[data-mantine-color-scheme="dark"] .survey-actions-hint-text {
@@ -496,18 +559,56 @@ body[data-mantine-color-scheme="dark"] .survey-actions-hint-text {
 }
 
 .survey-btn.ant-btn {
-  height: 46px;
-  padding: 0 16px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 800;
-  transition: transform 160ms ease, box-shadow 160ms ease,
-    background-color 160ms ease, border-color 160ms ease;
+  height: 42px;
+  padding: 0 22px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  transition: transform 180ms ease, box-shadow 180ms ease,
+    background-color 180ms ease, border-color 180ms ease, opacity 180ms ease;
 }
 
 .survey-btn.ant-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 28px rgba(2, 8, 23, 0.14);
+  box-shadow: 0 6px 18px rgba(2, 8, 23, 0.10);
+}
+
+/* Default (non-primary) buttons in dark theme */
+body[data-mantine-color-scheme="dark"] .survey-btn.ant-btn-default {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(148, 163, 184, 0.32) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-btn.ant-btn-default:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(148, 163, 184, 0.50) !important;
+  color: #fff !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-btn.ant-btn-default:disabled {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* Danger button in dark theme */
+body[data-mantine-color-scheme="dark"] .survey-btn.ant-btn-primary.ant-btn-dangerous {
+  background: rgba(220, 38, 38, 0.82) !important;
+  border-color: rgba(220, 38, 38, 0.60) !important;
+  color: #fff !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-btn.ant-btn-primary.ant-btn-dangerous:hover {
+  background: rgba(220, 38, 38, 1) !important;
+}
+
+/* Primary button disabled in dark theme */
+body[data-mantine-color-scheme="dark"] .survey-btn-primary.ant-btn-primary:disabled {
+  background: rgba(14, 165, 233, 0.25) !important;
+  color: rgba(255, 255, 255, 0.40) !important;
+  border: none;
 }
 
 .survey-btn-primary.ant-btn-primary {
@@ -518,11 +619,28 @@ body[data-mantine-color-scheme="dark"] .survey-actions-hint-text {
 @keyframes surveyPanelIn {
   0% {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateX(32px) scale(0.98);
+    filter: blur(4px);
+  }
+  60% {
+    opacity: 1;
+    filter: blur(0);
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes surveyPanelOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-24px) scale(0.98);
   }
 }
 
@@ -538,7 +656,7 @@ body[data-mantine-color-scheme="dark"] .survey-actions-hint-text {
 
 .survey-footer {
   text-align: center;
-  padding: 16px 0;
+  padding: 6px 0;
   font-size: 13px;
   color: #666;
   z-index: 1;
@@ -566,6 +684,44 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
   max-width: 700px !important;
 }
 
+/* ── Agency contact prompt (post-survey) ── */
+.swal-agency-popup {
+  border-radius: 18px !important;
+  padding: 28px 24px 22px !important;
+  max-width: 400px !important;
+}
+
+.swal-agency-popup .swal2-html-container {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.swal-agency-popup .swal2-confirm {
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 8px 28px !important;
+}
+
+body[data-mantine-color-scheme="dark"] .swal-agency-popup {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+body[data-mantine-color-scheme="dark"] .swal-agency-popup h3 {
+  color: #f1f5f9 !important;
+}
+
+body[data-mantine-color-scheme="dark"] .swal-agency-popup p {
+  color: #94a3b8 !important;
+}
+
+body[data-mantine-color-scheme="dark"] .swal-agency-popup a[href^="tel"] {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
 /* === Background Animation === */
 @keyframes gradientFlow {
   0% {
@@ -583,21 +739,115 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
 
 @media screen and (max-width: 768px) {
   .survey-page-content.ant-card {
-    padding: 18px;
-    border-radius: 18px;
-    width: calc(100% - 20px);
+    padding: 14px;
+    border-radius: 16px;
+    width: calc(100% - 16px);
   }
 
   .survey-title-icon {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .survey-title {
-    font-size: 26px !important;
+    font-size: 20px !important;
+  }
+
+  .survey-subtitle {
+    font-size: 13px;
   }
 
   .survey-step-panel {
-    padding: 14px;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .survey-intro {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .survey-intro-right {
+    align-self: flex-start;
+  }
+
+  .survey-section-pill {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .survey-section-header {
+    gap: 8px;
+  }
+
+  .survey-section-header-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+
+  .survey-section-title {
+    font-size: 16px !important;
+  }
+
+  .survey-section-desc {
+    font-size: 13px;
+  }
+
+  /* Steps: compact for narrow screens */
+  .survey-steps {
+    margin-left: 0 !important;
+  }
+
+  .survey-steps .ant-steps-item-title {
+    font-size: 11px;
+  }
+
+  .survey-steps .ant-steps-item {
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+  }
+
+  .survey-step-icon {
+    font-size: 14px;
+  }
+
+  /* Buttons: touch-friendly */
+  .survey-btn.ant-btn {
+    height: 40px;
+    font-size: 13px;
+    padding: 0 14px;
+    border-radius: 8px;
+  }
+
+  .survey-actions {
+    padding: 10px 0 8px;
+  }
+
+  /* Form inputs */
+  .survey-page-content .ant-form-item-label > label {
+    font-size: 14px;
+  }
+
+  .survey-page-content .ant-input,
+  .survey-page-content .ant-input-affix-wrapper,
+  .survey-page-content textarea {
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+
+  .survey-page-content .ant-select-single .ant-select-selector {
+    height: 40px !important;
+  }
+
+  .survey-page-content .ant-select-selection-item,
+  .survey-page-content .ant-select-selection-placeholder {
+    line-height: 38px !important;
+    font-size: 14px;
+  }
+
+  .survey-page-content .ant-radio-wrapper {
+    font-size: 14px;
   }
 }
 
@@ -654,23 +904,32 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
 
   .survey-page-content.ant-card {
     max-width: 840px;
-    margin-top: 0; /* prevent further stacking */
-    margin-bottom: 0 !important; /* ← kill extra space */
-    padding-bottom: 12px;
+    margin-top: 0;
+    margin-bottom: 0 !important;
+    padding: 22px 20px;
     width: 100%;
-    flex: 0 1 auto; /* ← prevent it from pushing footer down */
+    flex: 0 1 auto;
   }
 
   .survey-steps {
     max-width: 840px;
-    margin-top: -20px;
+    margin-top: -10px;
+    margin-left: 0 !important;
+  }
+
+  .survey-steps .ant-steps-item-title {
+    font-size: 12px;
+  }
+
+  .survey-steps .ant-steps-item-description {
+    font-size: 10px;
   }
 
   .survey-footer {
     font-size: 11px;
     padding: 6px 0 !important;
     margin-top: 0 !important;
-    flex-shrink: 0; /* ← don't let flex collapse it */
+    flex-shrink: 0;
   }
 
   .logo-svg-emb,
@@ -678,6 +937,10 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
     height: 36px;
     width: 36px;
     object-fit: contain;
+  }
+
+  .agency-header-inner-survey {
+    gap: 12px;
   }
 
   .republic-text,
@@ -693,22 +956,19 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
     font-size: 10px;
   }
 
+  .survey-title {
+    font-size: 22px !important;
+  }
+
   .survey-page-content .ant-typography {
-    font-size: 12px;
+    font-size: 13px;
   }
 
-  .survey-page-content .ant-steps-item-title {
-    font-size: 11px;
-  }
-
-  .survey-page-content .ant-steps-item-description {
-    font-size: 10px;
-  }
-
-  .ant-btn {
-    height: 25px;
-    font-size: 11px;
-    padding: 0 10px;
+  /* Buttons: keep touch-friendly on tablet */
+  .survey-btn.ant-btn {
+    height: 38px;
+    font-size: 13px;
+    padding: 0 16px;
   }
 }
 
@@ -739,13 +999,13 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
   .survey-page-content.ant-card {
     max-width: 95%;
     margin: 0 auto 12px auto;
-    padding: 20px 16px;
+    padding: 16px 14px;
     width: 100%;
     flex: 0 1 auto;
   }
 
   .survey-steps {
-    margin-left: -45px !important; /* ← shrink default margin */
+    margin-left: 0 !important;
     max-width: 100%;
   }
 
@@ -754,7 +1014,7 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
   }
 
   .survey-steps .ant-steps-item-description {
-    font-size: 8px;
+    font-size: 9px;
   }
 
   .survey-steps .ant-steps-item {
@@ -777,6 +1037,10 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
     object-fit: contain;
   }
 
+  .agency-header-inner-survey {
+    gap: 10px;
+  }
+
   .republic-text,
   .department-text {
     font-size: 11px;
@@ -791,20 +1055,140 @@ body[data-mantine-color-scheme="dark"] .survey-footer {
   }
 
   .survey-page-content .ant-typography {
-    font-size: 11px;
+    font-size: 12px;
   }
 
-  .survey-page-content .ant-steps-item-title {
-    font-size: 10px;
+  .survey-btn.ant-btn {
+    height: 38px;
+    font-size: 13px;
+    padding: 0 12px;
+  }
+}
+
+/* === Extra-small phones (< 440px) === */
+@media screen and (max-width: 440px) {
+  .survey-page-content.ant-card {
+    padding: 10px;
+    border-radius: 12px;
+    width: calc(100% - 10px);
+    margin: 0 auto 8px auto;
   }
 
-  .survey-page-content .ant-steps-item-description {
+  .agency-header-survey {
+    padding: 8px;
+  }
+
+  .logo-svg-emb,
+  .logo-svg-bp {
+    height: 26px;
+    width: 26px;
+  }
+
+  .agency-header-inner-survey {
+    gap: 6px;
+  }
+
+  .republic-text,
+  .department-text {
     font-size: 9px;
   }
 
-  .ant-btn {
-    height: 30px;
+  .bureau-text {
+    font-size: 13px;
+  }
+
+  .address-text {
+    font-size: 8px;
+  }
+
+  .survey-title {
+    font-size: 17px !important;
+  }
+
+  .survey-subtitle {
+    font-size: 12px;
+  }
+
+  .survey-step-panel {
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  /* Steps: hide text, show only dots */
+  .survey-steps .ant-steps-item-title {
+    font-size: 0;
+    visibility: hidden;
+    width: 0;
+    height: 0;
+  }
+
+  .survey-step-title {
+    font-size: 0;
+  }
+
+  .survey-step-icon {
     font-size: 14px;
-    padding: 0 8px;
+    visibility: visible;
+  }
+
+  .survey-section-header-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .survey-section-title {
+    font-size: 15px !important;
+  }
+
+  .survey-section-desc {
+    font-size: 12px;
+  }
+
+  .survey-section-pill {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .survey-page-content .ant-form-item-label > label {
+    font-size: 13px;
+  }
+
+  .survey-page-content .ant-input,
+  .survey-page-content .ant-input-affix-wrapper,
+  .survey-page-content textarea {
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+
+  .survey-page-content .ant-select-single .ant-select-selector {
+    height: 36px !important;
+  }
+
+  .survey-page-content .ant-select-selection-item,
+  .survey-page-content .ant-select-selection-placeholder {
+    line-height: 34px !important;
+    font-size: 13px;
+  }
+
+  .survey-page-content .ant-radio-wrapper {
+    font-size: 13px;
+  }
+
+  .survey-btn.ant-btn {
+    height: 36px;
+    font-size: 12px;
+    padding: 0 10px;
+    border-radius: 8px;
+  }
+
+  .survey-actions {
+    padding: 8px 0 6px;
+  }
+
+  .survey-footer {
+    font-size: 9px;
+    padding: 2px 0 !important;
   }
 }

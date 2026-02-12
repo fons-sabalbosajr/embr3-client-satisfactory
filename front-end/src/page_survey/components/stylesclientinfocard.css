@@ -36,15 +36,35 @@ body[data-mantine-color-scheme="dark"] .client-info-card-note-text {
 @media screen and (min-width: 768px) and (max-width: 1080px) {
   .client-info-card-note-text {
     font-size: 13px;
-    color: rgba(2, 6, 23, 0.66);
   }
 }
 
 @media screen and (min-width: 440px) and (max-width: 768px) {
   .client-info-card-note-text {
-    font-size: 13px;
-    color: rgba(2, 6, 23, 0.66);
+    font-size: 12px;
     display: flex;
     margin-top: -8px;
+  }
+
+  .client-info-card-dynamic-input {
+    width: 100%;
+  }
+}
+
+@media screen and (max-width: 440px) {
+  .client-info-card-note {
+    padding-top: 8px;
+  }
+
+  .client-info-card-note-text {
+    font-size: 11px;
+  }
+
+  .client-info-card-dynamic-input {
+    width: 100%;
+  }
+
+  .client-info-card-radio-space {
+    gap: 6px;
   }
 }

@@ -193,6 +193,18 @@ body[data-mantine-color-scheme="dark"] .client-home-container {
   }
 }
 
+@keyframes sloganGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 .agency-header-home {
   position: fixed;
   top: 0;
@@ -216,33 +228,25 @@ body[data-mantine-color-scheme="dark"] .agency-header-home {
   margin: 0 auto;
   max-width: 1400px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
+  gap: 16px;
   text-align: center;
 }
 
-.agency-header-top {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.agency-header-logos {
-  display: flex;
-  gap: 14px;
-  align-items: center;
+.agency-header-text {
+  margin-top: 0;
+  line-height: 1.15;
+  flex: 0 1 auto;
 }
 
 .logo-svg-emb,
 .logo-svg-bp {
   height: 52px;
   width: auto;
+  flex-shrink: 0;
   filter: drop-shadow(0 6px 18px rgba(2, 8, 23, 0.18));
-}
-
-.agency-header-text {
-  margin-top: 8px;
-  line-height: 1.15;
 }
 
 .republic-text {
@@ -318,13 +322,13 @@ body[data-mantine-color-scheme="dark"] .hero-agency-line {
   color: var(--text-dark);
 }
 .hero-section {
-  padding: clamp(12px, 2.5vh, 28px) clamp(12px, 2vw, 24px) 76px;
+  padding: 0 clamp(12px, 2vw, 24px) 20px;
   min-height: calc(100vh - var(--client-header-space));
   display: flex;
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 1;
 }
@@ -350,7 +354,7 @@ body[data-mantine-color-scheme="dark"] .hero-agency-line {
 .hero-card {
   position: relative;
   width: 100%;
-  padding: 26px 24px;
+  padding: 20px 24px 16px;
   border-radius: 18px;
   border: 1px solid transparent;
   background:
@@ -374,8 +378,19 @@ body[data-mantine-color-scheme="dark"] .hero-agency-line {
 
 .hero-card-grid {
   display: grid;
-  gap: 18px;
+  gap: 4px;
   align-items: center;
+}
+
+/* On single-column layouts, show image above content */
+.hero-card-visual {
+  order: -1;
+}
+
+@media screen and (min-width: 768px) {
+  .hero-card-visual {
+    order: 0;
+  }
 }
 
 .hero-card-visual {
@@ -416,65 +431,102 @@ body[data-mantine-color-scheme="dark"] .hero-image-in-card {
   filter: drop-shadow(0 22px 42px rgba(0, 0, 0, 0.45)) saturate(1.22) contrast(1.10) brightness(1.08);
 }
 
+/* Slogan + QR row */
+.hero-slogan-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 0;
+}
+
 .hero-big-slogan {
   display: block;
-  width: 100%;
+  flex: 1 1 0%;
+  min-width: 0;
   font-family: var(--font-display);
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  font-size: clamp(2.5rem, 5.6vw, 4.1rem);
+  font-size: clamp(3rem, 7vw, 5.2rem);
   line-height: 1.05;
-  margin: 2px 0 14px;
+  margin: 0;
   text-align: center;
-  color: var(--brand-ink);
-  text-shadow: 0 2px 18px rgba(2, 6, 23, 0.16);
+  background: linear-gradient(
+    90deg,
+    #0ea5e9,
+    #22c55e,
+    #f59e0b,
+    #ef4444,
+    #8b5cf6,
+    #0ea5e9
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: sloganGradient 6s ease infinite;
+  text-shadow: none;
 }
 
 .client-cover-footer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 14px;
+  position: relative;
   z-index: 2;
   display: flex;
   justify-content: center;
-  padding: 0 16px;
-  pointer-events: none;
+  margin-top: 12px;
+  padding: 10px 0 0;
+  border-top: 1px solid rgba(2, 6, 23, 0.08);
+}
+
+body[data-mantine-color-scheme="dark"] .client-cover-footer {
+  border-top-color: rgba(148, 163, 184, 0.14);
 }
 
 .client-cover-footer-inner {
   width: 100%;
-  max-width: 1400px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
 }
 
 .client-cover-footer-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: rgba(2, 6, 23, 0.72);
+  color: rgba(2, 6, 23, 0.60);
 }
 
 .client-cover-footer-meta {
-  font-size: 11px;
-  color: rgba(2, 6, 23, 0.56);
+  font-size: 10px;
+  color: rgba(2, 6, 23, 0.46);
 }
 
 body[data-mantine-color-scheme="dark"] .client-cover-footer-title {
-  color: rgba(255, 255, 255, 0.74);
+  color: rgba(255, 255, 255, 0.62);
 }
 
 body[data-mantine-color-scheme="dark"] .client-cover-footer-meta {
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(255, 255, 255, 0.48);
 }
 
 body[data-mantine-color-scheme="dark"] .hero-big-slogan {
-  color: rgba(255, 255, 255, 0.96);
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(
+    90deg,
+    #38bdf8,
+    #4ade80,
+    #fbbf24,
+    #f87171,
+    #a78bfa,
+    #38bdf8
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: sloganGradient 6s ease infinite;
+  text-shadow: none;
 }
 
 body[data-mantine-color-scheme="dark"] .hero-card {
@@ -486,14 +538,14 @@ body[data-mantine-color-scheme="dark"] .hero-card {
   width: fit-content;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-radius: 999px;
   background: rgba(14, 165, 233, 0.16);
   color: rgba(2, 6, 23, 0.92);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2px;
-  margin: 0 auto 14px;
+  margin: 0 auto 2px;
 }
 
 body[data-mantine-color-scheme="dark"] .hero-kicker {
@@ -519,7 +571,7 @@ body[data-mantine-color-scheme="dark"] .hero-title {
   display: block;
   font-size: clamp(1.15rem, 1.6vw, 1.55rem);
   line-height: 1.25;
-  margin-bottom: 18px;
+  margin-bottom: 3px;
   font-weight: 600;
   color: rgba(2, 6, 23, 0.90);
   text-align: center;
@@ -536,10 +588,10 @@ body[data-mantine-color-scheme="dark"] .hero-slogan {
 }
 
 .hero-subtitle {
-  line-height: 1.5;
+  line-height: 1.4;
   font-size: 20px;
   color: rgba(2, 6, 23, 0.78);
-  margin-bottom: 16px;
+  margin-bottom: 4px;
   text-align: center;
   display: block;
 }
@@ -759,6 +811,61 @@ body[data-mantine-color-scheme="dark"] .hero-social-proof {
   color: rgba(255, 255, 255, 0.82);
 }
 
+/* ── QR Code (desktop only, inline with slogan) ── */
+.hero-qr-section {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 14px 16px 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(14, 165, 233, 0.25);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.06), rgba(34, 197, 94, 0.06));
+  box-shadow: 0 4px 18px rgba(14, 165, 233, 0.10);
+}
+
+body[data-mantine-color-scheme="dark"] .hero-qr-section {
+  border-color: rgba(56, 189, 248, 0.28);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(52, 211, 153, 0.06));
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.30);
+}
+
+.hero-qr-wrapper {
+  padding: 8px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.08);
+}
+
+body[data-mantine-color-scheme="dark"] .hero-qr-wrapper {
+  background: #f8fafc;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+.hero-qr-code {
+  display: block;
+}
+
+.hero-qr-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: rgba(14, 165, 233, 0.80);
+  text-align: center;
+}
+
+body[data-mantine-color-scheme="dark"] .hero-qr-label {
+  color: rgba(56, 189, 248, 0.82);
+}
+
+/* Show QR only on desktop (≥900px) */
+@media screen and (min-width: 900px) {
+  .hero-qr-section {
+    display: flex;
+  }
+}
+
 /* Make the language select match the higher-contrast card look */
 .hero-language-select .ant-select-selector {
   background: rgba(255, 255, 255, 0.88) !important;
@@ -973,6 +1080,10 @@ body[data-mantine-color-scheme="dark"] .hero-language-select .ant-select-selecto
 
   .agency-header-home {
     padding: 10px 12px;
+  }
+
+  .agency-header-inner-home {
+    gap: 8px;
   }
 
   .logo-svg-emb,

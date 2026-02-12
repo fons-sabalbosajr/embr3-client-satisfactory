@@ -247,7 +247,7 @@ i18n
 
           section: {
             personalInfo: "Personal Information",
-            citizensCharter: "Citizen’s Charter",
+            citizensCharter: "Citizen's Charter",
             sqd: "Service Quality Dimensions",
             remarks: "Remarks / Suggestions",
           },
@@ -278,6 +278,24 @@ i18n
             incompleteCC: "Citizens Charter answers incomplete",
             atLeastOneCCRequired:
               "Please answer at least one Citizens Charter question before proceeding.",
+          },
+
+          // Misc UI
+          loadError: "Failed to load questions. Check the API or network.",
+          errorLabel: "Error",
+          pleaseFillOut: "Please fill this out.",
+          answerHere: "Answer here...",
+          toggleTheme: "Toggle Theme",
+          responsesRecorded: "{{count}} response recorded",
+          responsesRecorded_plural: "{{count}} responses recorded",
+          allRightsReserved: "© {{year}} EMB Region III. All rights reserved.",
+          surveyFooter: "Environmental Management Bureau Region III Online Customer Satisfaction Measurement. All rights reserved.",
+
+          // Post-survey agency prompt
+          agencyPrompt: {
+            title: "Environmental Management Bureau — Region III",
+            subtitle: "Stay connected with us for updates and inquiries.",
+            close: "Close",
           },
         },
       },
@@ -520,20 +538,20 @@ i18n
           },
 
           section: {
-            personalInfo: "Personal Information",
-            citizensCharter: "Citizen’s Charter",
-            sqd: "Service Quality Dimensions",
-            remarks: "Remarks / Suggestions",
+            personalInfo: "Pangunahing Impormasyon",
+            citizensCharter: "Citizen's Charter",
+            sqd: "Mga Dimensyon ng Kalidad ng Serbisyo",
+            remarks: "Komento / Suhestyon",
           },
 
           summaryLabels: {
-            region: "Region",
-            agency: "Agency",
-            customerType: "Customer Type",
-            companyName: "Establishment/Proponent Name",
-            gender: "Gender",
-            age: "Age",
-            serviceAvailed: "Service Availed",
+            region: "Rehiyon",
+            agency: "Ahensya",
+            customerType: "Uri ng Kliyente",
+            companyName: "Pangalan ng Establisyamento/Proponent",
+            gender: "Kasarian",
+            age: "Edad",
+            serviceAvailed: "Serbisyong Ginamit",
             assistPersonnel: "Kawani na Tumulong",
           },
 
@@ -552,6 +570,24 @@ i18n
             incompleteCC: "Hindi kumpleto ang sagot sa Citizens Charter",
             atLeastOneCCRequired:
               "Sagutan ang kahit isang tanong sa Citizens Charter bago magpatuloy.",
+          },
+
+          // Misc UI
+          loadError: "Hindi nagload ang mga tanong. Suriin ang API o koneksyon.",
+          errorLabel: "Error",
+          pleaseFillOut: "Pakipunan ito.",
+          answerHere: "Isulat dito...",
+          toggleTheme: "Palitan ang Tema",
+          responsesRecorded: "{{count}} sagot ang naitala",
+          responsesRecorded_plural: "{{count}} sagot ang naitala",
+          allRightsReserved: "© {{year}} EMB Region III. Lahat ng karapatan ay nakalaan.",
+          surveyFooter: "Environmental Management Bureau Region III Online Customer Satisfaction Measurement. Lahat ng karapatan ay nakalaan.",
+
+          // Post-survey agency prompt
+          agencyPrompt: {
+            title: "Environmental Management Bureau — Region III",
+            subtitle: "Makipag-ugnayan sa amin para sa mga update at katanungan.",
+            close: "Isara",
           },
         },
       },
