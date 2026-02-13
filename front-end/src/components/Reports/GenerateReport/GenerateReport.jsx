@@ -13,7 +13,7 @@ import {
   Divider,
 } from "antd";
 import * as api from "../../../services/api";
-import * as XLSX from "xlsx";
+import { exportToExcelFile } from "../../../utils/excelExport";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import dayjs from "dayjs";
@@ -100,10 +100,7 @@ function normalizeSqdAnswer(val) {
 
 // Export helpers
 function exportToExcel(filename, rows) {
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Report");
-  XLSX.writeFile(wb, filename);
+  exportToExcelFile(filename, rows, "Report");
 }
 
 function exportToPdf(title, headers, bodyRows, filename) {

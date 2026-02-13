@@ -43,6 +43,8 @@ import {
   getOpaqueItem,
   setOpaqueItem,
   removeOpaqueItem,
+  migratePlainKeysToEncrypted,
+  clearAllStorage,
 } from "./utils/encryptedStorage";
 
 const MainApp = () => {
@@ -52,8 +54,7 @@ const MainApp = () => {
       getOpaqueItem("token") ?? localStorage.getItem("token")
     );
     if (!isAuthenticated) {
-      localStorage.clear();
-      sessionStorage.clear();
+      clearAllStorage();
     }
   }, []);
   const defaultColor = getDecryptedItem("mantine-color-scheme") || "light";
@@ -73,22 +74,9 @@ const MainApp = () => {
     setEncryptedItem("mantine-color-scheme", colorScheme);
   }, [colorScheme]);
 
-  // One-time migration of plain localStorage keys to obfuscated ones
+  // One-time migration of plain localStorage keys to obfuscated/encrypted ones
   useEffect(() => {
-    const migrateKey = (k) => {
-      try {
-        const val = localStorage.getItem(k);
-        if (val && !getOpaqueItem(k)) {
-          setOpaqueItem(k, val);
-          localStorage.removeItem(k);
-        }
-      } catch {
-        // ignore
-      }
-    };
-    migrateKey("token");
-    migrateKey("user");
-    migrateKey("darkMode");
+    migratePlainKeysToEncrypted();
   }, []);
 
   // React to auth changes (e.g., login/logout) via custom event and storage

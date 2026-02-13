@@ -2,7 +2,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { requirePermission } from "../middleware/permission.js";
-import { getEmailHealth } from "../utils/email.js";
+import { getEmailHealth, sendVerificationEmail } from "../utils/email.js";
 
 const router = express.Router();
 
@@ -171,8 +171,6 @@ router.get(
   }
 );
 
-export default router;
-
 // Email transport health check (admin only)
 router.get(
   "/email/health",
@@ -188,3 +186,25 @@ router.get(
     }
   }
 );
+
+// POST /api/admin/email/test - Send a test email to verify configuration
+router.post(
+  "/email/test",
+  authMiddleware,
+  requirePermission("canManageUsers"),
+  async (req, res) => {
+    try {
+      const { to } = req.body;
+      if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+        return res.status(400).json({ ok: false, error: "Valid 'to' email address is required" });
+      }
+      await sendVerificationEmail(to, "Test User", "https://example.com/test-verification");
+      res.json({ ok: true, message: `Test email sent to ${to}` });
+    } catch (err) {
+      console.error("Test email send error:", err);
+      res.status(500).json({ ok: false, error: err.message || String(err) });
+    }
+  }
+);
+
+export default router;

@@ -6,6 +6,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
 import { Server } from "socket.io";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import hpp from "hpp";
 
 // Routes
 import feedbackRoutes from "./routes/feedback.js";
@@ -73,7 +76,43 @@ app.use(
       : { origin: true, credentials: true }
   )
 );
-app.use(express.json());
+
+// Security headers
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // CSP handled by frontend/nginx in production
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+// Prevent HTTP parameter pollution
+app.use(hpp());
+
+// Rate limiters
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300,                 // limit each IP to 300 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many requests, please try again later." },
+});
+app.use(globalLimiter);
+
+// Strict rate-limit for auth endpoints (login, signup, forgot-password)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,                    // 15 attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many authentication attempts, please try again after 15 minutes." },
+});
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/signup", authLimiter);
+app.use("/api/auth/forgot-password", authLimiter);
+app.use("/api/auth/resend-verification", authLimiter);
+
+// Limit JSON body size
+app.use(express.json({ limit: "1mb" }));
 
 const activeFeedbacks = new Map();
 
@@ -139,6 +178,23 @@ app.use("/api/service-categories", serviceCategoriesRoute);
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
+
+// In production, serve the built frontend SPA (useful when not using nginx)
+if (IS_PROD) {
+  const path = await import("path");
+  const { fileURLToPath } = await import("url");
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.default.dirname(__filename);
+  const distPath = path.default.join(__dirname, "../front-end/dist");
+
+  app.use(express.static(distPath));
+  // SPA fallback: serve index.html for any non-API route
+  app.get("*", (req, res) => {
+    if (!req.path.startsWith("/api") && !req.path.startsWith("/socket.io")) {
+      res.sendFile(path.default.join(distPath, "index.html"));
+    }
+  });
+}
 
 // DB Connection and start server
 mongoose
