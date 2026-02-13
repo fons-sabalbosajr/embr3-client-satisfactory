@@ -4,7 +4,7 @@ import { ExportOutlined } from "@ant-design/icons";
 import MeasurementTable from "../Measurement/components/MeasurementTable";
 import MeasurementFormModal from "../Measurement/components/MeasurementFormModal";
 import { getFeedbacks } from "../../services/api";
-import * as XLSX from "xlsx";
+import { exportToExcelFile } from "../../utils/excelExport";
 import dayjs from "dayjs";
 import socket from "../../utils/socket"; // Ensure this path is correct
 
@@ -78,10 +78,7 @@ function Measurement() {
       submittedAt: dayjs(item.submittedAt).format("YYYY-MM-DD HH:mm:ss"),
     }));
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Measurements");
-    XLSX.writeFile(wb, "ClientMeasurements.xlsx");
+    exportToExcelFile("ClientMeasurements.xlsx", exportData, "Measurements");
   };
 
   const openEditModal = (record) => {

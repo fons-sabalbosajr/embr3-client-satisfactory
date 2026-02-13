@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getDecryptedItem, getOpaqueItem } from "../utils/encryptedStorage";
+import { getDecryptedItem, getOpaqueItem, setOpaqueItem, removeOpaqueItem } from "../utils/encryptedStorage";
 
 // Base URL strategy:
 // - Prefer VITE_API_BASE when deploying frontend and backend on different domains (e.g., Render multi-service)
@@ -30,6 +30,33 @@ API.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Response interceptor: handle token refresh and 401 auto-logout
+API.interceptors.response.use(
+  (response) => {
+    // If the server refreshed the token, store the new one
+    const refreshedToken = response.headers["x-refreshed-token"];
+    if (refreshedToken) {
+      setOpaqueItem("token", refreshedToken);
+    }
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid — clear auth and redirect
+      removeOpaqueItem("token");
+      removeOpaqueItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      // Only redirect if not already on a public page
+      const path = window.location.pathname;
+      if (path.startsWith("/admin") && path !== "/admin") {
+        window.location.replace(`${window.location.origin}/admin`);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Get all users (for Accounts Management)
 export const getAllUsers = () => API.get("/auth/users");

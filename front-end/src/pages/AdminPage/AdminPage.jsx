@@ -28,6 +28,7 @@ import {
   getDecryptedItem,
   setEncryptedItem,
   removeOpaqueItem,
+  clearAllStorage,
 } from "../../utils/encryptedStorage";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import EMBLogo from "../../assets/emblogo.svg";
@@ -107,12 +108,7 @@ function AdminPage() {
             "The current user seems idle; the system will automatically log you out and redirect you to the login page.",
           okText: "OK",
           onOk: () => {
-            removeOpaqueItem("user");
-            removeOpaqueItem("token");
-            removeOpaqueItem("darkMode");
-            localStorage.removeItem("user");
-            localStorage.removeItem("token");
-            localStorage.removeItem("darkMode");
+            clearAllStorage();
             try {
               const { origin } = window.location;
               window.location.href = `${origin}/admin`;
@@ -123,12 +119,7 @@ function AdminPage() {
         });
         // Fallback: force redirect after 10s if modal not confirmed
         warningTimeout = setTimeout(() => {
-          removeOpaqueItem("user");
-          removeOpaqueItem("token");
-          removeOpaqueItem("darkMode");
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          localStorage.removeItem("darkMode");
+          clearAllStorage();
           try {
             const { origin } = window.location;
             window.location.href = `${origin}/admin`;
@@ -156,11 +147,6 @@ function AdminPage() {
   useEffect(() => {
     const ensureAuthenticated = async () => {
       try {
-        // If there's no token at all, redirect to login
-        const hasToken = !!(localStorage.getItem("token") || (typeof window !== 'undefined' && window.localStorage) /* noop to keep same branch */);
-        // We use opaque storage for token; check through getDecryptedItem fallback isn't needed here
-        // We'll just probe Authorization via getMe if user data is missing.
-
         const decryptedDataString = getDecryptedItem("user");
 
         if (!decryptedDataString) {
@@ -178,12 +164,7 @@ function AdminPage() {
             }
           } catch (err) {
             // If we can't hydrate, clear and redirect to login
-            removeOpaqueItem("user");
-            removeOpaqueItem("token");
-            removeOpaqueItem("darkMode");
-            localStorage.removeItem("user");
-            localStorage.removeItem("token");
-            localStorage.removeItem("darkMode");
+            clearAllStorage();
             navigate("/admin");
             return;
           }
@@ -239,12 +220,7 @@ function AdminPage() {
           "Issue hydrating authenticated user; clearing storage and redirecting.",
           e?.message || e
         );
-        removeOpaqueItem("user");
-        removeOpaqueItem("token");
-        removeOpaqueItem("darkMode");
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        localStorage.removeItem("darkMode");
+        clearAllStorage();
         navigate("/admin");
       }
     };
@@ -277,19 +253,7 @@ function AdminPage() {
   }, [isDarkMode]);
 
   const handleLogout = () => {
-    // Remove obfuscated keys
-    removeOpaqueItem("user");
-    removeOpaqueItem("token");
-    removeOpaqueItem("darkMode");
-    // Clear all localStorage and sessionStorage
-    localStorage.clear();
-    sessionStorage.clear();
-    // Optionally, overwrite any remaining keys with dummy values for extra obfuscation
-    Object.keys(localStorage).forEach((key) => {
-      try {
-        localStorage.setItem(key, "[hidden]");
-      } catch {}
-    });
+    clearAllStorage();
     navigate("/admin");
     window.location.reload();
   };

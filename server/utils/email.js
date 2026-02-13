@@ -60,6 +60,25 @@ function getTransport() {
 
 const transporter = getTransport();
 
+// Retry helper for transient failures
+async function withRetry(fn, retries = 2, delayMs = 2000) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const code = err?.responseCode || err?.code;
+      // Don't retry on permanent failures (auth, bad address, etc.)
+      if (code === 535 || code === 550 || code === 553 || code === 554) throw err;
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, delayMs * (attempt + 1)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 // Unified send helper that uses SMTP unless explicitly configured to use API providers
 async function sendMailUnified({ to, subject, html, from }) {
   const sender = from || `${envStr("EMAIL_FROM", "EMB Region III Online CSM Portal")} <${envStr("EMAIL_USER")}>`;
@@ -112,13 +131,15 @@ async function sendMailUnified({ to, subject, html, from }) {
     return { provider: "resend" };
   }
 
-  // SMTP path
-  return transporter.sendMail({
-    from: sender,
-    to,
-    subject,
-    html,
-  });
+  // SMTP path (with retry for transient failures)
+  return withRetry(() =>
+    transporter.sendMail({
+      from: sender,
+      to,
+      subject,
+      html,
+    })
+  );
 }
 
 let lastVerify = { ok: false, error: "not-verified" };

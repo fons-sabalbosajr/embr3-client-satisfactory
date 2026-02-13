@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Table, Space, Typography, Input, Button, Tag } from 'antd';
 import * as api from '../../../services/api';
-import * as XLSX from 'xlsx';
+import { exportToExcelFile } from '../../../utils/excelExport';
 
 const { Title, Text } = Typography;
 
@@ -84,10 +84,7 @@ function ExtractData() {
       'Assisted Personnel': r.assisted || '',
       'Service Availed': (r.services || []).join('; '),
     }));
-    const ws = XLSX.utils.json_to_sheet(exportRows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Extract');
-    XLSX.writeFile(wb, `survey-extract-${new Date().toISOString().slice(0,10)}.xlsx`);
+    exportToExcelFile(`survey-extract-${new Date().toISOString().slice(0,10)}.xlsx`, exportRows, 'Extract');
   };
 
   return (
