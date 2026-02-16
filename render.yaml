@@ -20,11 +20,17 @@ services:
         sync: false
       - key: EMAIL_PASS
         sync: false
+      - key: FRONTEND_URL
+        sync: false
   - type: static
     name: embr3-frontend
     rootDir: front-end
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_BASE
         sync: false

@@ -7,8 +7,7 @@ import Swal from "sweetalert2";
 import { BulbOutlined, BulbFilled } from "@ant-design/icons";
 import { FloatButton } from "antd";
 import { signUp, login, forgotPassword, resendVerification } from "../../services/api";
-import CryptoJS from "crypto-js";
-import { getConfig } from "../../utils/config";
+
 import { setOpaqueItem } from "../../utils/encryptedStorage";
 import { setEncryptedItem } from "../../utils/encryptedStorage";
 
@@ -34,16 +33,16 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
       const res = await login({ username, password });
 
       // Hide keys by storing under obfuscated storage keys
-  setOpaqueItem("token", res.data.token);
-  // Store user data encrypted using setEncryptedItem for compatibility
-  setEncryptedItem("user", JSON.stringify(res.data.user));
+      setOpaqueItem("token", res.data.token);
+      // Store user data encrypted using setEncryptedItem for compatibility
+      setEncryptedItem("user", JSON.stringify(res.data.user));
 
-    // Notify app shell that auth state changed, then navigate
-    try {
-      window.dispatchEvent(new Event("auth:changed"));
-    } catch {}
-  // Navigate to admin dashboard without full reload to avoid static host 404 flash
-  navigate("/admin/dashboard", { replace: true });
+      // Notify app shell that auth state changed, then navigate
+      try {
+        window.dispatchEvent(new Event("auth:changed"));
+      } catch {}
+      // Navigate to admin dashboard without full reload to avoid static host 404 flash
+      navigate("/admin/dashboard", { replace: true });
     } catch (err) {
       console.error("Login error:", err);
       Swal.fire({

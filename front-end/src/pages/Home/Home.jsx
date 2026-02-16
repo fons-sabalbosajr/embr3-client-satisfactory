@@ -15,6 +15,7 @@ import { getFeedbacks } from "../../services/api";
 import EMBLogo from "../../assets/emblogo.svg";
 import BPLogo from "../../assets/bplogo.svg";
 import Survey from "../../assets/surveyman.png";
+import { getOpaqueItem } from "../../utils/encryptedStorage";
 import "./home.css";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
@@ -26,7 +27,7 @@ function Home({ toggleColorScheme }) {
 
   useEffect(() => {
     // Hide language key for non-authenticated users
-    const isAuthenticated = !!(localStorage.getItem("token") || Object.keys(localStorage).find(k => k.includes("token")));
+    const isAuthenticated = !!(getOpaqueItem("token") || localStorage.getItem("token"));
     if (!isAuthenticated) {
       localStorage.removeItem("i18nextLng");
     }

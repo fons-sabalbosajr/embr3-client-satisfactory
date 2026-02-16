@@ -1,33 +1,35 @@
-/* dashboard.css */
+/* dashboard.css — Corporate Theme */
 
 .dashboard-container {
-  padding: 24px;
-  min-height: calc(100vh - 136px); /* Adjust based on your AdminPage layout if applicable */
-  border-radius: 8px;
+  padding: 20px 24px;
+  min-height: calc(100vh - 136px);
+  border-radius: 6px;
 }
 
 .dashboard-title {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #262626; /* Darker text for titles */
-  font-size: 2.2em;
+  text-align: left;
+  margin-bottom: 24px;
+  color: #1a1a2e;
+  font-size: 1.5em;
   font-weight: 700;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px; /* Space between icon and text */
+  justify-content: flex-start;
+  gap: 8px;
+  letter-spacing: -0.3px;
 }
 
 .dashboard-card {
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* More prominent shadow */
-  transition: all 0.3s ease;
-  overflow: hidden; /* Ensures content respects border-radius */
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .dashboard-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
 }
 
 /* Specific styling for Ant Design Statistic values */

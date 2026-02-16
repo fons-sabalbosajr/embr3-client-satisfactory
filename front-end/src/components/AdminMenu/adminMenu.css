@@ -1,9 +1,19 @@
-/* Applies to all menu items */
+/* Corporate Admin Menu Styles */
 .custom-admin-menu .ant-menu-item,
 .custom-admin-menu .ant-menu-submenu-title {
-  font-size: 11px !important; /* adjust as needed */
+  font-size: 12px !important;
   font-weight: 500 !important;
- font-family: "Poppins", sans-serif;
-  //padding: 0px 12px !important; /* optional: tweak spacing */
-  //color: rgb(255, 255, 255) !important;
+  font-family: "Inter", "Plus Jakarta Sans", "Poppins", sans-serif;
+  letter-spacing: 0.2px;
+  /* padding: 0px 12px !important; */
+  /* color: rgb(255, 255, 255) !important; */
+}
+
+.custom-admin-menu .ant-menu-item-selected {
+  font-weight: 600 !important;
+}
+
+.custom-admin-menu .ant-menu-submenu-title .ant-menu-item-icon,
+.custom-admin-menu .ant-menu-item .ant-menu-item-icon {
+  font-size: 15px !important;
 }

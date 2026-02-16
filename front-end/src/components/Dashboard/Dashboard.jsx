@@ -416,7 +416,7 @@ function Dashboard() {
               ].includes(a)
             ) {
               sqdConsidered += 1;
-              if (a === "Strongly Disagree" || a === "Agree") sqdNumerator += 1;
+              if (a === "Strongly Agree" || a === "Agree") sqdNumerator += 1;
             }
           });
         });

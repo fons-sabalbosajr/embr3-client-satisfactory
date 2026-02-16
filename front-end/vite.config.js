@@ -93,4 +93,24 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Split large vendor libraries into separate chunks for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          // UI frameworks
+          "vendor-antd": ["antd", "@ant-design/icons"],
+          "vendor-mantine": ["@mantine/core", "@mantine/hooks"],
+          // Charting & PDF
+          "vendor-data": ["recharts", "jspdf", "exceljs"],
+        },
+      },
+    },
+    // Increase warning threshold (antd and data libs are inherently large)
+    chunkSizeWarningLimit: 1700,
+    // Generate source maps for production debugging (optional)
+    sourcemap: false,
+  },
 });
