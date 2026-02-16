@@ -145,7 +145,7 @@ h1 {
   /* ✨ Adjust font size for Tags within the table for tablets */
   .questions-table-compact .ant-table-tbody .ant-tag {
     font-size: 9px; /* Smaller font for tags */
-    //padding: 2px 5px; /* Adjust padding to make them more compact */
+    /* padding: 2px 5px; */ /* Adjust padding to make them more compact */
   }
 }
 

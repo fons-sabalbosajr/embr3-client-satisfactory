@@ -66,7 +66,7 @@ function Measurement() {
       const [start, end] = dates;
       result = result.filter((item) => {
         const submitted = dayjs(item.submittedAt);
-        return submitted.isAfter(start) && submitted.isBefore(end);
+        return (submitted.isSame(start, 'day') || submitted.isAfter(start)) && (submitted.isSame(end, 'day') || submitted.isBefore(end));
       });
     }
     setFiltered(result);
@@ -98,7 +98,7 @@ function Measurement() {
     setData(updatedData);
     setFiltered(updatedData);
     closeModal();
-    (messageApi && messageApi.success) ? messageApi.success("Entry updated successfully.") : null;
+    if (messageApi && messageApi.success) messageApi.success("Entry updated successfully.");
   };
 
   return (

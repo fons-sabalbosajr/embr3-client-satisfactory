@@ -1,4 +1,4 @@
-/* adminpage.css */
+/* adminpage.css — Corporate Theme */
 
 /* Style for the logo container in the Sider */
 .admin-logo-container {
@@ -7,12 +7,19 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .admin-logo {
-  height: 32px;
-  width: 32px;
+  height: 36px;
+  width: 36px;
   transition: all 0.3s;
+}
+
+.admin-title-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 /* Ensure dropdown link has a pointer and good alignment */
@@ -20,6 +27,13 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.user-dropdown-link:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
 /* Ensure the menu takes the full height available minus the logo and footer switch */
@@ -28,15 +42,16 @@
   background: transparent;
 }
 
-/* Style for the user dropdown link for better interaction */
-.user-dropdown-link {
-    padding: 8px 12px;
-    border-radius: 8px;
-    transition: background-color 0.3s;
+/* Corporate layout helpers */
+.admin-header-bar {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
-.user-dropdown-link:hover {
-    background-color: rgba(0, 0, 0, 0.04);
+/* Scrollbar styling for sider */
+.ant-layout-sider::-webkit-scrollbar {
+  width: 4px;
 }
-
-
+.ant-layout-sider::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}

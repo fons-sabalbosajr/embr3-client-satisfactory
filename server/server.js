@@ -22,6 +22,16 @@ import serviceCategoriesRoute from "./routes/serviceCategories.js";
 
 dotenv.config();
 
+// Validate required environment variables at startup
+if (!process.env.JWT_SECRET) {
+  console.error("FATAL: JWT_SECRET environment variable is not set. Server cannot start securely.");
+  process.exit(1);
+}
+if (!process.env.MONGO_URI) {
+  console.error("FATAL: MONGO_URI environment variable is not set.");
+  process.exit(1);
+}
+
 // Host selection: prefer explicit SERVER_HOST, otherwise bind to 0.0.0.0
 const REQUESTED_HOST = process.env.SERVER_HOST;
 const DEFAULT_HOST = "0.0.0.0";
@@ -64,6 +74,12 @@ const io = new Server(server, {
         credentials: true,
       },
 });
+
+// When running behind Nginx, trust the first proxy so rate-limiters and
+// req.ip see the real client IP instead of 127.0.0.1.
+if (IS_PROD) {
+  app.set("trust proxy", 1);
+}
 
 // Middleware
 app.use(
@@ -112,7 +128,10 @@ app.use("/api/auth/forgot-password", authLimiter);
 app.use("/api/auth/resend-verification", authLimiter);
 
 // Limit JSON body size
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "500kb" }));
+
+// Register socket.io instance on app for controllers
+app.set("io", io);
 
 const activeFeedbacks = new Map();
 
@@ -261,3 +280,20 @@ server.on("error", (err) => {
 
   console.error("Server error:", err);
 });
+
+// Graceful shutdown
+const shutdown = async (signal) => {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+  try {
+    server.close(() => console.log("HTTP server closed."));
+    io.close();
+    await mongoose.connection.close();
+    console.log("MongoDB connection closed.");
+  } catch (err) {
+    console.error("Error during shutdown:", err);
+  } finally {
+    process.exit(0);
+  }
+};
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

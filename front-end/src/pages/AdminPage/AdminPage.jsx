@@ -22,7 +22,7 @@ import {
   CaretLeftFilled,
   MailOutlined,
 } from "@ant-design/icons";
-import CryptoJS from "crypto-js";
+
 import { getCachedConfig } from "../../utils/config";
 import {
   getDecryptedItem,
@@ -57,8 +57,8 @@ function AdminPage() {
     }
   });
   const [themePrefs, setThemePrefs] = useState({
-    siderBg: "#001529",
-    headerBg: "#001529",
+    siderBg: "#0C2340",
+    headerBg: "#0C2340",
     colorPrimary: "#1677ff",
   });
 
@@ -259,11 +259,11 @@ function AdminPage() {
   };
 
   const handleSuggestFeature = () => {
-    console.log("Suggest a Feature clicked");
+    window.open("mailto:embr3.ocsm@gmail.com?subject=Feature%20Suggestion%20-%20EMBR3%20OCSM", "_blank");
   };
 
   const handleContactUs = () => {
-    console.log("Contact Us clicked");
+    window.open("mailto:embr3.ocsm@gmail.com?subject=Support%20Request%20-%20EMBR3%20OCSM", "_blank");
   };
 
   const location = useLocation();
@@ -333,16 +333,17 @@ function AdminPage() {
       algorithm: isDarkMode ? darkAlgorithm : defaultAlgorithm,
       token: {
         colorPrimary: normalizeHex(themePrefs.colorPrimary, "#1677ff"),
-        borderRadius: 8,
+        borderRadius: 6,
         colorBgBase: isDarkMode ? "#141414" : "#F5F5F5",
         // Keep content/base text tied to darkMode only to avoid white text on white content in light mode
         colorTextBase: isDarkMode ? "#EAEAEA" : "#1A1A1A",
         colorBgContainer: isDarkMode ? "#1d1d1d" : "#ffffff", // Keep this
+        fontFamily: "'Inter', 'Plus Jakarta Sans', 'Poppins', sans-serif",
       },
       components: {
         Layout: {
-          siderBg: normalizeHex(themePrefs.siderBg, isDarkMode ? "#001529" : "#ffffff"),
-          headerBg: normalizeHex(themePrefs.headerBg, isDarkMode ? "#001529" : "#ffffff"),
+          siderBg: normalizeHex(themePrefs.siderBg, isDarkMode ? "#0C2340" : "#ffffff"),
+          headerBg: normalizeHex(themePrefs.headerBg, isDarkMode ? "#0C2340" : "#ffffff"),
         },
         Menu: (() => {
           const sb = normalizeHex(themePrefs.siderBg, isDarkMode ? "#001529" : "#ffffff");
@@ -373,7 +374,7 @@ function AdminPage() {
     <ConfigProvider theme={currentTheme}>
       <Layout style={{ minHeight: "100vh" }}>
         <Sider
-          theme={(luminance(normalizeHex(themePrefs.siderBg, isDarkMode ? "#001529" : "#ffffff")) > 0.5) ? "light" : "dark"}
+          theme={(luminance(normalizeHex(themePrefs.siderBg, isDarkMode ? "#0C2340" : "#ffffff")) > 0.5) ? "light" : "dark"}
           collapsible
           collapsed={collapsed}
           onCollapse={(value) => setCollapsed(value)}
@@ -423,7 +424,7 @@ function AdminPage() {
             selectedKey={selectedKey}
             onMenuClick={handleMenuClick}
             menuTheme={
-              luminance(normalizeHex(themePrefs.siderBg, isDarkMode ? "#001529" : "#ffffff")) > 0.5
+              luminance(normalizeHex(themePrefs.siderBg, isDarkMode ? "#0C2340" : "#ffffff")) > 0.5
                 ? "light"
                 : "dark"
             }
@@ -436,6 +437,7 @@ function AdminPage() {
           }}
         >
           <Header
+            className="admin-header-bar"
             style={{
               position: "sticky", // ✅ this keeps it visible while scrolling
               top: 0,
@@ -446,6 +448,8 @@ function AdminPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              height: 56,
+              lineHeight: "56px",
             }}
           >
             <Button
@@ -481,7 +485,7 @@ function AdminPage() {
           </Header>
           <Content
             style={{
-              margin: "10px 10px 12px 10px",
+              margin: "12px 16px",
               background: isDarkMode ? "#1d1d1d" : "#ffffff",
               borderRadius: borderRadius,
               overflow: "auto",
@@ -502,10 +506,12 @@ function AdminPage() {
             style={{
               textAlign: "center",
               background: "transparent",
-              padding: "5px 0 20px 0",
+              padding: "8px 0 16px 0",
+              fontSize: "12px",
+              color: isDarkMode ? "#666" : "#999",
             }}
           >
-            EMB R3 Online Client Satisfaction Measurement ©
+            EMB Region III — Online Client Satisfaction Measurement ©{" "}
             {new Date().getFullYear()}
           </Footer>
         </Layout>

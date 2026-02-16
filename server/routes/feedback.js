@@ -1,6 +1,7 @@
 import express from 'express';
 import Feedback from '../models/Feedback.js';
 import { updateFeedback } from '../controllers/feedback.js';
+import { authMiddleware } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/permission.js';
 
 const router = express.Router();
@@ -30,10 +31,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.put('/:id', requirePermission('canEdit'), updateFeedback);
+router.put('/:id', authMiddleware, requirePermission('canEdit'), updateFeedback);
 
 // Delete feedback (protected)
-router.delete('/:id', requirePermission('canDelete'), async (req, res) => {
+router.delete('/:id', authMiddleware, requirePermission('canDelete'), async (req, res) => {
   try {
     const deleted = await Feedback.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ message: 'Feedback not found' });

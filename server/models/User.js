@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema({
   fullname: { type: String, required: true },
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String, required: true, select: false },
   privilege: { type: String, default: "viewer" }, // Add privilege field
   permissions: {
     type: {
@@ -17,10 +17,10 @@ const userSchema = new mongoose.Schema({
     default: {},
   },
   position: { type: String },
-  verificationToken: { type: String },
+  verificationToken: { type: String, select: false },
   isVerified: { type: Boolean, default: false },
-  resetPasswordToken: { type: String },
-  resetPasswordExpires: { type: Date },
+  resetPasswordToken: { type: String, select: false },
+  resetPasswordExpires: { type: Date, select: false },
   preferences: {
     type: Object,
     default: {},
