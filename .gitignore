@@ -1,1 +1,25 @@
+# === Environment & Secrets ===
+*.env
+*.env.*
+!*.env.example
+!deploy/.env.production.example
+!deploy/.env.frontend.production
+
+# === Build artifacts ===
+node_modules/
+dist/
+*.tar.gz
+
+# === Credentials & deploy scripts with passwords ===
+google and emailjs account.txt
+deploy_now.mjs
+
+# === OS / Editor junk ===
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 front-end/nul
