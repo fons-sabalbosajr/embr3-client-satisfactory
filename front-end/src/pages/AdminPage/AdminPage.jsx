@@ -171,6 +171,7 @@ function AdminPage() {
           } catch (err) {
             // If we can't hydrate, clear and redirect to login
             clearAllStorage();
+            try { window.dispatchEvent(new Event("auth:changed")); } catch {}
             navigate("/admin");
             return;
           }
@@ -188,6 +189,8 @@ function AdminPage() {
               setCurrentUser(user || null);
               if (user) setEncryptedItem("user", JSON.stringify(user));
             } catch {
+              clearAllStorage();
+              try { window.dispatchEvent(new Event("auth:changed")); } catch {}
               navigate("/admin");
               return;
             }
@@ -227,6 +230,7 @@ function AdminPage() {
           e?.message || e
         );
         clearAllStorage();
+        try { window.dispatchEvent(new Event("auth:changed")); } catch {}
         navigate("/admin");
       }
     };

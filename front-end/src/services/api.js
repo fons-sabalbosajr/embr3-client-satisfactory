@@ -44,19 +44,24 @@ API.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401 && !error.config?._skipAuthIntercept) {
-      // Check server message to distinguish expired/invalid tokens from other 401s
+    if (error.response?.status === 401) {
+      // Only auto-clear for confirmed token expiry/missing — NOT login failures
       const msg = (error.response?.data?.message || "").toLowerCase();
-      const isTokenProblem = msg.includes("expired") || msg.includes("invalid") || msg.includes("no token");
-      if (isTokenProblem) {
+      const isTokenExpiry =
+        msg.includes("expired") ||
+        msg.includes("no token provided") ||
+        msg.includes("token is invalid");
+      if (isTokenExpiry) {
         removeOpaqueItem("token");
         removeOpaqueItem("user");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        try { window.dispatchEvent(new Event("auth:changed")); } catch {}
         const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
         const path = window.location.pathname;
         const adminRoot = `${basePath}/admin`;
-        if (path.startsWith(adminRoot) && path !== adminRoot) {
+        // Only hard-redirect from admin sub-pages (not the login page itself)
+        if (path.startsWith(`${adminRoot}/`)) {
           window.location.replace(`${window.location.origin}${adminRoot}`);
         }
       }
@@ -100,7 +105,7 @@ export const verifyEmail = ({ token, email }) => API.get('/auth/verify', { param
 export const resendVerification = (payload) => API.post('/auth/resend-verification', payload);
 
 // Preferences API (per-user settings)
-export const getPreferences = () => API.get(`/auth/preferences`, { _skipAuthIntercept: true });
+export const getPreferences = () => API.get(`/auth/preferences`);
 export const updatePreferences = (prefs) => API.put(`/auth/preferences`, prefs);
 
 // Database / infrastructure helpers for DeveloperSettings.DangerZone
