@@ -18,7 +18,9 @@ function inferBackendApiBase() {
   return null;
 }
 
-const baseURL = import.meta?.env?.VITE_API_BASE || inferBackendApiBase() || "/api";
+// In production with a base path (e.g., /ocsm/), prefix API calls accordingly
+const vitaBase = (import.meta?.env?.BASE_URL || "/").replace(/\/$/, "");
+const baseURL = import.meta?.env?.VITE_API_BASE || inferBackendApiBase() || `${vitaBase}/api`;
 const API = axios.create({ baseURL });
 
 // Add request interceptor to include auth token
@@ -48,10 +50,12 @@ API.interceptors.response.use(
       removeOpaqueItem("user");
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      // Only redirect if not already on a public page
+      // Only redirect if not already on the login page
+      const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
       const path = window.location.pathname;
-      if (path.startsWith("/admin") && path !== "/admin") {
-        window.location.replace(`${window.location.origin}/admin`);
+      const adminRoot = `${basePath}/admin`;
+      if (path.startsWith(adminRoot) && path !== adminRoot) {
+        window.location.replace(`${window.location.origin}${adminRoot}`);
       }
     }
     return Promise.reject(error);
@@ -62,6 +66,7 @@ API.interceptors.response.use(
 export const getAllUsers = () => API.get("/auth/users");
 
 export const getFeedbacks = () => API.get("/feedback");
+export const getFeedbackCount = () => API.get("/feedback/count");
 export const signUp = (formData) => API.post("/auth/signup", formData);
 export const login = (formData) => API.post("/auth/login", formData);
 

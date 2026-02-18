@@ -26,6 +26,18 @@ router.post('/', async (req, res) => {
   }
 });
 
+// @desc    Get public feedback count (no auth required)
+// @route   GET /api/feedback/count
+router.get('/count', async (req, res) => {
+  try {
+    const count = await Feedback.countDocuments();
+    res.status(200).json({ count });
+  } catch (err) {
+    console.error('Error counting feedback:', err);
+    res.status(500).json({ error: 'Failed to count feedback.' });
+  }
+});
+
 // @desc    Get all feedback
 // @route   GET /api/feedback
 router.get('/', authMiddleware, async (req, res) => {

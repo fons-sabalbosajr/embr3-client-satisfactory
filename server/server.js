@@ -225,7 +225,7 @@ if (IS_PROD) {
 
   app.use(express.static(distPath));
   // SPA fallback: serve index.html for any non-API route
-  app.get("*", (req, res) => {
+  app.get("{*splat}", (req, res) => {
     if (!req.path.startsWith("/api") && !req.path.startsWith("/socket.io")) {
       res.sendFile(path.default.join(distPath, "index.html"));
     }

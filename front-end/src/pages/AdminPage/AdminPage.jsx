@@ -115,7 +115,8 @@ function AdminPage() {
             clearAllStorage();
             try {
               const { origin } = window.location;
-              window.location.href = `${origin}/admin`;
+              const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+              window.location.href = `${origin}${basePath}/admin`;
             } catch {
               window.location.reload();
             }
@@ -126,7 +127,8 @@ function AdminPage() {
           clearAllStorage();
           try {
             const { origin } = window.location;
-            window.location.href = `${origin}/admin`;
+            const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+            window.location.href = `${origin}${basePath}/admin`;
           } catch {
             window.location.reload();
           }

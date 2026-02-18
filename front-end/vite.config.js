@@ -78,8 +78,8 @@ const BACKEND = explicitBackend
 console.log(`[vite] dev proxy BACKEND=${BACKEND}`);
 
 export default defineConfig({
-  // Serve app at root during dev and build
-  base: "/",
+  // Serve app at root during dev; /ocsm/ in production
+  base: process.env.NODE_ENV === 'production' || process.env.VITE_BASE ? (process.env.VITE_BASE || '/ocsm/') : '/',
   plugins: [react(), svgr()],
   server: {
     port: 5174,

@@ -11,7 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { QRCodeSVG } from "qrcode.react";
 
-import { getFeedbacks } from "../../services/api";
+import { getFeedbackCount } from "../../services/api";
 import EMBLogo from "../../assets/emblogo.svg";
 import BPLogo from "../../assets/bplogo.svg";
 import Survey from "../../assets/surveyman.png";
@@ -39,14 +39,16 @@ function Home({ toggleColorScheme }) {
 
   const clientUrl = (() => {
     const base = import.meta.env.VITE_APP_URL || window.location.origin;
-    return `${base.replace(/\/+$/, "")}/client`;
+    const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+    return `${base.replace(/\/+$/, "")}${basePath}/client`;
   })();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await getFeedbacks();
-        setFeedbacks(res.data);
+        const res = await getFeedbackCount();
+        // Create a dummy array with the right length so feedbacks.length works
+        setFeedbacks(new Array(res.data.count || 0));
       } catch (err) {
         console.error("API ERROR:", err.message);
       }

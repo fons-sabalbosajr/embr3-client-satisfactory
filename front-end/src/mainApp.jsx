@@ -129,7 +129,8 @@ const MainApp = () => {
       // Redirect to /admin after clearing auth (not the deep path)
       try {
         const { origin } = window.location;
-        window.location.replace(`${origin}/admin`);
+        const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+        window.location.replace(`${origin}${basePath}/admin`);
       } catch {
         window.location.reload();
       }
