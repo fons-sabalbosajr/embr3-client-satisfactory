@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FloatButton, Row, Col, Typography, Button, Select } from "antd";
-import { BulbOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import { FloatButton, Row, Col, Typography, Button, Select, Dropdown, Modal } from "antd";
+import { BulbOutlined, ArrowRightOutlined, InfoCircleOutlined, TeamOutlined, GlobalOutlined } from "@ant-design/icons";
 import {
   IconDeviceMobile,
   IconLock,
@@ -56,9 +56,48 @@ function Home({ toggleColorScheme }) {
     fetchData();
   }, []);
 
-  const handleTakeSurveyClick = () => {
-    navigate(`/survey/page1?lang=${language}`);
+  const handleTakeSurvey = (type) => {
+    navigate(`/survey/page1?lang=${language}&type=${type}`);
   };
+
+  const showSurveyInfo = () => {
+    Modal.info({
+      title: t("surveyTypeInfo.title", "Survey Types"),
+      width: 520,
+      content: (
+        <div style={{ marginTop: 12 }}>
+          <p><strong><TeamOutlined /> {t("surveyTypeInfo.internalTitle", "Internal Survey")}</strong></p>
+          <p style={{ marginLeft: 24, color: "#555" }}>
+            {t("surveyTypeInfo.internalDesc", "For EMB Region III employees. The client type is automatically set to \"Government\" and an optional field for the employee name is shown.")}
+          </p>
+          <p style={{ marginTop: 16 }}><strong><GlobalOutlined /> {t("surveyTypeInfo.externalTitle", "External Survey")}</strong></p>
+          <p style={{ marginLeft: 24, color: "#555" }}>
+            {t("surveyTypeInfo.externalDesc", "For citizens, businesses, and other government agencies transacting with EMB Region III.")}
+          </p>
+        </div>
+      ),
+      okText: t("agencyPrompt.close", "Close"),
+    });
+  };
+
+  const surveyMenuItems = [
+    {
+      key: "internal",
+      icon: <TeamOutlined />,
+      label: t("surveyType.internal", "Internal Survey"),
+    },
+    {
+      key: "external",
+      icon: <GlobalOutlined />,
+      label: t("surveyType.external", "External Survey"),
+    },
+    { type: "divider" },
+    {
+      key: "info",
+      icon: <InfoCircleOutlined />,
+      label: t("surveyType.info", "What's the difference?"),
+    },
+  ];
 
   const languageOptions = [
     {
@@ -175,15 +214,28 @@ function Home({ toggleColorScheme }) {
                     </div>
 
                     <div className="hero-cta-row">
-                      <Button
-                        type="primary"
-                        icon={<ArrowRightOutlined />}
-                        onClick={handleTakeSurveyClick}
-                        className="hero-button"
-                        size="large"
+                      <Dropdown
+                        menu={{
+                          items: surveyMenuItems,
+                          onClick: ({ key }) => {
+                            if (key === "info") {
+                              showSurveyInfo();
+                            } else {
+                              handleTakeSurvey(key);
+                            }
+                          },
+                        }}
+                        trigger={["click"]}
                       >
-                        {t("takeSurvey")}
-                      </Button>
+                        <Button
+                          type="primary"
+                          icon={<ArrowRightOutlined />}
+                          className="hero-button"
+                          size="large"
+                        >
+                          {t("takeSurvey")}
+                        </Button>
+                      </Dropdown>
 
                       <div className="language-select-wrapper">
                         <Select

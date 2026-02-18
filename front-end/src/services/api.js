@@ -44,18 +44,21 @@ API.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid — clear auth and redirect
-      removeOpaqueItem("token");
-      removeOpaqueItem("user");
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      // Only redirect if not already on the login page
-      const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
-      const path = window.location.pathname;
-      const adminRoot = `${basePath}/admin`;
-      if (path.startsWith(adminRoot) && path !== adminRoot) {
-        window.location.replace(`${window.location.origin}${adminRoot}`);
+    if (error.response?.status === 401 && !error.config?._skipAuthIntercept) {
+      // Check server message to distinguish expired/invalid tokens from other 401s
+      const msg = (error.response?.data?.message || "").toLowerCase();
+      const isTokenProblem = msg.includes("expired") || msg.includes("invalid") || msg.includes("no token");
+      if (isTokenProblem) {
+        removeOpaqueItem("token");
+        removeOpaqueItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+        const path = window.location.pathname;
+        const adminRoot = `${basePath}/admin`;
+        if (path.startsWith(adminRoot) && path !== adminRoot) {
+          window.location.replace(`${window.location.origin}${adminRoot}`);
+        }
       }
     }
     return Promise.reject(error);
@@ -97,7 +100,7 @@ export const verifyEmail = ({ token, email }) => API.get('/auth/verify', { param
 export const resendVerification = (payload) => API.post('/auth/resend-verification', payload);
 
 // Preferences API (per-user settings)
-export const getPreferences = () => API.get(`/auth/preferences`);
+export const getPreferences = () => API.get(`/auth/preferences`, { _skipAuthIntercept: true });
 export const updatePreferences = (prefs) => API.put(`/auth/preferences`, prefs);
 
 // Database / infrastructure helpers for DeveloperSettings.DangerZone

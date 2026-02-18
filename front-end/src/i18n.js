@@ -91,7 +91,26 @@ i18n
           gender: {
             Male: "Male",
             Female: "Female",
+            "LGBTQ++": "LGBTQ++",
             RatherNotSay: "Rather Not Say",
+          },
+
+          surveyType: {
+            internal: "Internal Survey",
+            external: "External Survey",
+            info: "What's the difference?",
+          },
+          surveyTypeInfo: {
+            title: "Survey Types",
+            internalTitle: "Internal Survey",
+            internalDesc: "For EMB Region III employees. The client type is automatically set to \"Government\" and an optional field for your name is provided.",
+            externalTitle: "External Survey",
+            externalDesc: "For citizens, businesses, and other government agencies transacting with EMB Region III.",
+          },
+          internalSurveyBadge: "Internal Survey — EMB Region III Employee",
+          employeeName: {
+            label: "Employee Name (Optional)",
+            placeholder: "Enter your name (optional)",
           },
 
           step: {
@@ -261,6 +280,8 @@ i18n
             age: "Age",
             serviceAvailed: "Service Availed",
             assistPersonnel: "Assisted Personnel",
+            employeeName: "Employee Name",
+            agencyName: "Agency Name",
           },
 
           summary: {
@@ -389,7 +410,26 @@ i18n
           gender: {
             Male: "Lalaki",
             Female: "Babae",
+            "LGBTQ++": "LGBTQ++",
             RatherNotSay: "Mas mabuti nang hindi sabihin",
+          },
+
+          surveyType: {
+            internal: "Panloob na Survey",
+            external: "Panlabas na Survey",
+            info: "Ano ang pagkakaiba?",
+          },
+          surveyTypeInfo: {
+            title: "Mga Uri ng Survey",
+            internalTitle: "Panloob na Survey",
+            internalDesc: "Para sa mga empleyado ng EMB Region III. Awtomatikong itinakda ang uri ng kliyente bilang \"Gobyerno\" at mayroong opsyonal na field para sa iyong pangalan.",
+            externalTitle: "Panlabas na Survey",
+            externalDesc: "Para sa mga mamamayan, negosyo, at iba pang ahensya ng gobyerno na nakikipag-transaksyon sa EMB Region III.",
+          },
+          internalSurveyBadge: "Panloob na Survey — Empleyado ng EMB Region III",
+          employeeName: {
+            label: "Pangalan ng Empleyado (Opsyonal)",
+            placeholder: "Ilagay ang iyong pangalan (opsyonal)",
           },
 
           // Questions
@@ -553,6 +593,8 @@ i18n
             age: "Edad",
             serviceAvailed: "Serbisyong Ginamit",
             assistPersonnel: "Kawani na Tumulong",
+            employeeName: "Pangalan ng Empleyado",
+            agencyName: "Pangalan ng Ahensya",
           },
 
           summary: {

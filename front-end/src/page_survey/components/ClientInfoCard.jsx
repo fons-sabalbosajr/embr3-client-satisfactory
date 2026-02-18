@@ -8,14 +8,28 @@ import { isEqual } from "lodash";
 import { categorizeServices } from "../../utils/serviceCategories";
 import { getDecryptedItem, setEncryptedItem } from "../../utils/encryptedStorage";
 
-function ClientInfoCard({ formItemName, form, options }) {
+function ClientInfoCard({ formItemName, form, options, isInternalSurvey = false }) {
   let { genderOptions, serviceOptions } = options;
   // Ensure 'RatherNotSay' is always present
   if (!genderOptions.includes('RatherNotSay')) {
     genderOptions = [...genderOptions, 'RatherNotSay'];
   }
+  // Ensure 'LGBTQ++' is always present
+  if (!genderOptions.includes('LGBTQ++')) {
+    genderOptions = [...genderOptions.filter(g => g !== 'RatherNotSay'), 'LGBTQ++', 'RatherNotSay'];
+  }
   const { Text } = Typography;
   const { t } = useTranslation();
+
+  // For internal survey, auto-set to Government
+  useEffect(() => {
+    if (isInternalSurvey) {
+      form.setFieldsValue({
+        [`${formItemName}_customerType`]: "Government",
+        [`${formItemName}_agencyName`]: "EMB Region III",
+      });
+    }
+  }, [isInternalSurvey, form, formItemName]);
 
   const customerTypeOptions = [
     { value: "Citizen", label: t("clientTypeCitizen") },
@@ -87,17 +101,25 @@ function ClientInfoCard({ formItemName, form, options }) {
 
   return (
     <Space direction="vertical" className="client-info-card-space">
+      {isInternalSurvey && (
+        <div className="client-info-card-internal-badge">
+          <Text strong style={{ color: "#0284c7" }}>
+            {t("internalSurveyBadge", "Internal Survey — EMB Region III Employee")}
+          </Text>
+        </div>
+      )}
+
       <Form.Item
         name={`${formItemName}_customerType`}
         label={t("clientTypeLabel")}
         rules={[{ required: true, message: t("selectClientType") }]}
       >
-        <Radio.Group>
+        <Radio.Group disabled={isInternalSurvey}>
           <Space direction="vertical" className="client-info-card-radio-space">
             {customerTypeOptions.map(({ value, label }) => (
               <div key={value}>
                 <Radio value={value}>{label}</Radio>
-                {customerType === "Business" && value === "Business" && (
+                {customerType === "Business" && value === "Business" && !isInternalSurvey && (
                   <Form.Item
                     name={`${formItemName}_companyName`}
                     noStyle
@@ -122,6 +144,7 @@ function ClientInfoCard({ formItemName, form, options }) {
                     <Input
                       placeholder={t("agencyPlaceholder")}
                       className="client-info-card-dynamic-input"
+                      disabled={isInternalSurvey}
                     />
                   </Form.Item>
                 )}
@@ -130,6 +153,16 @@ function ClientInfoCard({ formItemName, form, options }) {
           </Space>
         </Radio.Group>
       </Form.Item>
+
+      {isInternalSurvey && (
+        <Form.Item
+          name={`${formItemName}_employeeName`}
+          label={t("employeeName.label", "Employee Name (Optional)")}
+          rules={[{ required: false }]}
+        >
+          <Input placeholder={t("employeeName.placeholder", "Enter your name (optional)")} />
+        </Form.Item>
+      )}
 
       {(customerType === "Citizen" || !customerType) && (
         <Row gutter={16}>
