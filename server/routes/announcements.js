@@ -1,13 +1,15 @@
 import express from 'express';
 import sanitizeHtml from 'sanitize-html';
 import Announcement from '../models/Announcement.js';
+import User from '../models/User.js';
 import { requirePermission } from '../middleware/permission.js';
 import authMiddleware from '../middleware/auth.js';
+import { sendAnnouncementEmail } from '../utils/email.js';
 
 const router = express.Router();
 
-// Get announcements (optionally filter by target and active)
-router.get('/', async (req, res) => {
+// Get announcements (optionally filter by target and active) — requires auth
+router.get('/', authMiddleware, async (req, res) => {
   try {
     const { target, active, status } = req.query;
     const q = {};
@@ -133,6 +135,62 @@ router.delete('/:id', authMiddleware, requirePermission('canManageAnnouncements'
     res.json({ message: 'Deleted' });
   } catch (err) {
     console.error('Delete announcement error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /:id/send-email — broadcast announcement to all verified admin users
+router.post('/:id/send-email', authMiddleware, requirePermission('canManageAnnouncements'), async (req, res) => {
+  try {
+    const ann = await Announcement.findById(req.params.id);
+    if (!ann) return res.status(404).json({ message: 'Announcement not found' });
+
+    // Get all verified users
+    const users = await User.find({ isVerified: true }).select('email fullname');
+    if (!users.length) return res.status(400).json({ message: 'No verified users to email' });
+
+    const results = { sent: 0, failed: 0 };
+    for (const user of users) {
+      try {
+        await sendAnnouncementEmail(user.email, user.fullname, ann.title, ann.message);
+        results.sent += 1;
+      } catch (emailErr) {
+        console.error(`Failed to send announcement email to ${user.email}:`, emailErr.message);
+        results.failed += 1;
+      }
+    }
+
+    // Mark emailSent on announcements
+    ann.emailSent = true;
+    ann.emailSentAt = new Date();
+    await ann.save();
+
+    res.json({ message: `Email sent to ${results.sent} user(s), ${results.failed} failed.`, ...results });
+  } catch (err) {
+    console.error('Send announcement email error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /public — unauthenticated endpoint for login panel banners
+router.get('/public', async (req, res) => {
+  try {
+    const now = new Date();
+    const items = await Announcement.find({
+      active: true,
+      target: { $in: ['admin', 'both'] },
+      $or: [
+        { startDate: { $exists: false } },
+        { startDate: null },
+        { startDate: { $lte: now } },
+      ],
+    }).sort({ createdAt: -1 }).limit(10).lean();
+
+    // Filter out expired announcements
+    const filtered = items.filter(a => !a.endDate || new Date(a.endDate) >= now);
+    res.json({ data: filtered });
+  } catch (err) {
+    console.error('Get public announcements error', err);
     res.status(500).json({ message: 'Server error' });
   }
 });

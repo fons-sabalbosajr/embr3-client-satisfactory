@@ -35,6 +35,7 @@ import {
   Legend,
 } from "recharts";
 import * as api from "../../services/api";
+import socket from "../../utils/socket";
 import "./dashboard.css";
 
 const { Title, Text } = Typography;
@@ -444,6 +445,25 @@ function Dashboard() {
     };
 
     fetchData();
+  }, []);
+
+  // Real-time: auto-refresh dashboard when a new survey is submitted
+  useEffect(() => {
+    const onNewFeedback = () => {
+      // Re-run the data fetch without showing the full-page spinner
+      (async () => {
+        try {
+          const response = await api.getClientSatisfactoryData();
+          const data = response.data;
+          setAllSurveys(data);
+          setStats((prev) => ({ ...prev, totalSurveys: data.length }));
+        } catch (err) {
+          console.error("Dashboard auto-refresh failed:", err);
+        }
+      })();
+    };
+    socket.on("feedbackAdded", onNewFeedback);
+    return () => socket.off("feedbackAdded", onNewFeedback);
   }, []);
 
   // Recompute CC/SQD tiles and totals (no Assisted Personnel filter)

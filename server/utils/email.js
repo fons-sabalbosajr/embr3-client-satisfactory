@@ -545,3 +545,38 @@ export const sendTestEmail = async (to) => {
     html,
   });
 };
+
+/**
+ * Announcement Broadcast — sent when an admin broadcasts an announcement via email.
+ */
+export const sendAnnouncementEmail = async (to, name, title, messageHtml) => {
+  const safeName = escapeHtml(name);
+  const safeTitle = escapeHtml(title);
+
+  const body = `
+    <p style="margin:0 0 6px;font-size:15px;font-weight:600;color:${BRAND.textDark};">Hello, ${safeName}</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:${BRAND.textMuted};">
+      A new announcement has been posted on the <strong style="color:${BRAND.textDark};">Online Customer Satisfaction Measurement Portal</strong>.
+    </p>
+    ${infoBox("#F0F7FF", BRAND.blue, `
+      <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:${BRAND.textDark};">${safeTitle}</p>
+      <div style="margin:0;font-size:13px;color:${BRAND.textMuted};line-height:1.6;">${messageHtml}</div>
+    `)}
+    ${separator()}
+    <p style="margin:0;font-size:12px;color:${BRAND.textLight};line-height:1.6;">
+      This announcement was posted by your system administrator. For questions, please contact the admin team.
+    </p>`;
+
+  const html = corporateEmail({
+    headerTitle: "New Announcement",
+    headerSubtitle: safeTitle,
+    headerAccent: BRAND.blue,
+    body,
+  });
+
+  return sendMailUnified({
+    to,
+    subject: `Announcement: ${title} \u2014 EMB Region III Online CSM Portal`,
+    html,
+  });
+};

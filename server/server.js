@@ -36,7 +36,7 @@ if (!process.env.MONGO_URI) {
 const REQUESTED_HOST = process.env.SERVER_HOST;
 const DEFAULT_HOST = "0.0.0.0";
 // Prefer standard PORT, fallback to SERVER_PORT, then default
-const PORT = Number(process.env.PORT || process.env.SERVER_PORT || 5001);
+const PORT = Number(process.env.PORT || process.env.SERVER_PORT || 5000);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5174";
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -196,6 +196,23 @@ app.use("/api/service-categories", serviceCategoriesRoute);
 // Lightweight health endpoint for Render/uptime checks
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok" });
+});
+
+// Global error handler — catches unhandled errors from all routes/middleware
+app.use((err, req, res, _next) => {
+  console.error("Unhandled error:", err.stack || err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    message:
+      process.env.NODE_ENV === "production"
+        ? "An unexpected error occurred."
+        : err.message || "Internal Server Error",
+  });
+});
+
+// Handle unhandled promise rejections globally
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Promise Rejection:", reason);
 });
 
 // In production, serve the built frontend SPA (useful when not using nginx)

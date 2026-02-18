@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import ServiceCategory from '../models/ServiceCategory.js';
 import authMiddleware from '../middleware/auth.js';
 import { requirePermission } from '../middleware/permission.js';
@@ -69,7 +70,11 @@ router.put('/:id', authMiddleware, requirePermission('canEdit'), async (req, res
 router.delete('/:id', authMiddleware, requirePermission('canEdit'), async (req, res) => {
   try {
     const { id } = req.params;
-    await ServiceCategory.findByIdAndDelete(id);
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid category ID format.' });
+    }
+    const deleted = await ServiceCategory.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ message: 'Category not found' });
     res.json({ message: 'Deleted' });
   } catch (err) {
     console.error('Delete service category error', err);

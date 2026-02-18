@@ -617,7 +617,11 @@ export default function GenerateReport() {
   const onExportCcExcel = () =>
     exportToExcel(
       `cc-results-${new Date().toISOString().slice(0, 10)}.xlsx`,
-      ccRows
+      ccRows.map((r) => ({
+        "Citizens Answers": r.item,
+        "Response Count": r.count,
+        "Percentage": `${r.percentage}%`,
+      }))
     );
   const onExportSqdExcel = () =>
     exportToExcel(

@@ -101,9 +101,11 @@ export const connectDb = () => API.post(`/admin/db/connect`);
 
 // Announcements
 export const getAnnouncements = (params) => API.get('/announcements', { params });
+export const getPublicAnnouncements = () => API.get('/announcements/public');
 export const createAnnouncement = (payload) => API.post('/announcements', payload);
 export const updateAnnouncement = (id, payload) => API.put(`/announcements/${id}`, payload);
 export const deleteAnnouncement = (id) => API.delete(`/announcements/${id}`);
+export const sendAnnouncementEmailApi = (id) => API.post(`/announcements/${id}/send-email`);
 
 // Service Categories (for Services Availed)
 export const getServiceCategories = () => API.get('/service-categories');

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Card, Tabs, Form, Input, Button, Typography, Row, Col } from "antd";
+import { Card, Tabs, Form, Input, Button, Typography, Row, Col, Collapse } from "antd";
 import "./homeadmin.css";
+import "../../components/Announcements/announcement.css";
 import AgencyHeader from "./AgencyHeader";
 import Swal from "sweetalert2";
-import { BulbOutlined, BulbFilled } from "@ant-design/icons";
+import { BulbOutlined, BulbFilled, NotificationOutlined } from "@ant-design/icons";
 import { FloatButton } from "antd";
-import { signUp, login, forgotPassword, resendVerification } from "../../services/api";
+import { signUp, login, forgotPassword, resendVerification, getPublicAnnouncements } from "../../services/api";
+import dayjs from "dayjs";
 
 import { setOpaqueItem } from "../../utils/encryptedStorage";
 import { setEncryptedItem } from "../../utils/encryptedStorage";
@@ -19,6 +21,7 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
   const [signupForm] = Form.useForm();
   const params = new URLSearchParams(location.search);
   const [loginForm] = Form.useForm();
+  const [announcements, setAnnouncements] = useState([]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -26,6 +29,17 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
       setActiveTab("login");
     }
   }, [location, navigate]);
+
+  // Fetch public announcements for login panel banners
+  useEffect(() => {
+    getPublicAnnouncements()
+      .then((res) => {
+        const items = Array.isArray(res.data?.data) ? res.data.data : [];
+        // Only show announcements with displayMode 'banner' or 'both'
+        setAnnouncements(items.filter((a) => a.displayMode === 'banner' || a.displayMode === 'both'));
+      })
+      .catch(() => {});
+  }, []);
 
   const handleLogin = async ({ username, password }) => {
     setLoading(true);
@@ -177,7 +191,7 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
           <div className="circle circle4" />
           <div className="circle circle5" />
         </div>
-        <AgencyHeader /> {/* <-- Add this line */}
+        <AgencyHeader />
         <div className="form-wrapper">
           <Card className="auth-card">
             <h2 className="auth-title">ADMINISTRATION PANEL</h2>
@@ -327,6 +341,37 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
                 },
               ]}
             />
+            {/* Announcement banners — inside card, below form */}
+            {announcements.length > 0 && (
+              <div className="login-announcements-banner">
+                <div className="login-ann-header">
+                  <NotificationOutlined /> <span>Announcements</span>
+                </div>
+                <Collapse
+                  accordion
+                  size="small"
+                  bordered={false}
+                  className="login-ann-collapse"
+                  items={announcements.map((ann) => ({
+                    key: ann._id,
+                    label: (
+                      <span className="login-ann-panel-title">{ann.title}</span>
+                    ),
+                    children: (
+                      <>
+                        <div className="ann-body" dangerouslySetInnerHTML={{ __html: ann.message }} />
+                        {ann.startDate && (
+                          <div className="ann-date">
+                            {dayjs(ann.startDate).format('MMM D, YYYY')}
+                            {ann.endDate ? ` — ${dayjs(ann.endDate).format('MMM D, YYYY')}` : ''}
+                          </div>
+                        )}
+                      </>
+                    ),
+                  }))}
+                />
+              </div>
+            )}
           </Card>
         </div>
       </div>

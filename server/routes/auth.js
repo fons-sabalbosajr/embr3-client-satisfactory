@@ -236,7 +236,9 @@ router.post("/forgot-password", async (req, res) => {
     const resetLink = `${getFrontendUrl(
       req
     )}/reset-password?token=${token}&email=${email}`;
-    await sendResetPasswordEmail(email, user.fullname, resetLink);
+    // Fire-and-forget to avoid slow SMTP blocking the response
+    sendResetPasswordEmail(email, user.fullname, resetLink)
+      .catch((emailErr) => console.error("❌ Reset password email failed:", emailErr));
 
     res.status(200).json({
       message: "Password reset email sent. Please check your inbox.",

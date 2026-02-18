@@ -1,6 +1,6 @@
 // AdminPage.jsx
-import React, { useEffect, useState, useMemo } from "react";
-import { Modal } from "antd";
+import React, { useEffect, useState, useMemo, Suspense } from "react";
+import { Modal, Spin } from "antd";
 import {
   Layout,
   Avatar,
@@ -12,6 +12,7 @@ import {
   Switch,
   Space,
   Button,
+  Tag,
 } from "antd";
 import {
   UserOutlined,
@@ -21,6 +22,7 @@ import {
   CaretRightFilled,
   CaretLeftFilled,
   MailOutlined,
+  NotificationOutlined,
 } from "@ant-design/icons";
 
 import { getCachedConfig } from "../../utils/config";
@@ -48,6 +50,8 @@ function AdminPage() {
   const [collapsed, setCollapsed] = useState(false);
   const [userName, setUserName] = useState("Admin");
   const [currentUser, setCurrentUser] = useState(null);
+  const [announcementModal, setAnnouncementModal] = useState(false);
+  const [modalAnnouncements, setModalAnnouncements] = useState([]);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
       const saved = getDecryptedItem("darkMode") ?? localStorage.getItem("darkMode");
@@ -245,6 +249,32 @@ function AdminPage() {
       if (cached) onThemeUpdated({ detail: cached });
     } catch {}
     return () => window.removeEventListener("theme:updated", onThemeUpdated);
+  }, []);
+
+  // Fetch popup-mode announcements on mount
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const res = await api.getAnnouncements({ active: 'true' });
+        const items = Array.isArray(res.data?.data) ? res.data.data : [];
+        const now = Date.now();
+        const popups = items.filter((a) => {
+          if (a.status !== 'active') return false;
+          if (a.displayMode !== 'modal' && a.displayMode !== 'both') return false;
+          return true;
+        });
+        if (popups.length > 0) {
+          // Only show once per session using sessionStorage
+          const shownKey = 'annPopupShown';
+          if (!sessionStorage.getItem(shownKey)) {
+            setModalAnnouncements(popups);
+            setAnnouncementModal(true);
+            sessionStorage.setItem(shownKey, '1');
+          }
+        }
+      } catch {}
+    };
+    fetchAnnouncements();
   }, []);
 
   // Effect for saving dark mode preference
@@ -499,7 +529,9 @@ function AdminPage() {
                 transition: "box-shadow 0.3s ease-in-out",
               }}
             >
-              <Outlet />
+              <Suspense fallback={<div style={{ textAlign: 'center', padding: '60px 0' }}><Spin size="large" /></div>}>
+                <Outlet />
+              </Suspense>
             </div>
           </Content>
           <Footer
@@ -516,6 +548,48 @@ function AdminPage() {
           </Footer>
         </Layout>
       </Layout>
+
+      {/* Announcement Popup Modal */}
+      <Modal
+        title={
+          <Space>
+            <NotificationOutlined style={{ color: '#1677ff' }} />
+            <span>Announcements</span>
+          </Space>
+        }
+        open={announcementModal}
+        onCancel={() => setAnnouncementModal(false)}
+        footer={
+          <Button type="primary" onClick={() => setAnnouncementModal(false)}>
+            Got it
+          </Button>
+        }
+        width={560}
+      >
+        {modalAnnouncements.map((ann, idx) => (
+          <div
+            key={ann._id}
+            style={{
+              padding: '14px 16px',
+              borderLeft: '4px solid #1677ff',
+              borderRadius: 8,
+              background: 'rgba(22, 119, 255, 0.04)',
+              marginBottom: idx < modalAnnouncements.length - 1 ? 12 : 0,
+            }}
+          >
+            <Typography.Text strong style={{ fontSize: 15 }}>{ann.title}</Typography.Text>
+            <div
+              style={{ marginTop: 8, fontSize: 13, lineHeight: 1.7 }}
+              dangerouslySetInnerHTML={{ __html: ann.message }}
+            />
+            {ann.startDate && (
+              <Typography.Text type="secondary" style={{ fontSize: 11, marginTop: 8, display: 'block' }}>
+                {new Date(ann.startDate).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </Typography.Text>
+            )}
+          </div>
+        ))}
+      </Modal>
     </ConfigProvider>
   );
 }
