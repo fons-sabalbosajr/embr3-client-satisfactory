@@ -23,7 +23,7 @@ i18n
           feedbackText: "We want your feedback!",
 
           heroKicker: "Client Feedback Portal",
-          heroBigSlogan: "HELP US TO IMPROVE!",
+          heroBigSlogan: "HELP US IMPROVE!",
           heroSlogan: "Help us improve — share your experience in just a few minutes.",
           heroPillFast: "2-minute survey",
           heroPillConfidential: "Confidential",
