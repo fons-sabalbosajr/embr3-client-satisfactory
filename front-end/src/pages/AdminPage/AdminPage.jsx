@@ -199,7 +199,12 @@ function AdminPage() {
           try {
             const me = await api.getMe();
             setCurrentUser(me?.data?.user || null);
-          } catch {
+          } catch (bgErr) {
+            // If the token is expired/invalid (401), redirect to login
+            if (bgErr?.response?.status === 401) {
+              navigate("/admin");
+              return;
+            }
             setCurrentUser(null);
           }
         }

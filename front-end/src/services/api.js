@@ -57,13 +57,10 @@ API.interceptors.response.use(
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         try { window.dispatchEvent(new Event("auth:changed")); } catch {}
-        const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
-        const path = window.location.pathname;
-        const adminRoot = `${basePath}/admin`;
-        // Only hard-redirect from admin sub-pages (not the login page itself)
-        if (path.startsWith(`${adminRoot}/`)) {
-          window.location.replace(`${window.location.origin}${adminRoot}`);
-        }
+        // No hard redirect here — the auth:changed event flips isAuthenticated
+        // in MainApp, which swaps AdminPage for the login form via React Router.
+        // A window.location.replace() would race with the React state update
+        // and cause redirect loops in production.
       }
     }
     return Promise.reject(error);
