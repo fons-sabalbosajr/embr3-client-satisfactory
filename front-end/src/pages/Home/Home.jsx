@@ -172,7 +172,7 @@ function Home({ toggleColorScheme }) {
                     <div className="hero-qr-wrapper">
                       <QRCodeSVG
                         value={clientUrl}
-                        size={130}
+                        size={200}
                         level="H"
                         bgColor="#ffffff"
                         fgColor="#0b4f6c"

@@ -185,6 +185,22 @@ sudo nginx -t          # test config (must pass!)
 sudo systemctl reload nginx
 ```
 
+### Allow `embapp` to restart the service without a password
+
+By default, `embapp` doesn't have sudo privileges. Run this **once as root** so `embapp` can restart the backend without needing a password:
+
+```bash
+echo 'embapp ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart embr3-server, /usr/bin/systemctl status embr3-server, /usr/bin/systemctl stop embr3-server, /usr/bin/systemctl start embr3-server' | tee /etc/sudoers.d/embapp-service
+```
+
+If `sudo` still asks for a password when running as `embapp`, exit back to root and restart from there:
+
+```bash
+exit                                    # return to root
+systemctl restart embr3-server
+systemctl status embr3-server
+```
+
 ### fail2ban
 
 The VPS has fail2ban protecting SSH. If your IP gets banned (too many failed login attempts):

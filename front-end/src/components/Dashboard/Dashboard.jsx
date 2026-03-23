@@ -13,6 +13,7 @@ import {
   Table,
   Button,
   Checkbox,
+  Segmented,
 } from "antd";
 import {
   BarChartOutlined,
@@ -65,6 +66,7 @@ function Dashboard() {
     section: null,
   });
   const [detailFilter, setDetailFilter] = useState([]);
+  const [surveyTypeFilter, setSurveyTypeFilter] = useState("all");
   // Assisted Personnel filter removed per request
   const keysRef = React.useRef({ cc: {}, sqd: {} });
   const [questionTextMap, setQuestionTextMap] = useState({});
@@ -91,6 +93,17 @@ function Dashboard() {
     )
       return "Satisfaction";
     return shortCode;
+  };
+
+  // Infer survey type for records that don't have surveyType stored
+  const inferSurveyType = (entry) => {
+    if (entry.surveyType) return entry.surveyType;
+    const labeled = entry.answersLabeled || {};
+    if (
+      labeled["Customer Type"] === "Government" &&
+      (labeled["Agency Name"] === "EMB Region III" || labeled["Employee Name"])
+    ) return "internal";
+    return "external";
   };
 
   // --- Normalizers (component scope) ---
@@ -470,7 +483,9 @@ function Dashboard() {
   useEffect(() => {
     if (!allSurveys.length || !keysRef.current.cc || !keysRef.current.sqd)
       return;
-    const filtered = allSurveys;
+    const filtered = surveyTypeFilter === "all"
+      ? allSurveys
+      : allSurveys.filter((s) => inferSurveyType(s) === surveyTypeFilter);
 
     const ccKeys = keysRef.current.cc;
     const sqdKeys = keysRef.current.sqd;
@@ -519,7 +534,75 @@ function Dashboard() {
     );
     setCcTotals(totals);
     setSqdBreakdownTiles(makeSqd(filtered, sqdKeys));
-  }, [allSurveys]);
+
+    // ── Recompute chart data for the current filter ──
+    const scoreMap = {
+      "Strongly Agree": 5,
+      Agree: 4,
+      Neutral: 3,
+      Disagree: 2,
+      "Strongly Disagree": 1,
+      Satisfactory: 3,
+    };
+
+    // CC response counts bar chart
+    const newCcResponseCounts = Object.entries(ccKeys).map(([label, key]) => ({
+      question: label,
+      responses: filtered.filter((entry) => entry.answers?.[key]).length,
+    }));
+    setCcResponseCounts(newCcResponseCounts);
+
+    // SQD average scores bar chart
+    const scoreDistribution = Object.entries(sqdKeys).map(([label, key]) => {
+      let sum = 0;
+      let count = 0;
+      filtered.forEach((entry) => {
+        const val = normalizeSqdAnswer(entry.answers?.[key]);
+        const n = scoreMap[val];
+        if (n) { sum += n; count++; }
+      });
+      return {
+        name: label,
+        "Average Score": count ? Number((sum / count).toFixed(2)) : 0,
+      };
+    });
+
+    // Overall average from SQD only
+    let sqdScoreAccum = 0;
+    let sqdCountAccum = 0;
+    filtered.forEach((entry) => {
+      Object.values(sqdKeys).forEach((k) => {
+        const v = normalizeSqdAnswer(entry.answers?.[k]);
+        const n = scoreMap[v];
+        if (n) { sqdScoreAccum += n; sqdCountAccum += 1; }
+      });
+    });
+    const averageOverallScore = sqdCountAccum ? sqdScoreAccum / sqdCountAccum : 0;
+
+    // SQD Overall Score (SA+A / total excl. N/A), excluding SQD0
+    let sqdNumerator = 0;
+    let sqdConsidered = 0;
+    filtered.forEach((entry) => {
+      Object.entries(sqdKeys).forEach(([label, k]) => {
+        if (label === "SQD0") return;
+        const a = normalizeSqdAnswer(entry.answers?.[k]);
+        if (!a || a === "N/A") return;
+        if (["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"].includes(a)) {
+          sqdConsidered += 1;
+          if (a === "Strongly Agree" || a === "Agree") sqdNumerator += 1;
+        }
+      });
+    });
+    const sqdOverallScore = sqdConsidered ? (sqdNumerator / sqdConsidered) * 100 : 0;
+
+    setStats((prev) => ({
+      ...prev,
+      totalSurveys: filtered.length,
+      scoreDistribution,
+      averageOverallScore: Number(averageOverallScore.toFixed(2)),
+      sqdOverallScore: Number(sqdOverallScore.toFixed(1)),
+    }));
+  }, [allSurveys, surveyTypeFilter]);
 
   // Open details modal for a selected question breakdown tile
   const openDetail = (section, shortCode) => {
@@ -527,12 +610,16 @@ function Dashboard() {
     const key = keyMap?.[shortCode];
     if (!key) return;
 
+    const surveysToUse = surveyTypeFilter === "all"
+      ? allSurveys
+      : allSurveys.filter((s) => inferSurveyType(s) === surveyTypeFilter);
+
     const rows = [];
     let counts;
 
     if (section === "cc") {
       counts = { Yes: 0, No: 0, "N/A": 0 };
-      allSurveys.forEach((entry) => {
+      surveysToUse.forEach((entry) => {
         const raw = entry.answers?.[key];
         const answer = normalizeCcAnswer(raw);
         if (!answer) return;
@@ -568,7 +655,7 @@ function Dashboard() {
         Disagree: 0,
         "Strongly Disagree": 0,
       };
-      allSurveys.forEach((entry) => {
+      surveysToUse.forEach((entry) => {
         const raw = entry.answers?.[key];
         const answer = normalizeSqdAnswer(raw);
         if (!answer) return;
@@ -693,7 +780,19 @@ function Dashboard() {
         </div>
       ) : (
         <Space direction="vertical" size={24} style={{ width: "100%" }}>
-          {/* Assisted Personnel filter removed */}
+          {/* Survey Type Filter */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <Text strong>Filter by Survey Type:</Text>
+            <Segmented
+              options={[
+                { label: `All (${allSurveys.length})`, value: "all" },
+                { label: `Internal (${allSurveys.filter((s) => inferSurveyType(s) === "internal").length})`, value: "internal" },
+                { label: `External (${allSurveys.filter((s) => inferSurveyType(s) === "external").length})`, value: "external" },
+              ]}
+              value={surveyTypeFilter}
+              onChange={setSurveyTypeFilter}
+            />
+          </div>
           {/* Key Statistics */}
           <Row gutter={[24, 24]}>
             <Col xs={12} md={12} lg={6}>

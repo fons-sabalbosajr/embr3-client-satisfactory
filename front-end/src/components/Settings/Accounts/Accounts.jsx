@@ -10,8 +10,10 @@ import {
   Typography,
   Space,
   Checkbox,
+  Popconfirm,
 } from "antd";
 import * as api from "../../../services/api";
+import { getDecryptedItem } from "../../../utils/encryptedStorage";
 import Swal from "sweetalert2";
 
 const { Title } = Typography;
@@ -34,6 +36,15 @@ export default function Accounts() {
   const [accessModalVisible, setAccessModalVisible] = useState(false);
   const [accessUser, setAccessUser] = useState(null);
   const [accessForm] = Form.useForm();
+
+  const currentUser = (() => {
+    try {
+      const raw = getDecryptedItem("user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
 
   useEffect(() => {
     async function fetchUsers() {
@@ -197,6 +208,35 @@ export default function Accounts() {
     }
   };
 
+  const handleDeleteUser = async (user) => {
+    if (currentUser && currentUser._id === user._id) {
+      Swal.fire({ icon: "error", title: "Cannot delete your own account" });
+      return;
+    }
+    const result = await Swal.fire({
+      title: `Delete user "${user.fullname || user.username}"?`,
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ff4d4f",
+      confirmButtonText: "Yes, delete",
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await api.deleteUser(user._id);
+      Swal.fire({ icon: "success", title: "User deleted", showConfirmButton: false, timer: 1400 });
+      const res = await api.getAllUsers();
+      setUsers(Array.isArray(res.data.data) ? res.data.data : []);
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Failed to delete user",
+        text: err.response?.data?.message || err.message,
+      });
+    }
+  };
+
   const columns = [
     { title: "Full Name", dataIndex: "fullname", key: "fullname" },
     { title: "Username", dataIndex: "username", key: "username" },
@@ -211,6 +251,14 @@ export default function Accounts() {
           </Button>
           <Button type="primary" size="small" onClick={() => handleManageAccess(user)}>
             Manage Access
+          </Button>
+          <Button
+            danger
+            size="small"
+            disabled={currentUser && currentUser._id === user._id}
+            onClick={() => handleDeleteUser(user)}
+          >
+            Delete
           </Button>
         </Space>
       ),

@@ -8,7 +8,7 @@ export const updateFeedback = async (req, res) => {
       return res.status(400).json({ message: "Invalid feedback ID format" });
     }
     // Only allow specific fields to be updated (prevent mass assignment)
-    const allowedFields = ["answers", "answersLabeled"];
+    const allowedFields = ["answers", "answersLabeled", "surveyType"];
     const updateData = {};
     for (const key of allowedFields) {
       if (req.body[key] !== undefined) updateData[key] = req.body[key];

@@ -1,15 +1,27 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Table, Space, Typography, Input, Button, Tag } from 'antd';
+import { Card, Table, Space, Typography, Input, Button, Tag, Select } from 'antd';
 import * as api from '../../../services/api';
 import { exportToExcelFile } from '../../../utils/excelExport';
 
 const { Title, Text } = Typography;
+
+// Infer survey type for records without surveyType stored
+const inferSurveyType = (entry) => {
+  if (entry.surveyType) return entry.surveyType;
+  const labeled = entry.answersLabeled || {};
+  if (
+    labeled["Customer Type"] === "Government" &&
+    (labeled["Agency Name"] === "EMB Region III" || labeled["Employee Name"])
+  ) return "internal";
+  return "external";
+};
 
 function ExtractData() {
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
   const [personnel, setPersonnel] = useState('');
+  const [surveyTypeFilter, setSurveyTypeFilter] = useState(null);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -37,6 +49,7 @@ function ExtractData() {
             services,
             assisted,
             submittedAt,
+            surveyType: inferSurveyType(entry),
             raw: entry,
           };
         });
@@ -57,12 +70,24 @@ function ExtractData() {
       const hay = `${r.region} ${r.customerType} ${r.companyOrAgency} ${(r.services||[]).join(', ')} ${r.assisted}`.toLowerCase();
       const okQ = q ? hay.includes(q) : true;
       const okP = p ? String(r.assisted||'').toLowerCase().includes(p) : true;
-      return okQ && okP;
+      const okType = surveyTypeFilter ? r.surveyType === surveyTypeFilter : true;
+      return okQ && okP && okType;
     });
-  }, [rows, search, personnel]);
+  }, [rows, search, personnel, surveyTypeFilter]);
 
   const columns = [
     { title: 'Submitted At', dataIndex: 'submittedAt', key: 'submittedAt' },
+    {
+      title: 'Survey Type',
+      dataIndex: 'surveyType',
+      key: 'surveyType',
+      width: 120,
+      render: (type) => (
+        <Tag color={type === 'internal' ? 'blue' : 'green'}>
+          {type === 'internal' ? 'Internal' : 'External'}
+        </Tag>
+      ),
+    },
     { title: 'Region', dataIndex: 'region', key: 'region' },
     { title: 'Customer Type', dataIndex: 'customerType', key: 'customerType' },
     { title: 'Company/Agency', dataIndex: 'companyOrAgency', key: 'companyOrAgency' },
@@ -78,6 +103,7 @@ function ExtractData() {
   const handleExport = () => {
     const exportRows = filtered.map((r) => ({
       'Submitted At': r.submittedAt,
+      'Survey Type': r.surveyType === 'internal' ? 'Internal' : 'External',
       Region: r.region,
       'Customer Type': r.customerType,
       'Company/Agency': r.companyOrAgency,
@@ -103,6 +129,17 @@ function ExtractData() {
             value={personnel}
             onChange={(e) => setPersonnel(e.target.value)}
             style={{ width: 260 }}
+          />
+          <Select
+            allowClear
+            placeholder="All Survey Types"
+            value={surveyTypeFilter}
+            onChange={(v) => setSurveyTypeFilter(v || null)}
+            options={[
+              { value: 'internal', label: 'Internal' },
+              { value: 'external', label: 'External' },
+            ]}
+            style={{ width: 160 }}
           />
           <Button type="primary" onClick={handleExport}>Export to Excel</Button>
         </Space>

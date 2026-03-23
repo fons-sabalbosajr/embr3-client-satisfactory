@@ -396,7 +396,7 @@ function Survey({ toggleColorScheme }) {
 
   const handleSubmit = async (formValues) => {
     try {
-      await submitFeedback({ answers: formValues, deviceId });
+      await submitFeedback({ answers: formValues, deviceId, surveyType });
 
       await Swal.fire({
         icon: "success",

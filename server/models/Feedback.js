@@ -5,6 +5,7 @@ const feedbackSchema = new mongoose.Schema(
     deviceId: { type: String },
     answers: { type: mongoose.Schema.Types.Mixed }, // flexible nested object
     answersLabeled: { type: mongoose.Schema.Types.Mixed },
+    surveyType: { type: String, enum: ["internal", "external"], default: "external" },
     submittedAt: { type: Date },
   },
   {

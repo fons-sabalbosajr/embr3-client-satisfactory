@@ -97,6 +97,7 @@ export const forgotPassword = (email) =>
 export const resetPassword = (payload) =>
   API.post("/auth/reset-password", payload);
 export const updateUser = (id, updatedUser) => API.put(`/auth/users/${id}`, updatedUser);
+export const deleteUser = (id) => API.delete(`/auth/users/${id}`);
 export const getMe = () => API.get('/auth/me');
 export const verifyEmail = ({ token, email }) => API.get('/auth/verify', { params: { token, email } });
 export const resendVerification = (payload) => API.post('/auth/resend-verification', payload);

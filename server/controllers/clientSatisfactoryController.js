@@ -3,11 +3,13 @@ import Question from "../models/Question.js";
 
 export const submitSurvey = (io) => async (req, res) => {
   try {
-    const { answers, deviceId } = req.body;
+    const { answers, deviceId, surveyType } = req.body;
 
     if (!answers || !deviceId) {
       return res.status(400).json({ message: "Missing answers or deviceId" });
     }
+
+    const validatedType = surveyType === "internal" ? "internal" : "external";
 
     const questions = await Question.find().lean();
 
@@ -50,6 +52,7 @@ export const submitSurvey = (io) => async (req, res) => {
       deviceId,
       answers,
       answersLabeled: labeledAnswers,
+      surveyType: validatedType,
       submittedAt: new Date(),
     });
 

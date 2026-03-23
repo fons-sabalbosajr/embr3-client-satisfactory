@@ -72,8 +72,19 @@ function Measurement() {
     setFiltered(result);
   };
 
+  const inferSurveyType = (item) => {
+    if (item.surveyType) return item.surveyType;
+    const labeled = item.answersLabeled || {};
+    if (
+      labeled["Customer Type"] === "Government" &&
+      (labeled["Agency Name"] === "EMB Region III" || labeled["Employee Name"])
+    ) return "internal";
+    return "external";
+  };
+
   const handleExport = () => {
     const exportData = filtered.map((item) => ({
+      "Survey Type": inferSurveyType(item) === "internal" ? "Internal" : "External",
       ...item.answersLabeled,
       submittedAt: dayjs(item.submittedAt).format("YYYY-MM-DD HH:mm:ss"),
     }));
