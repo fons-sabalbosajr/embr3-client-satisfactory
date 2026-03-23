@@ -6,8 +6,8 @@ import { requirePermission } from '../middleware/permission.js';
 
 const router = express.Router();
 
-// List categories
-router.get('/', authMiddleware, async (req, res) => {
+// List categories (public – the survey form needs this without auth)
+router.get('/', async (req, res) => {
   try {
     const items = await ServiceCategory.find({}).sort({ name: 1 });
     res.json({ data: items });

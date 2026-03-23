@@ -92,3 +92,39 @@
   font-size: 11px;
   color: rgba(0, 0, 0, 0.4);
 }
+
+/* === iPad touch-friendly (768-1080px) === */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .login-ann-collapse .ant-collapse-header {
+    min-height: 44px;
+    padding: 12px 14px !important;
+  }
+
+  .login-ann-panel-title {
+    font-size: 14px;
+  }
+
+  .login-ann-collapse .ann-body {
+    font-size: 14px;
+  }
+}
+
+/* === Large desktops (1440px+) === */
+@media screen and (min-width: 1440px) {
+  .login-ann-header {
+    font-size: 15px;
+  }
+
+  .login-ann-panel-title {
+    font-size: 14px;
+  }
+
+  .login-ann-collapse .ann-body {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .announcement-preview-body {
+    font-size: 15px;
+  }
+}

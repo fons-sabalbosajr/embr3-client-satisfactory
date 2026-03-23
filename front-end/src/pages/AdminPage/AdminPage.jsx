@@ -149,6 +149,16 @@ function AdminPage() {
       window.removeEventListener("touchstart", resetTimer);
     };
   }, []);
+
+  // Auto-collapse sidebar on iPad-width screens (<=1080px)
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 1080px)");
+    const handleResize = (e) => setCollapsed(e.matches);
+    handleResize(mediaQuery);
+    mediaQuery.addEventListener("change", handleResize);
+    return () => mediaQuery.removeEventListener("change", handleResize);
+  }, []);
+
   // Effect for handling user authentication check (tolerant to brief storage race)
   useEffect(() => {
     const ensureAuthenticated = async () => {

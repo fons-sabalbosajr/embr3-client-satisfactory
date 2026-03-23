@@ -347,4 +347,81 @@ body[data-mantine-color-scheme="dark"] .address-text {
   .auth-card{
     margin-top: 0;
   }
+
+  .form-wrapper {
+    padding: 20px 24px;
+  }
+
+  .auth-card {
+    max-width: 480px;
+  }
+}
+
+/* === iPad touch-friendly (768-1080px) === */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .auth-card .ant-input,
+  .auth-card .ant-input-password {
+    min-height: 44px;
+    font-size: 15px;
+  }
+
+  .auth-card .ant-btn {
+    min-height: 44px;
+    font-size: 15px;
+  }
+}
+
+/* === Large desktops (1440px+) === */
+@media screen and (min-width: 1440px) {
+  .agency-header-inner-home {
+    max-width: 1600px;
+    gap: 20px;
+  }
+
+  .logo-svg-emb,
+  .logo-svg-bp {
+    height: 60px;
+  }
+
+  .republic-text,
+  .department-text {
+    font-size: 14px;
+  }
+
+  .bureau-text {
+    font-size: 16px;
+  }
+
+  .address-text {
+    font-size: 13px;
+  }
+
+  .form-wrapper {
+    max-width: 560px;
+  }
+
+  .auth-card {
+    max-width: 560px;
+    border-radius: 20px;
+  }
+}
+
+/* === Ultra-wide / 4K desktops (1920px+) === */
+@media screen and (min-width: 1920px) {
+  .agency-header-inner-home {
+    max-width: 1800px;
+  }
+
+  .logo-svg-emb,
+  .logo-svg-bp {
+    height: 66px;
+  }
+
+  .form-wrapper {
+    max-width: 600px;
+  }
+
+  .auth-card {
+    max-width: 600px;
+  }
 }

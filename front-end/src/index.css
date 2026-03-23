@@ -52,5 +52,29 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* ── Responsive root adjustments ── */
+
+/* iPad 9th gen portrait (810px) and similar tablets */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  body {
+    font-size: 15px;
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
+/* Large desktops (1440px+) */
+@media screen and (min-width: 1440px) {
+  body {
+    font-size: 16px;
+  }
+}
+
+/* Extra-large / 4K desktops (1920px+) */
+@media screen and (min-width: 1920px) {
+  body {
+    font-size: 17px;
+  }
+}
+
 
 

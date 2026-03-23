@@ -68,3 +68,18 @@ body[data-mantine-color-scheme="dark"] .client-info-card-note-text {
     gap: 6px;
   }
 }
+
+/* Large desktops (1440px+) */
+@media screen and (min-width: 1440px) {
+  .client-info-card-note-text {
+    font-size: 15px;
+  }
+
+  .client-info-card-dynamic-input {
+    width: min(520px, 100%);
+  }
+
+  .client-info-card-radio-space {
+    gap: 14px;
+  }
+}

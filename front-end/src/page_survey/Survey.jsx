@@ -823,6 +823,7 @@ function Survey({ toggleColorScheme }) {
               i18n.changeLanguage(key); // <-- make it global
             },
           }}
+          overlayClassName="survey-lang-dropdown"
           placement="topRight"
           trigger={["click"]}
         >

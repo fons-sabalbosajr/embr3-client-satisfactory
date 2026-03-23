@@ -5,8 +5,8 @@ import socket from "../../utils/socket";
 import "./stylesclientinfocard.css";
 import { useTranslation } from "react-i18next";
 import { isEqual } from "lodash";
-import { categorizeServices } from "../../utils/serviceCategories";
 import { getDecryptedItem, setEncryptedItem } from "../../utils/encryptedStorage";
+import { getServiceCategories } from "../../services/api";
 
 function ClientInfoCard({ formItemName, form, options, isInternalSurvey = false }) {
   let { genderOptions, serviceOptions } = options;
@@ -71,19 +71,50 @@ function ClientInfoCard({ formItemName, form, options, isInternalSurvey = false 
 
   const customerType = form.getFieldValue(`${formItemName}_customerType`);
 
-  // Group service options into Internal / External / Other for the dropdown
+  // Fetch service category mappings from the server
+  const [svcCatMap, setSvcCatMap] = React.useState({ internal: new Set(), external: new Set() });
+  useEffect(() => {
+    let cancelled = false;
+    getServiceCategories()
+      .then((res) => {
+        if (cancelled) return;
+        const list = res.data?.data || [];
+        const toKey = (s) => String(s || '').trim().toLowerCase();
+        const intSet = new Set(list.filter((x) => x.type === 'internal').map((x) => toKey(x.name)));
+        const extSet = new Set(list.filter((x) => x.type === 'external').map((x) => toKey(x.name)));
+        setSvcCatMap({ internal: intSet, external: extSet });
+      })
+      .catch(() => { /* non-fatal */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Group and filter service options based on survey type (internal/external)
   const groupedServiceOptions = useMemo(() => {
-    const { internal, external, other } = categorizeServices(serviceOptions || []);
+    const toKey = (s) => String(s || '').trim().toLowerCase();
     const toOptions = (list) => (list || []).map((s) => ({ label: s, value: s }));
-    const groups = [];
-    if (internal.length)
-      groups.push({ label: t('serviceGroups.internal') || 'Internal Services', options: toOptions(internal) });
-    if (external.length)
-      groups.push({ label: t('serviceGroups.external') || 'External Services', options: toOptions(external) });
-    if (other.length)
-      groups.push({ label: t('serviceGroups.other') || 'Other Services', options: toOptions(other) });
-    return groups;
-  }, [serviceOptions, t]);
+
+    const internal = [];
+    const external = [];
+    const other = [];
+    (serviceOptions || []).forEach((opt) => {
+      const k = toKey(opt);
+      if (svcCatMap.internal.has(k)) internal.push(opt);
+      else if (svcCatMap.external.has(k)) external.push(opt);
+      else other.push(opt);
+    });
+
+    // Filter by survey type
+    if (isInternalSurvey) {
+      // Internal survey → show only internal services
+      if (internal.length) return toOptions(internal);
+      // Fallback: if no categories are mapped yet, show all
+      return toOptions(serviceOptions || []);
+    }
+    // External survey → show only external services
+    if (external.length) return toOptions(external);
+    // Fallback
+    return toOptions(serviceOptions || []);
+  }, [serviceOptions, svcCatMap, isInternalSurvey]);
 
   // Prefill and persist assisted personnel name across sessions
   useEffect(() => {

@@ -55,3 +55,59 @@
   background: rgba(255, 255, 255, 0.15);
   border-radius: 2px;
 }
+
+/* iPad 9th gen portrait & tablets (768–1080px) */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .admin-logo-container {
+    height: 56px;
+    gap: 8px;
+  }
+
+  .admin-logo {
+    height: 30px;
+    width: 30px;
+  }
+
+  .user-dropdown-link {
+    padding: 8px 12px;
+    min-height: 44px;
+  }
+}
+
+/* Mobile – auto-collapse sidebar */
+@media screen and (max-width: 767px) {
+  .admin-logo-container {
+    height: 48px;
+    gap: 6px;
+  }
+
+  .admin-logo {
+    height: 28px;
+    width: 28px;
+  }
+}
+
+/* Large desktops (1440px+) */
+@media screen and (min-width: 1440px) {
+  .admin-logo-container {
+    height: 72px;
+    gap: 14px;
+  }
+
+  .admin-logo {
+    height: 40px;
+    width: 40px;
+  }
+}
+
+/* Ultra-wide / 4K (1920px+) */
+@media screen and (min-width: 1920px) {
+  .admin-logo-container {
+    height: 80px;
+  }
+
+  .admin-logo {
+    height: 44px;
+    width: 44px;
+  }
+}

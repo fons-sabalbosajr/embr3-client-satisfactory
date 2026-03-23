@@ -9,6 +9,7 @@ import {
   Select,
   Tag,
   Space,
+  Tabs,
 } from "antd";
 import {
   EditOutlined,
@@ -674,7 +675,7 @@ function DataConfig() {
         open={catModalOpen}
         onCancel={() => setCatModalOpen(false)}
         footer={null}
-        width={700}
+        width={800}
       >
         <Space direction="vertical" style={{ width: '100%' }}>
           <Form
@@ -694,7 +695,7 @@ function DataConfig() {
             }}
           >
             <Form.Item name="name" rules={[{ required: true, message: 'Name required' }]}>
-              <Input placeholder="Service name (e.g., ECC Online)" />
+              <Input placeholder="Service name (e.g., ECC Online)" style={{ minWidth: 320 }} />
             </Form.Item>
             <Form.Item name="type" rules={[{ required: true, message: 'Type required' }]}>
               <Select placeholder="Type" style={{ width: 160 }}>
@@ -707,43 +708,87 @@ function DataConfig() {
             </Form.Item>
           </Form>
 
-          <Table
-            size="small"
-            rowKey="_id"
-            dataSource={catItems}
-            columns={[
-              { title: 'Name', dataIndex: 'name', key: 'name' },
-              { title: 'Type', dataIndex: 'type', key: 'type', render: (t) => t === 'internal' ? <Tag color="geekblue">Internal</Tag> : <Tag color="green">External</Tag> },
+          <Tabs
+            defaultActiveKey="internal"
+            items={[
               {
-                title: 'Actions', key: 'actions', align: 'right',
-                render: (_, rec) => (
-                  <Space>
-                    <Button size="small" onClick={async () => {
-                      const newType = rec.type === 'internal' ? 'external' : 'internal';
-                      try {
-                        setCatLoading(true);
-                        await api.updateServiceCategory(rec._id, { type: newType });
-                        fetchCategories();
-                      } catch (e) {
-                        console.error('Update category failed', e);
-                      } finally {
-                        setCatLoading(false);
+                key: 'internal',
+                label: <span><Tag color="geekblue" style={{ marginRight: 4 }}>Internal</Tag> ({catItems.filter((c) => c.type === 'internal').length})</span>,
+                children: (
+                  <Table
+                    size="small"
+                    rowKey="_id"
+                    loading={catLoading}
+                    dataSource={catItems.filter((c) => c.type === 'internal')}
+                    pagination={{ pageSize: 10 }}
+                    columns={[
+                      { title: 'Service Name', dataIndex: 'name', key: 'name', sorter: (a, b) => a.name.localeCompare(b.name) },
+                      {
+                        title: 'Actions', key: 'actions', width: 180, align: 'right',
+                        render: (_, rec) => (
+                          <Space>
+                            <Button size="small" onClick={async () => {
+                              try {
+                                setCatLoading(true);
+                                await api.updateServiceCategory(rec._id, { type: 'external' });
+                                fetchCategories();
+                              } catch (e) { console.error('Update category failed', e); }
+                              finally { setCatLoading(false); }
+                            }}>Move to External</Button>
+                            <Button size="small" danger onClick={async () => {
+                              try {
+                                setCatLoading(true);
+                                await api.deleteServiceCategory(rec._id);
+                                fetchCategories();
+                              } catch (e) { console.error('Delete category failed', e); }
+                              finally { setCatLoading(false); }
+                            }}>Delete</Button>
+                          </Space>
+                        )
                       }
-                    }}>Toggle Type</Button>
-                    <Button size="small" danger onClick={async () => {
-                      try {
-                        setCatLoading(true);
-                        await api.deleteServiceCategory(rec._id);
-                        fetchCategories();
-                      } catch (e) {
-                        console.error('Delete category failed', e);
-                      } finally {
-                        setCatLoading(false);
+                    ]}
+                  />
+                ),
+              },
+              {
+                key: 'external',
+                label: <span><Tag color="green" style={{ marginRight: 4 }}>External</Tag> ({catItems.filter((c) => c.type === 'external').length})</span>,
+                children: (
+                  <Table
+                    size="small"
+                    rowKey="_id"
+                    loading={catLoading}
+                    dataSource={catItems.filter((c) => c.type === 'external')}
+                    pagination={{ pageSize: 10 }}
+                    columns={[
+                      { title: 'Service Name', dataIndex: 'name', key: 'name', sorter: (a, b) => a.name.localeCompare(b.name) },
+                      {
+                        title: 'Actions', key: 'actions', width: 180, align: 'right',
+                        render: (_, rec) => (
+                          <Space>
+                            <Button size="small" onClick={async () => {
+                              try {
+                                setCatLoading(true);
+                                await api.updateServiceCategory(rec._id, { type: 'internal' });
+                                fetchCategories();
+                              } catch (e) { console.error('Update category failed', e); }
+                              finally { setCatLoading(false); }
+                            }}>Move to Internal</Button>
+                            <Button size="small" danger onClick={async () => {
+                              try {
+                                setCatLoading(true);
+                                await api.deleteServiceCategory(rec._id);
+                                fetchCategories();
+                              } catch (e) { console.error('Delete category failed', e); }
+                              finally { setCatLoading(false); }
+                            }}>Delete</Button>
+                          </Space>
+                        )
                       }
-                    }}>Delete</Button>
-                  </Space>
-                )
-              }
+                    ]}
+                  />
+                ),
+              },
             ]}
           />
         </Space>

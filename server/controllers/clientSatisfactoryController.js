@@ -28,6 +28,7 @@ export const submitSurvey = (io) => async (req, res) => {
       merged_customer_age_gender_question_companyName: "Company Name",
       merged_customer_age_gender_question_agencyName: "Agency Name",
       merged_customer_age_gender_question_assistPersonnel: "Assisted Personnel",
+      merged_customer_age_gender_question_employeeName: "Employee Name",
     };
 
     const labeledAnswers = {};
