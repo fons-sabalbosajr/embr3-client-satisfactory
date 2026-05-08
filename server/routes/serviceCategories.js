@@ -1,12 +1,13 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import ServiceCategory from '../models/ServiceCategory.js';
 import authMiddleware from '../middleware/auth.js';
 import { requirePermission } from '../middleware/permission.js';
 
 const router = express.Router();
 
-// List categories
-router.get('/', authMiddleware, async (req, res) => {
+// List categories (public – the survey form needs this without auth)
+router.get('/', async (req, res) => {
   try {
     const items = await ServiceCategory.find({}).sort({ name: 1 });
     res.json({ data: items });
@@ -69,7 +70,11 @@ router.put('/:id', authMiddleware, requirePermission('canEdit'), async (req, res
 router.delete('/:id', authMiddleware, requirePermission('canEdit'), async (req, res) => {
   try {
     const { id } = req.params;
-    await ServiceCategory.findByIdAndDelete(id);
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid category ID format.' });
+    }
+    const deleted = await ServiceCategory.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ message: 'Category not found' });
     res.json({ message: 'Deleted' });
   } catch (err) {
     console.error('Delete service category error', err);

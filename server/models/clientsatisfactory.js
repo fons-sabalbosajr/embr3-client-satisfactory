@@ -4,6 +4,7 @@ const ClientSatisfactorySchema = new mongoose.Schema({
  deviceId: { type: String, required: true },
   answers: { type: Object, required: true },
   answersLabeled: { type: Object },
+  surveyType: { type: String, enum: ["internal", "external"], default: "external" },
   submittedAt: { type: Date, default: Date.now },
 });
 

@@ -101,3 +101,69 @@
   font-weight: 500;
   color: #0d1a26;
 }
+
+/* ── View Modal Redesign ── */
+.view-modal-root .ant-modal-header {
+  padding-bottom: 12px;
+}
+
+.view-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.view-modal-info-card {
+  border-radius: 8px;
+}
+
+.view-modal-info-card .ant-card-head {
+  min-height: auto;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.view-modal-descriptions .ant-descriptions-item-label {
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  background: #fafafa;
+}
+
+.view-modal-descriptions .ant-descriptions-item-content {
+  font-size: 13px;
+}
+
+.view-modal-stat-card {
+  border-radius: 8px;
+  text-align: center;
+}
+
+.view-modal-stat-card .ant-statistic-title {
+  font-size: 12px;
+}
+
+.view-modal-stat-card .ant-statistic-content {
+  font-size: 22px;
+}
+
+.view-modal-table .ant-table-thead > tr > th {
+  font-size: 11px;
+  padding: 6px 10px !important;
+  background: #fafafa;
+}
+
+.view-modal-table .ant-table-tbody > tr > td {
+  font-size: 12px;
+  padding: 6px 10px !important;
+}
+
+.view-modal-tabs .ant-tabs-nav {
+  margin-bottom: 12px;
+}
+
+.view-modal-remarks {
+  min-height: 80px;
+}

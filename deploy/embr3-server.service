@@ -1,0 +1,49 @@
+# =============================================================================
+# EMB R3 OCSM – Systemd Service Unit
+# =============================================================================
+# Installation:
+#   sudo cp deploy/embr3-server.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable embr3-server
+#   sudo systemctl start embr3-server
+# =============================================================================
+
+[Unit]
+Description=EMB R3 OCSM Backend Server
+Documentation=https://github.com/your-org/embr3-client-satisfactory
+After=network.target
+
+[Service]
+Type=simple
+User=embapp
+WorkingDirectory=/opt/embr3-csm/server
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/embr3-csm/server/.env
+
+# Graceful shutdown timeout (matches server.js SIGTERM handler)
+TimeoutStopSec=15
+
+# Resource limits for KVM 2 (8 GB RAM)
+MemoryMax=2G
+CPUQuota=150%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=embr3-server
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/embr3-csm/server
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

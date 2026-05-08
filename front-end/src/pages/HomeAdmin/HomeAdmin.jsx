@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Card, Tabs, Form, Input, Button, Typography, Row, Col } from "antd";
+import { Card, Tabs, Form, Input, Button, Typography, Row, Col, Collapse } from "antd";
 import "./homeadmin.css";
+import "../../components/Announcements/announcement.css";
 import AgencyHeader from "./AgencyHeader";
 import Swal from "sweetalert2";
-import { BulbOutlined, BulbFilled } from "@ant-design/icons";
+import { BulbOutlined, BulbFilled, NotificationOutlined } from "@ant-design/icons";
 import { FloatButton } from "antd";
-import { signUp, login, forgotPassword, resendVerification } from "../../services/api";
-import CryptoJS from "crypto-js";
-import { getConfig } from "../../utils/config";
+import { signUp, login, forgotPassword, resendVerification, getPublicAnnouncements } from "../../services/api";
+import dayjs from "dayjs";
+
 import { setOpaqueItem } from "../../utils/encryptedStorage";
 import { setEncryptedItem } from "../../utils/encryptedStorage";
 
@@ -20,6 +21,7 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
   const [signupForm] = Form.useForm();
   const params = new URLSearchParams(location.search);
   const [loginForm] = Form.useForm();
+  const [announcements, setAnnouncements] = useState([]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -28,22 +30,33 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
     }
   }, [location, navigate]);
 
+  // Fetch public announcements for login panel banners
+  useEffect(() => {
+    getPublicAnnouncements()
+      .then((res) => {
+        const items = Array.isArray(res.data?.data) ? res.data.data : [];
+        // Only show announcements with displayMode 'banner' or 'both'
+        setAnnouncements(items.filter((a) => a.displayMode === 'banner' || a.displayMode === 'both'));
+      })
+      .catch(() => {});
+  }, []);
+
   const handleLogin = async ({ username, password }) => {
     setLoading(true);
     try {
       const res = await login({ username, password });
 
       // Hide keys by storing under obfuscated storage keys
-  setOpaqueItem("token", res.data.token);
-  // Store user data encrypted using setEncryptedItem for compatibility
-  setEncryptedItem("user", JSON.stringify(res.data.user));
+      setOpaqueItem("token", res.data.token);
+      // Store user data encrypted using setEncryptedItem for compatibility
+      setEncryptedItem("user", JSON.stringify(res.data.user));
 
-    // Notify app shell that auth state changed, then navigate
-    try {
-      window.dispatchEvent(new Event("auth:changed"));
-    } catch {}
-  // Navigate to admin dashboard without full reload to avoid static host 404 flash
-  navigate("/admin/dashboard", { replace: true });
+      // Notify app shell that auth state changed, then navigate
+      try {
+        window.dispatchEvent(new Event("auth:changed"));
+      } catch {}
+      // Navigate to admin dashboard without full reload to avoid static host 404 flash
+      navigate("/admin/dashboard", { replace: true });
     } catch (err) {
       console.error("Login error:", err);
       Swal.fire({
@@ -178,7 +191,7 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
           <div className="circle circle4" />
           <div className="circle circle5" />
         </div>
-        <AgencyHeader /> {/* <-- Add this line */}
+        <AgencyHeader />
         <div className="form-wrapper">
           <Card className="auth-card">
             <h2 className="auth-title">ADMINISTRATION PANEL</h2>
@@ -328,6 +341,37 @@ function HomeAdmin({ toggleColorScheme, colorScheme }) {
                 },
               ]}
             />
+            {/* Announcement banners — inside card, below form */}
+            {announcements.length > 0 && (
+              <div className="login-announcements-banner">
+                <div className="login-ann-header">
+                  <NotificationOutlined /> <span>Announcements</span>
+                </div>
+                <Collapse
+                  accordion
+                  size="small"
+                  bordered={false}
+                  className="login-ann-collapse"
+                  items={announcements.map((ann) => ({
+                    key: ann._id,
+                    label: (
+                      <span className="login-ann-panel-title">{ann.title}</span>
+                    ),
+                    children: (
+                      <>
+                        <div className="ann-body" dangerouslySetInnerHTML={{ __html: ann.message }} />
+                        {ann.startDate && (
+                          <div className="ann-date">
+                            {dayjs(ann.startDate).format('MMM D, YYYY')}
+                            {ann.endDate ? ` — ${dayjs(ann.endDate).format('MMM D, YYYY')}` : ''}
+                          </div>
+                        )}
+                      </>
+                    ),
+                  }))}
+                />
+              </div>
+            )}
           </Card>
         </div>
       </div>

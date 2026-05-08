@@ -6,6 +6,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
 import { Server } from "socket.io";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import hpp from "hpp";
 
 // Routes
 import feedbackRoutes from "./routes/feedback.js";
@@ -19,11 +22,21 @@ import serviceCategoriesRoute from "./routes/serviceCategories.js";
 
 dotenv.config();
 
+// Validate required environment variables at startup
+if (!process.env.JWT_SECRET) {
+  console.error("FATAL: JWT_SECRET environment variable is not set. Server cannot start securely.");
+  process.exit(1);
+}
+if (!process.env.MONGO_URI) {
+  console.error("FATAL: MONGO_URI environment variable is not set.");
+  process.exit(1);
+}
+
 // Host selection: prefer explicit SERVER_HOST, otherwise bind to 0.0.0.0
 const REQUESTED_HOST = process.env.SERVER_HOST;
 const DEFAULT_HOST = "0.0.0.0";
 // Prefer standard PORT, fallback to SERVER_PORT, then default
-const PORT = Number(process.env.PORT || process.env.SERVER_PORT || 5001);
+const PORT = Number(process.env.PORT || process.env.SERVER_PORT || 5000);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5174";
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -62,6 +75,12 @@ const io = new Server(server, {
       },
 });
 
+// When running behind Nginx, trust the first proxy so rate-limiters and
+// req.ip see the real client IP instead of 127.0.0.1.
+if (IS_PROD) {
+  app.set("trust proxy", 1);
+}
+
 // Middleware
 app.use(
   cors(
@@ -73,7 +92,46 @@ app.use(
       : { origin: true, credentials: true }
   )
 );
-app.use(express.json());
+
+// Security headers
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // CSP handled by frontend/nginx in production
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+// Prevent HTTP parameter pollution
+app.use(hpp());
+
+// Rate limiters
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300,                 // limit each IP to 300 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many requests, please try again later." },
+});
+app.use(globalLimiter);
+
+// Strict rate-limit for auth endpoints (login, signup, forgot-password)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,                    // 15 attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many authentication attempts, please try again after 15 minutes." },
+});
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/signup", authLimiter);
+app.use("/api/auth/forgot-password", authLimiter);
+app.use("/api/auth/resend-verification", authLimiter);
+
+// Limit JSON body size
+app.use(express.json({ limit: "500kb" }));
+
+// Register socket.io instance on app for controllers
+app.set("io", io);
 
 const activeFeedbacks = new Map();
 
@@ -140,6 +198,40 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+// Global error handler — catches unhandled errors from all routes/middleware
+app.use((err, req, res, _next) => {
+  console.error("Unhandled error:", err.stack || err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    message:
+      process.env.NODE_ENV === "production"
+        ? "An unexpected error occurred."
+        : err.message || "Internal Server Error",
+  });
+});
+
+// Handle unhandled promise rejections globally
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Promise Rejection:", reason);
+});
+
+// In production, serve the built frontend SPA (useful when not using nginx)
+if (IS_PROD) {
+  const path = await import("path");
+  const { fileURLToPath } = await import("url");
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.default.dirname(__filename);
+  const distPath = path.default.join(__dirname, "../front-end/dist");
+
+  app.use(express.static(distPath));
+  // SPA fallback: serve index.html for any non-API route
+  app.get("{*splat}", (req, res) => {
+    if (!req.path.startsWith("/api") && !req.path.startsWith("/socket.io")) {
+      res.sendFile(path.default.join(distPath, "index.html"));
+    }
+  });
+}
+
 // DB Connection and start server
 mongoose
   .connect(process.env.MONGO_URI)
@@ -205,3 +297,20 @@ server.on("error", (err) => {
 
   console.error("Server error:", err);
 });
+
+// Graceful shutdown
+const shutdown = async (signal) => {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+  try {
+    server.close(() => console.log("HTTP server closed."));
+    io.close();
+    await mongoose.connection.close();
+    console.log("MongoDB connection closed.");
+  } catch (err) {
+    console.error("Error during shutdown:", err);
+  } finally {
+    process.exit(0);
+  }
+};
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

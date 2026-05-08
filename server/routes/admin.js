@@ -1,29 +1,10 @@
 import express from "express";
-import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { authMiddleware } from "../middleware/auth.js";
 import { requirePermission } from "../middleware/permission.js";
-import { getEmailHealth } from "../utils/email.js";
+import { getEmailHealth, sendTestEmail } from "../utils/email.js";
 
 const router = express.Router();
-
-// Lightweight auth middleware (mirrors auth.js behavior)
-const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Authentication invalid, no token provided" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: payload.id, username: payload.username };
-    next();
-  } catch (error) {
-    return res.status(401).json({ message: "Authentication invalid, token is invalid" });
-  }
-};
 
 // Map mongoose readyState to readable string
 function connectionStateName(state) {
@@ -145,8 +126,10 @@ router.get(
                 let v = doc[k];
                 if (v === undefined || v === null) return "";
                 if (typeof v === "object") v = JSON.stringify(v);
-                // escape quotes
-                const s = String(v).replace(/"/g, '""');
+                // Prevent CSV formula injection
+                let s = String(v);
+                if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+                s = s.replace(/"/g, '""');
                 // wrap fields containing comma/newline/quote in quotes
                 return /[",\n]/.test(s) ? `"${s}"` : s;
               })
@@ -171,8 +154,6 @@ router.get(
   }
 );
 
-export default router;
-
 // Email transport health check (admin only)
 router.get(
   "/email/health",
@@ -188,3 +169,25 @@ router.get(
     }
   }
 );
+
+// POST /api/admin/email/test - Send a test email to verify configuration
+router.post(
+  "/email/test",
+  authMiddleware,
+  requirePermission("canManageUsers"),
+  async (req, res) => {
+    try {
+      const { to } = req.body;
+      if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+        return res.status(400).json({ ok: false, error: "Valid 'to' email address is required" });
+      }
+      await sendTestEmail(to);
+      res.json({ ok: true, message: `Test email sent to ${to}` });
+    } catch (err) {
+      console.error("Test email send error:", err);
+      res.status(500).json({ ok: false, error: err.message || String(err) });
+    }
+  }
+);
+
+export default router;

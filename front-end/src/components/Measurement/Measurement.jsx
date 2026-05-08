@@ -4,7 +4,7 @@ import { ExportOutlined } from "@ant-design/icons";
 import MeasurementTable from "../Measurement/components/MeasurementTable";
 import MeasurementFormModal from "../Measurement/components/MeasurementFormModal";
 import { getFeedbacks } from "../../services/api";
-import * as XLSX from "xlsx";
+import { exportToExcelFile } from "../../utils/excelExport";
 import dayjs from "dayjs";
 import socket from "../../utils/socket"; // Ensure this path is correct
 
@@ -66,22 +66,30 @@ function Measurement() {
       const [start, end] = dates;
       result = result.filter((item) => {
         const submitted = dayjs(item.submittedAt);
-        return submitted.isAfter(start) && submitted.isBefore(end);
+        return (submitted.isSame(start, 'day') || submitted.isAfter(start)) && (submitted.isSame(end, 'day') || submitted.isBefore(end));
       });
     }
     setFiltered(result);
   };
 
+  const inferSurveyType = (item) => {
+    if (item.surveyType) return item.surveyType;
+    const labeled = item.answersLabeled || {};
+    if (
+      labeled["Customer Type"] === "Government" &&
+      (labeled["Agency Name"] === "EMB Region III" || labeled["Employee Name"])
+    ) return "internal";
+    return "external";
+  };
+
   const handleExport = () => {
     const exportData = filtered.map((item) => ({
+      "Survey Type": inferSurveyType(item) === "internal" ? "Internal" : "External",
       ...item.answersLabeled,
       submittedAt: dayjs(item.submittedAt).format("YYYY-MM-DD HH:mm:ss"),
     }));
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Measurements");
-    XLSX.writeFile(wb, "ClientMeasurements.xlsx");
+    exportToExcelFile("ClientMeasurements.xlsx", exportData, "Measurements");
   };
 
   const openEditModal = (record) => {
@@ -101,24 +109,24 @@ function Measurement() {
     setData(updatedData);
     setFiltered(updatedData);
     closeModal();
-    (messageApi && messageApi.success) ? messageApi.success("Entry updated successfully.") : null;
+    if (messageApi && messageApi.success) messageApi.success("Entry updated successfully.");
   };
 
   return (
     <Card title="Client Measurement Data">
       {contextHolder}
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={8}>
+      <Row gutter={[16, 12]} style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={12} md={8}>
           <Input.Search
             placeholder="Search..."
             onSearch={handleSearch}
             allowClear
           />
         </Col>
-        <Col span={8}>
-          <RangePicker onChange={handleDateFilter} />
+        <Col xs={24} sm={12} md={8}>
+          <RangePicker onChange={handleDateFilter} style={{ width: "100%" }} />
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={24} md={8}>
           <div
             style={{
               display: "flex",

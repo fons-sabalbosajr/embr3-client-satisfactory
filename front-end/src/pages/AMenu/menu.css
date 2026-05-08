@@ -359,3 +359,61 @@ body[data-mantine-color-scheme="dark"] .main-title {
     padding: 10px 24px;
   }
 }
+
+/* --- iPad touch-friendly (768-1080px) --- */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .survey-button,
+  .survey-button-admin {
+    min-height: 44px;
+    padding: 12px 32px;
+    font-size: 1rem;
+  }
+}
+
+/* --- Large desktops (1440px+) --- */
+@media screen and (min-width: 1440px) {
+  .main-title {
+    font-size: 3rem;
+  }
+
+  .survey-text {
+    font-size: 1.35rem;
+  }
+
+  .logo-svg-emb-menu,
+  .logo-svg-bp-menu {
+    height: 72px;
+  }
+
+  .agency-name-text-emb {
+    font-size: 22px;
+  }
+
+  .survey-button,
+  .survey-button-admin {
+    font-size: 1.1rem;
+    padding: 16px 38px;
+  }
+}
+
+/* --- Ultra-wide / 4K desktops (1920px+) --- */
+@media screen and (min-width: 1920px) {
+  .main-title {
+    font-size: 3.4rem;
+  }
+
+  .logo-svg-emb-menu,
+  .logo-svg-bp-menu {
+    height: 80px;
+  }
+
+  .agency-name-text-emb {
+    font-size: 24px;
+  }
+
+  .survey-button,
+  .survey-button-admin {
+    font-size: 1.15rem;
+    padding: 18px 42px;
+  }
+}

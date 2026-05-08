@@ -6,45 +6,21 @@ import jwt from "jsonwebtoken";
 import {
   sendVerificationEmail,
   sendResetPasswordEmail,
+  sendPasswordChangedEmail,
 } from "../utils/email.js";
+import { authMiddleware } from "../middleware/auth.js";
 import { requirePermission } from "../middleware/permission.js";
 
 const router = express.Router();
 
 function getFrontendUrl(req) {
   if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
-  // Use the caller's origin (e.g., Vite dev server) as best-effort default
-  const origin = req.headers.origin;
-  if (origin) return origin;
-  // Fallback to common dev port
+  // Fallback to common dev port — NEVER trust Origin header in production
   return "http://localhost:5174";
 }
 
-// Middleware to verify JWT
-const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res
-      .status(401)
-      .json({ message: "Authentication invalid, no token provided" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: payload.id, username: payload.username };
-    next();
-  } catch (error) {
-    return res
-      .status(401)
-      .json({ message: "Authentication invalid, token is invalid" });
-  }
-};
-
-// Get all users (for admin/accounts management)
-router.get("/users", authMiddleware, async (req, res) => {
+// Get all users (for admin/accounts management — requires canManageUsers)
+router.get("/users", authMiddleware, requirePermission("canManageUsers"), async (req, res) => {
   try {
     const users = await User.find(
       {},
@@ -73,7 +49,7 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ message: "Password must be at least 8 characters." });
     }
 
-    const existing = await User.findOne({ $or: [{ email }, { username }] });
+    const existing = await User.findOne({ $or: [{ email }, { username }] }).select("+verificationToken");
 
     // If an account exists
   if (existing) {
@@ -125,7 +101,7 @@ router.post("/resend-verification", async (req, res) => {
   try {
     const user = await User.findOne(
       email ? { email } : username ? { username } : null
-    );
+    ).select("+verificationToken");
     if (!user) {
       return res.status(404).json({ message: "No account found." });
     }
@@ -151,7 +127,7 @@ router.get("/verify", async (req, res) => {
   // console.log("Verification request:", { token, email });
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+verificationToken");
     // console.log("User found:", user);
 
     if (!user) {
@@ -201,7 +177,7 @@ router.post("/login", async (req, res) => {
   //console.debug("Login attempt for username:", username);
 
   try {
-    const user = await User.findOne({ username }); // <-- find by username
+    const user = await User.findOne({ username }).select("+password"); // <-- find by username, need password for compare
 
     if (!user)
       return res.status(400).json({ message: "Invalid username or password" });
@@ -245,7 +221,7 @@ router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+resetPasswordToken +resetPasswordExpires");
 
     if (!user)
       return res.status(404).json({ message: "No account with that email." });
@@ -260,7 +236,9 @@ router.post("/forgot-password", async (req, res) => {
     const resetLink = `${getFrontendUrl(
       req
     )}/reset-password?token=${token}&email=${email}`;
-    await sendResetPasswordEmail(email, user.fullname, resetLink);
+    // Fire-and-forget to avoid slow SMTP blocking the response
+    sendResetPasswordEmail(email, user.fullname, resetLink)
+      .catch((emailErr) => console.error("❌ Reset password email failed:", emailErr));
 
     res.status(200).json({
       message: "Password reset email sent. Please check your inbox.",
@@ -294,7 +272,7 @@ router.post("/reset-password", async (req, res) => {
       email,
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: new Date() }, // not expired
-    });
+    }).select("+password +resetPasswordToken +resetPasswordExpires");
 
     if (!user) {
       return res.status(400).json({ message: "Invalid or expired token." });
@@ -306,6 +284,10 @@ router.post("/reset-password", async (req, res) => {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
+
+    // Notify user that their password was changed (fire-and-forget)
+    sendPasswordChangedEmail(user.email, user.fullname)
+      .catch((err) => console.error("Password-changed notification email failed:", err));
 
     res.status(200).json({ message: "Password reset successful." });
   } catch (err) {
@@ -326,7 +308,9 @@ router.put("/users/:id", authMiddleware, async (req, res) => {
     }
 
     const isSelf = requester._id.toString() === id;
-    const isAdmin = !!requester.permissions?.canManageUsers;
+    const isAdmin = !!requester.permissions?.canManageUsers ||
+      requester.privilege === "admin" ||
+      (requester.position || "").toLowerCase() === "developer";
 
     if (!isSelf && !isAdmin) {
       return res
@@ -334,7 +318,7 @@ router.put("/users/:id", authMiddleware, async (req, res) => {
         .json({ message: "Forbidden: insufficient permissions to update user" });
     }
 
-    const user = await User.findById(id);
+    const user = await User.findById(id).select("+password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -348,13 +332,15 @@ router.put("/users/:id", authMiddleware, async (req, res) => {
     if (privilege !== undefined && isAdmin) user.privilege = privilege;
 
     // Handle password change (self or admin)
+    let passwordChanged = false;
     if (password !== undefined) {
-      if (typeof password !== "string" || password.length < 6) {
+      if (typeof password !== "string" || password.length < 8) {
         return res
           .status(400)
-          .json({ message: "Password must be at least 6 characters." });
+          .json({ message: "Password must be at least 8 characters." });
       }
       user.password = await bcrypt.hash(password, 12);
+      passwordChanged = true;
     }
 
     // Only admins may set permissions
@@ -369,6 +355,13 @@ router.put("/users/:id", authMiddleware, async (req, res) => {
     }
 
     await user.save();
+
+    // Notify user if their password was changed (fire-and-forget)
+    if (passwordChanged) {
+      sendPasswordChangedEmail(user.email, user.fullname)
+        .catch((err) => console.error("Password-changed notification email failed:", err));
+    }
+
     // Do not return sensitive fields
     const safeUser = {
       id: user._id,
@@ -381,6 +374,29 @@ router.put("/users/:id", authMiddleware, async (req, res) => {
     res.json({ message: "User updated successfully", user: safeUser });
   } catch (err) {
     console.error("Update user error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Delete user (admin / developer only)
+router.delete("/users/:id", authMiddleware, requirePermission("canManageUsers"), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent self-deletion
+    if (req.user.id === id) {
+      return res.status(400).json({ message: "You cannot delete your own account." });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await User.findByIdAndDelete(id);
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    console.error("Delete user error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });

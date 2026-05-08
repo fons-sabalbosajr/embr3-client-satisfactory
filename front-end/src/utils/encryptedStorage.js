@@ -54,3 +54,68 @@ export function getDecryptedItem(key) {
     return null;
   }
 }
+
+// --- Session storage counterparts ---
+
+export function setEncryptedSessionItem(key, value) {
+  const { colorSchemeSecret = '' } = getCachedConfig();
+  const encrypted = CryptoJS.AES.encrypt(value, colorSchemeSecret).toString();
+  try {
+    sessionStorage.setItem(deriveStorageKey(key), encrypted);
+  } catch {
+    // best-effort
+  }
+}
+
+export function getDecryptedSessionItem(key) {
+  const { colorSchemeSecret = '' } = getCachedConfig();
+  const encrypted = sessionStorage.getItem(deriveStorageKey(key));
+  if (!encrypted) return null;
+  try {
+    const bytes = CryptoJS.AES.decrypt(encrypted, colorSchemeSecret);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  } catch {
+    return null;
+  }
+}
+
+// --- Migration & cleanup ---
+
+// List of known sensitive keys that should be encrypted
+const SENSITIVE_KEYS = ['token', 'user', 'darkMode', 'mantine-color-scheme', 'themePrefsCache'];
+
+/**
+ * Migrate any remaining plain-text sensitive keys to encrypted storage.
+ * Safe to call multiple times (idempotent).
+ */
+export function migratePlainKeysToEncrypted() {
+  SENSITIVE_KEYS.forEach((logicalKey) => {
+    try {
+      const plainValue = localStorage.getItem(logicalKey);
+      if (plainValue && !getOpaqueItem(logicalKey)) {
+        // For 'token' use opaque (not AES), for everything else use AES encryption
+        if (logicalKey === 'token') {
+          setOpaqueItem(logicalKey, plainValue);
+        } else {
+          setEncryptedItem(logicalKey, plainValue);
+        }
+        localStorage.removeItem(logicalKey);
+      }
+    } catch {
+      // ignore individual key failures
+    }
+  });
+}
+
+/**
+ * Wipe all storage (both localStorage and sessionStorage).
+ * Useful for logout to ensure no residual data.
+ */
+export function clearAllStorage() {
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch {
+    // best-effort
+  }
+}

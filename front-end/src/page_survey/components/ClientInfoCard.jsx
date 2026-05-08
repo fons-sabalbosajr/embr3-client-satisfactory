@@ -5,17 +5,31 @@ import socket from "../../utils/socket";
 import "./stylesclientinfocard.css";
 import { useTranslation } from "react-i18next";
 import { isEqual } from "lodash";
-import { categorizeServices } from "../../utils/serviceCategories";
 import { getDecryptedItem, setEncryptedItem } from "../../utils/encryptedStorage";
+import { getServiceCategories } from "../../services/api";
 
-function ClientInfoCard({ formItemName, form, options }) {
+function ClientInfoCard({ formItemName, form, options, isInternalSurvey = false }) {
   let { genderOptions, serviceOptions } = options;
   // Ensure 'RatherNotSay' is always present
   if (!genderOptions.includes('RatherNotSay')) {
     genderOptions = [...genderOptions, 'RatherNotSay'];
   }
+  // Ensure 'LGBTQ++' is always present
+  if (!genderOptions.includes('LGBTQ++')) {
+    genderOptions = [...genderOptions.filter(g => g !== 'RatherNotSay'), 'LGBTQ++', 'RatherNotSay'];
+  }
   const { Text } = Typography;
   const { t } = useTranslation();
+
+  // For internal survey, auto-set to Government
+  useEffect(() => {
+    if (isInternalSurvey) {
+      form.setFieldsValue({
+        [`${formItemName}_customerType`]: "Government",
+        [`${formItemName}_agencyName`]: "EMB Region III",
+      });
+    }
+  }, [isInternalSurvey, form, formItemName]);
 
   const customerTypeOptions = [
     { value: "Citizen", label: t("clientTypeCitizen") },
@@ -57,19 +71,50 @@ function ClientInfoCard({ formItemName, form, options }) {
 
   const customerType = form.getFieldValue(`${formItemName}_customerType`);
 
-  // Group service options into Internal / External / Other for the dropdown
+  // Fetch service category mappings from the server
+  const [svcCatMap, setSvcCatMap] = React.useState({ internal: new Set(), external: new Set() });
+  useEffect(() => {
+    let cancelled = false;
+    getServiceCategories()
+      .then((res) => {
+        if (cancelled) return;
+        const list = res.data?.data || [];
+        const toKey = (s) => String(s || '').trim().toLowerCase();
+        const intSet = new Set(list.filter((x) => x.type === 'internal').map((x) => toKey(x.name)));
+        const extSet = new Set(list.filter((x) => x.type === 'external').map((x) => toKey(x.name)));
+        setSvcCatMap({ internal: intSet, external: extSet });
+      })
+      .catch(() => { /* non-fatal */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Group and filter service options based on survey type (internal/external)
   const groupedServiceOptions = useMemo(() => {
-    const { internal, external, other } = categorizeServices(serviceOptions || []);
+    const toKey = (s) => String(s || '').trim().toLowerCase();
     const toOptions = (list) => (list || []).map((s) => ({ label: s, value: s }));
-    const groups = [];
-    if (internal.length)
-      groups.push({ label: t('serviceGroups.internal') || 'Internal Services', options: toOptions(internal) });
-    if (external.length)
-      groups.push({ label: t('serviceGroups.external') || 'External Services', options: toOptions(external) });
-    if (other.length)
-      groups.push({ label: t('serviceGroups.other') || 'Other Services', options: toOptions(other) });
-    return groups;
-  }, [serviceOptions, t]);
+
+    const internal = [];
+    const external = [];
+    const other = [];
+    (serviceOptions || []).forEach((opt) => {
+      const k = toKey(opt);
+      if (svcCatMap.internal.has(k)) internal.push(opt);
+      else if (svcCatMap.external.has(k)) external.push(opt);
+      else other.push(opt);
+    });
+
+    // Filter by survey type
+    if (isInternalSurvey) {
+      // Internal survey → show only internal services
+      if (internal.length) return toOptions(internal);
+      // Fallback: if no categories are mapped yet, show all
+      return toOptions(serviceOptions || []);
+    }
+    // External survey → show only external services
+    if (external.length) return toOptions(external);
+    // Fallback
+    return toOptions(serviceOptions || []);
+  }, [serviceOptions, svcCatMap, isInternalSurvey]);
 
   // Prefill and persist assisted personnel name across sessions
   useEffect(() => {
@@ -87,17 +132,25 @@ function ClientInfoCard({ formItemName, form, options }) {
 
   return (
     <Space direction="vertical" className="client-info-card-space">
+      {isInternalSurvey && (
+        <div className="client-info-card-internal-badge">
+          <Text strong style={{ color: "#0284c7" }}>
+            {t("internalSurveyBadge", "Internal Survey — EMB Region III Employee")}
+          </Text>
+        </div>
+      )}
+
       <Form.Item
         name={`${formItemName}_customerType`}
         label={t("clientTypeLabel")}
         rules={[{ required: true, message: t("selectClientType") }]}
       >
-        <Radio.Group>
+        <Radio.Group disabled={isInternalSurvey}>
           <Space direction="vertical" className="client-info-card-radio-space">
             {customerTypeOptions.map(({ value, label }) => (
               <div key={value}>
                 <Radio value={value}>{label}</Radio>
-                {customerType === "Business" && value === "Business" && (
+                {customerType === "Business" && value === "Business" && !isInternalSurvey && (
                   <Form.Item
                     name={`${formItemName}_companyName`}
                     noStyle
@@ -122,6 +175,7 @@ function ClientInfoCard({ formItemName, form, options }) {
                     <Input
                       placeholder={t("agencyPlaceholder")}
                       className="client-info-card-dynamic-input"
+                      disabled={isInternalSurvey}
                     />
                   </Form.Item>
                 )}
@@ -130,6 +184,16 @@ function ClientInfoCard({ formItemName, form, options }) {
           </Space>
         </Radio.Group>
       </Form.Item>
+
+      {isInternalSurvey && (
+        <Form.Item
+          name={`${formItemName}_employeeName`}
+          label={t("employeeName.label", "Employee Name (Optional)")}
+          rules={[{ required: false }]}
+        >
+          <Input placeholder={t("employeeName.placeholder", "Enter your name (optional)")} />
+        </Form.Item>
+      )}
 
       {(customerType === "Citizen" || !customerType) && (
         <Row gutter={16}>

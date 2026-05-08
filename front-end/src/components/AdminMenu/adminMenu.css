@@ -1,9 +1,42 @@
-/* Applies to all menu items */
+/* Corporate Admin Menu Styles */
 .custom-admin-menu .ant-menu-item,
 .custom-admin-menu .ant-menu-submenu-title {
-  font-size: 11px !important; /* adjust as needed */
+  font-size: 12px !important;
   font-weight: 500 !important;
- font-family: "Poppins", sans-serif;
-  //padding: 0px 12px !important; /* optional: tweak spacing */
-  //color: rgb(255, 255, 255) !important;
+  font-family: "Inter", "Plus Jakarta Sans", "Poppins", sans-serif;
+  letter-spacing: 0.2px;
+  /* padding: 0px 12px !important; */
+  /* color: rgb(255, 255, 255) !important; */
+}
+
+.custom-admin-menu .ant-menu-item-selected {
+  font-weight: 600 !important;
+}
+
+.custom-admin-menu .ant-menu-submenu-title .ant-menu-item-icon,
+.custom-admin-menu .ant-menu-item .ant-menu-item-icon {
+  font-size: 15px !important;
+}
+
+/* iPad 9th gen & tablets (768–1080px): ensure touch-friendly menu items */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .custom-admin-menu .ant-menu-item,
+  .custom-admin-menu .ant-menu-submenu-title {
+    font-size: 12px !important;
+    min-height: 44px !important;
+    line-height: 44px !important;
+  }
+}
+
+/* Large desktops (1440px+) */
+@media screen and (min-width: 1440px) {
+  .custom-admin-menu .ant-menu-item,
+  .custom-admin-menu .ant-menu-submenu-title {
+    font-size: 13px !important;
+  }
+
+  .custom-admin-menu .ant-menu-submenu-title .ant-menu-item-icon,
+  .custom-admin-menu .ant-menu-item .ant-menu-item-icon {
+    font-size: 17px !important;
+  }
 }

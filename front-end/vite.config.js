@@ -78,8 +78,8 @@ const BACKEND = explicitBackend
 console.log(`[vite] dev proxy BACKEND=${BACKEND}`);
 
 export default defineConfig({
-  // Serve app at root during dev and build
-  base: "/",
+  // Serve app at root during dev; /ocsm/ in production
+  base: process.env.NODE_ENV === 'production' || process.env.VITE_BASE ? (process.env.VITE_BASE || '/ocsm/') : '/',
   plugins: [react(), svgr()],
   server: {
     port: 5174,
@@ -92,5 +92,25 @@ export default defineConfig({
         ws: true,
       },
     },
+  },
+  build: {
+    // Split large vendor libraries into separate chunks for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          // UI frameworks
+          "vendor-antd": ["antd", "@ant-design/icons"],
+          "vendor-mantine": ["@mantine/core", "@mantine/hooks"],
+          // Charting & PDF
+          "vendor-data": ["recharts", "jspdf", "exceljs"],
+        },
+      },
+    },
+    // Increase warning threshold (antd and data libs are inherently large)
+    chunkSizeWarningLimit: 1700,
+    // Generate source maps for production debugging (optional)
+    sourcemap: false,
   },
 });

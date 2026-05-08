@@ -1,33 +1,35 @@
-/* dashboard.css */
+/* dashboard.css — Corporate Theme */
 
 .dashboard-container {
-  padding: 24px;
-  min-height: calc(100vh - 136px); /* Adjust based on your AdminPage layout if applicable */
-  border-radius: 8px;
+  padding: 20px 24px;
+  min-height: calc(100vh - 136px);
+  border-radius: 6px;
 }
 
 .dashboard-title {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #262626; /* Darker text for titles */
-  font-size: 2.2em;
+  text-align: left;
+  margin-bottom: 24px;
+  color: #1a1a2e;
+  font-size: 1.5em;
   font-weight: 700;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px; /* Space between icon and text */
+  justify-content: flex-start;
+  gap: 8px;
+  letter-spacing: -0.3px;
 }
 
 .dashboard-card {
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* More prominent shadow */
-  transition: all 0.3s ease;
-  overflow: hidden; /* Ensures content respects border-radius */
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .dashboard-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
 }
 
 /* Specific styling for Ant Design Statistic values */
@@ -76,14 +78,14 @@
 }
 
 /* Responsive adjustments for smaller screens */
-@media (max-width: 767px) {
+/* iPad 9th gen portrait & tablets (768–1080px) */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
   .dashboard-container {
-    padding: 16px;
+    padding: 16px 14px;
   }
 
   .dashboard-title {
-    font-size: 1.8em;
-    margin-bottom: 20px;
+    font-size: 1.35em;
   }
 
   .ant-statistic-content {
@@ -91,10 +93,80 @@
   }
 
   .ant-statistic-title {
-    font-size: 14px !important;
+    font-size: 13px !important;
+  }
+
+  .chart-card .ant-card-head {
+    padding: 12px 16px;
+    font-size: 1.05em;
   }
 
   .chart-card .ant-card-body {
     padding: 16px;
+  }
+
+  .dashboard-card {
+    border-radius: 8px;
+  }
+}
+
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
+  .dashboard-container {
+    padding: 12px 10px;
+  }
+
+  .dashboard-title {
+    font-size: 1.25em;
+    margin-bottom: 16px;
+  }
+
+  .ant-statistic-content {
+    font-size: 22px !important;
+  }
+
+  .ant-statistic-title {
+    font-size: 13px !important;
+  }
+
+  .chart-card .ant-card-body {
+    padding: 12px;
+  }
+}
+
+/* Large desktops (1440px+) */
+@media screen and (min-width: 1440px) {
+  .dashboard-container {
+    padding: 24px 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  .dashboard-title {
+    font-size: 1.6em;
+  }
+
+  .ant-statistic-content {
+    font-size: 32px !important;
+  }
+
+  .chart-card .ant-card-body {
+    padding: 28px;
+  }
+}
+
+/* Ultra-wide / 4K desktops (1920px+) */
+@media screen and (min-width: 1920px) {
+  .dashboard-container {
+    max-width: 1800px;
+    padding: 28px 40px;
+  }
+
+  .dashboard-title {
+    font-size: 1.75em;
+  }
+
+  .ant-statistic-content {
+    font-size: 34px !important;
   }
 }

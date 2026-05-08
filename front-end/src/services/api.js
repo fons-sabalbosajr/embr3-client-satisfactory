@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getDecryptedItem, getOpaqueItem } from "../utils/encryptedStorage";
+import { getDecryptedItem, getOpaqueItem, setOpaqueItem, removeOpaqueItem } from "../utils/encryptedStorage";
 
 // Base URL strategy:
 // - Prefer VITE_API_BASE when deploying frontend and backend on different domains (e.g., Render multi-service)
@@ -18,7 +18,9 @@ function inferBackendApiBase() {
   return null;
 }
 
-const baseURL = import.meta?.env?.VITE_API_BASE || inferBackendApiBase() || "/api";
+// In production with a base path (e.g., /ocsm/), prefix API calls accordingly
+const vitaBase = (import.meta?.env?.BASE_URL || "/").replace(/\/$/, "");
+const baseURL = import.meta?.env?.VITE_API_BASE || inferBackendApiBase() || `${vitaBase}/api`;
 const API = axios.create({ baseURL });
 
 // Add request interceptor to include auth token
@@ -31,10 +33,45 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+// Response interceptor: handle token refresh and 401 auto-logout
+API.interceptors.response.use(
+  (response) => {
+    // If the server refreshed the token, store the new one
+    const refreshedToken = response.headers["x-refreshed-token"];
+    if (refreshedToken) {
+      setOpaqueItem("token", refreshedToken);
+    }
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Only auto-clear for confirmed token expiry/missing — NOT login failures
+      const msg = (error.response?.data?.message || "").toLowerCase();
+      const isTokenExpiry =
+        msg.includes("expired") ||
+        msg.includes("no token provided") ||
+        msg.includes("token is invalid");
+      if (isTokenExpiry) {
+        removeOpaqueItem("token");
+        removeOpaqueItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        try { window.dispatchEvent(new Event("auth:changed")); } catch {}
+        // No hard redirect here — the auth:changed event flips isAuthenticated
+        // in MainApp, which swaps AdminPage for the login form via React Router.
+        // A window.location.replace() would race with the React state update
+        // and cause redirect loops in production.
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Get all users (for Accounts Management)
 export const getAllUsers = () => API.get("/auth/users");
 
 export const getFeedbacks = () => API.get("/feedback");
+export const getFeedbackCount = () => API.get("/feedback/count");
 export const signUp = (formData) => API.post("/auth/signup", formData);
 export const login = (formData) => API.post("/auth/login", formData);
 
@@ -60,6 +97,7 @@ export const forgotPassword = (email) =>
 export const resetPassword = (payload) =>
   API.post("/auth/reset-password", payload);
 export const updateUser = (id, updatedUser) => API.put(`/auth/users/${id}`, updatedUser);
+export const deleteUser = (id) => API.delete(`/auth/users/${id}`);
 export const getMe = () => API.get('/auth/me');
 export const verifyEmail = ({ token, email }) => API.get('/auth/verify', { params: { token, email } });
 export const resendVerification = (payload) => API.post('/auth/resend-verification', payload);
@@ -74,9 +112,11 @@ export const connectDb = () => API.post(`/admin/db/connect`);
 
 // Announcements
 export const getAnnouncements = (params) => API.get('/announcements', { params });
+export const getPublicAnnouncements = () => API.get('/announcements/public');
 export const createAnnouncement = (payload) => API.post('/announcements', payload);
 export const updateAnnouncement = (id, payload) => API.put(`/announcements/${id}`, payload);
 export const deleteAnnouncement = (id) => API.delete(`/announcements/${id}`);
+export const sendAnnouncementEmailApi = (id) => API.post(`/announcements/${id}/send-email`);
 
 // Service Categories (for Services Availed)
 export const getServiceCategories = () => API.get('/service-categories');

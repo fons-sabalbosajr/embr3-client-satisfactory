@@ -3,6 +3,7 @@ import { Button, Title, Text, Stack, Container } from "@mantine/core";
 import { useNavigate, useLocation } from "react-router-dom";
 import EMBLogo from "../../assets/emblogo.svg";
 import BPLogo from "../../assets/bplogo.svg";
+import { getOpaqueItem } from "../../utils/encryptedStorage";
 import CryptoJS from "crypto-js";
 import "./menu.css";
 // Add these imports for theme toggle
@@ -29,9 +30,9 @@ async function decrypt(cipherText) {
 function Menu({ toggleColorScheme }) {
   useEffect(() => {
     // Check for authentication (token in obfuscated key or plain)
-    const isAuthenticated = !!(localStorage.getItem("token") || Object.keys(localStorage).find(k => k.includes("token")));
+    const isAuthenticated = !!(getOpaqueItem("token") || localStorage.getItem("token"));
     if (!isAuthenticated) {
-      localStorage.clear();
+      // Only remove non-essential keys; avoid clearing all storage
       sessionStorage.clear();
     }
   }, []);

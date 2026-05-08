@@ -1,6 +1,6 @@
 // AdminPage.jsx
-import React, { useEffect, useState, useMemo } from "react";
-import { Modal } from "antd";
+import React, { useEffect, useState, useMemo, Suspense } from "react";
+import { Modal, Spin } from "antd";
 import {
   Layout,
   Avatar,
@@ -12,6 +12,7 @@ import {
   Switch,
   Space,
   Button,
+  Tag,
 } from "antd";
 import {
   UserOutlined,
@@ -21,13 +22,15 @@ import {
   CaretRightFilled,
   CaretLeftFilled,
   MailOutlined,
+  NotificationOutlined,
 } from "@ant-design/icons";
-import CryptoJS from "crypto-js";
+
 import { getCachedConfig } from "../../utils/config";
 import {
   getDecryptedItem,
   setEncryptedItem,
   removeOpaqueItem,
+  clearAllStorage,
 } from "../../utils/encryptedStorage";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import EMBLogo from "../../assets/emblogo.svg";
@@ -47,6 +50,8 @@ function AdminPage() {
   const [collapsed, setCollapsed] = useState(false);
   const [userName, setUserName] = useState("Admin");
   const [currentUser, setCurrentUser] = useState(null);
+  const [announcementModal, setAnnouncementModal] = useState(false);
+  const [modalAnnouncements, setModalAnnouncements] = useState([]);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
       const saved = getDecryptedItem("darkMode") ?? localStorage.getItem("darkMode");
@@ -56,8 +61,8 @@ function AdminPage() {
     }
   });
   const [themePrefs, setThemePrefs] = useState({
-    siderBg: "#001529",
-    headerBg: "#001529",
+    siderBg: "#0C2340",
+    headerBg: "#0C2340",
     colorPrimary: "#1677ff",
   });
 
@@ -107,15 +112,11 @@ function AdminPage() {
             "The current user seems idle; the system will automatically log you out and redirect you to the login page.",
           okText: "OK",
           onOk: () => {
-            removeOpaqueItem("user");
-            removeOpaqueItem("token");
-            removeOpaqueItem("darkMode");
-            localStorage.removeItem("user");
-            localStorage.removeItem("token");
-            localStorage.removeItem("darkMode");
+            clearAllStorage();
             try {
               const { origin } = window.location;
-              window.location.href = `${origin}/admin`;
+              const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+              window.location.href = `${origin}${basePath}/admin`;
             } catch {
               window.location.reload();
             }
@@ -123,15 +124,11 @@ function AdminPage() {
         });
         // Fallback: force redirect after 10s if modal not confirmed
         warningTimeout = setTimeout(() => {
-          removeOpaqueItem("user");
-          removeOpaqueItem("token");
-          removeOpaqueItem("darkMode");
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          localStorage.removeItem("darkMode");
+          clearAllStorage();
           try {
             const { origin } = window.location;
-            window.location.href = `${origin}/admin`;
+            const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+            window.location.href = `${origin}${basePath}/admin`;
           } catch {
             window.location.reload();
           }
@@ -152,15 +149,20 @@ function AdminPage() {
       window.removeEventListener("touchstart", resetTimer);
     };
   }, []);
+
+  // Auto-collapse sidebar on iPad-width screens (<=1080px)
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 1080px)");
+    const handleResize = (e) => setCollapsed(e.matches);
+    handleResize(mediaQuery);
+    mediaQuery.addEventListener("change", handleResize);
+    return () => mediaQuery.removeEventListener("change", handleResize);
+  }, []);
+
   // Effect for handling user authentication check (tolerant to brief storage race)
   useEffect(() => {
     const ensureAuthenticated = async () => {
       try {
-        // If there's no token at all, redirect to login
-        const hasToken = !!(localStorage.getItem("token") || (typeof window !== 'undefined' && window.localStorage) /* noop to keep same branch */);
-        // We use opaque storage for token; check through getDecryptedItem fallback isn't needed here
-        // We'll just probe Authorization via getMe if user data is missing.
-
         const decryptedDataString = getDecryptedItem("user");
 
         if (!decryptedDataString) {
@@ -178,12 +180,8 @@ function AdminPage() {
             }
           } catch (err) {
             // If we can't hydrate, clear and redirect to login
-            removeOpaqueItem("user");
-            removeOpaqueItem("token");
-            removeOpaqueItem("darkMode");
-            localStorage.removeItem("user");
-            localStorage.removeItem("token");
-            localStorage.removeItem("darkMode");
+            clearAllStorage();
+            try { window.dispatchEvent(new Event("auth:changed")); } catch {}
             navigate("/admin");
             return;
           }
@@ -201,6 +199,8 @@ function AdminPage() {
               setCurrentUser(user || null);
               if (user) setEncryptedItem("user", JSON.stringify(user));
             } catch {
+              clearAllStorage();
+              try { window.dispatchEvent(new Event("auth:changed")); } catch {}
               navigate("/admin");
               return;
             }
@@ -209,7 +209,12 @@ function AdminPage() {
           try {
             const me = await api.getMe();
             setCurrentUser(me?.data?.user || null);
-          } catch {
+          } catch (bgErr) {
+            // If the token is expired/invalid (401), redirect to login
+            if (bgErr?.response?.status === 401) {
+              navigate("/admin");
+              return;
+            }
             setCurrentUser(null);
           }
         }
@@ -239,12 +244,8 @@ function AdminPage() {
           "Issue hydrating authenticated user; clearing storage and redirecting.",
           e?.message || e
         );
-        removeOpaqueItem("user");
-        removeOpaqueItem("token");
-        removeOpaqueItem("darkMode");
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        localStorage.removeItem("darkMode");
+        clearAllStorage();
+        try { window.dispatchEvent(new Event("auth:changed")); } catch {}
         navigate("/admin");
       }
     };
@@ -271,35 +272,49 @@ function AdminPage() {
     return () => window.removeEventListener("theme:updated", onThemeUpdated);
   }, []);
 
+  // Fetch popup-mode announcements on mount
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const res = await api.getAnnouncements({ active: 'true' });
+        const items = Array.isArray(res.data?.data) ? res.data.data : [];
+        const now = Date.now();
+        const popups = items.filter((a) => {
+          if (a.status !== 'active') return false;
+          if (a.displayMode !== 'modal' && a.displayMode !== 'both') return false;
+          return true;
+        });
+        if (popups.length > 0) {
+          // Only show once per session using sessionStorage
+          const shownKey = 'annPopupShown';
+          if (!sessionStorage.getItem(shownKey)) {
+            setModalAnnouncements(popups);
+            setAnnouncementModal(true);
+            sessionStorage.setItem(shownKey, '1');
+          }
+        }
+      } catch {}
+    };
+    fetchAnnouncements();
+  }, []);
+
   // Effect for saving dark mode preference
   useEffect(() => {
     setEncryptedItem("darkMode", JSON.stringify(isDarkMode));
   }, [isDarkMode]);
 
   const handleLogout = () => {
-    // Remove obfuscated keys
-    removeOpaqueItem("user");
-    removeOpaqueItem("token");
-    removeOpaqueItem("darkMode");
-    // Clear all localStorage and sessionStorage
-    localStorage.clear();
-    sessionStorage.clear();
-    // Optionally, overwrite any remaining keys with dummy values for extra obfuscation
-    Object.keys(localStorage).forEach((key) => {
-      try {
-        localStorage.setItem(key, "[hidden]");
-      } catch {}
-    });
+    clearAllStorage();
     navigate("/admin");
     window.location.reload();
   };
 
   const handleSuggestFeature = () => {
-    console.log("Suggest a Feature clicked");
+    window.open("mailto:embr3.ocsm@gmail.com?subject=Feature%20Suggestion%20-%20EMBR3%20OCSM", "_blank");
   };
 
   const handleContactUs = () => {
-    console.log("Contact Us clicked");
+    window.open("mailto:embr3.ocsm@gmail.com?subject=Support%20Request%20-%20EMBR3%20OCSM", "_blank");
   };
 
   const location = useLocation();
@@ -369,16 +384,17 @@ function AdminPage() {
       algorithm: isDarkMode ? darkAlgorithm : defaultAlgorithm,
       token: {
         colorPrimary: normalizeHex(themePrefs.colorPrimary, "#1677ff"),
-        borderRadius: 8,
+        borderRadius: 6,
         colorBgBase: isDarkMode ? "#141414" : "#F5F5F5",
         // Keep content/base text tied to darkMode only to avoid white text on white content in light mode
         colorTextBase: isDarkMode ? "#EAEAEA" : "#1A1A1A",
         colorBgContainer: isDarkMode ? "#1d1d1d" : "#ffffff", // Keep this
+        fontFamily: "'Inter', 'Plus Jakarta Sans', 'Poppins', sans-serif",
       },
       components: {
         Layout: {
-          siderBg: normalizeHex(themePrefs.siderBg, isDarkMode ? "#001529" : "#ffffff"),
-          headerBg: normalizeHex(themePrefs.headerBg, isDarkMode ? "#001529" : "#ffffff"),
+          siderBg: normalizeHex(themePrefs.siderBg, isDarkMode ? "#0C2340" : "#ffffff"),
+          headerBg: normalizeHex(themePrefs.headerBg, isDarkMode ? "#0C2340" : "#ffffff"),
         },
         Menu: (() => {
           const sb = normalizeHex(themePrefs.siderBg, isDarkMode ? "#001529" : "#ffffff");
@@ -409,7 +425,7 @@ function AdminPage() {
     <ConfigProvider theme={currentTheme}>
       <Layout style={{ minHeight: "100vh" }}>
         <Sider
-          theme={(luminance(normalizeHex(themePrefs.siderBg, isDarkMode ? "#001529" : "#ffffff")) > 0.5) ? "light" : "dark"}
+          theme={(luminance(normalizeHex(themePrefs.siderBg, isDarkMode ? "#0C2340" : "#ffffff")) > 0.5) ? "light" : "dark"}
           collapsible
           collapsed={collapsed}
           onCollapse={(value) => setCollapsed(value)}
@@ -459,7 +475,7 @@ function AdminPage() {
             selectedKey={selectedKey}
             onMenuClick={handleMenuClick}
             menuTheme={
-              luminance(normalizeHex(themePrefs.siderBg, isDarkMode ? "#001529" : "#ffffff")) > 0.5
+              luminance(normalizeHex(themePrefs.siderBg, isDarkMode ? "#0C2340" : "#ffffff")) > 0.5
                 ? "light"
                 : "dark"
             }
@@ -472,6 +488,7 @@ function AdminPage() {
           }}
         >
           <Header
+            className="admin-header-bar"
             style={{
               position: "sticky", // ✅ this keeps it visible while scrolling
               top: 0,
@@ -482,6 +499,8 @@ function AdminPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              height: 56,
+              lineHeight: "56px",
             }}
           >
             <Button
@@ -517,7 +536,7 @@ function AdminPage() {
           </Header>
           <Content
             style={{
-              margin: "10px 10px 12px 10px",
+              margin: "12px 16px",
               background: isDarkMode ? "#1d1d1d" : "#ffffff",
               borderRadius: borderRadius,
               overflow: "auto",
@@ -531,21 +550,67 @@ function AdminPage() {
                 transition: "box-shadow 0.3s ease-in-out",
               }}
             >
-              <Outlet />
+              <Suspense fallback={<div style={{ textAlign: 'center', padding: '60px 0' }}><Spin size="large" /></div>}>
+                <Outlet />
+              </Suspense>
             </div>
           </Content>
           <Footer
             style={{
               textAlign: "center",
               background: "transparent",
-              padding: "5px 0 20px 0",
+              padding: "8px 0 16px 0",
+              fontSize: "12px",
+              color: isDarkMode ? "#666" : "#999",
             }}
           >
-            EMB R3 Online Client Satisfaction Measurement ©
+            EMB Region III — Online Client Satisfaction Measurement ©{" "}
             {new Date().getFullYear()}
           </Footer>
         </Layout>
       </Layout>
+
+      {/* Announcement Popup Modal */}
+      <Modal
+        title={
+          <Space>
+            <NotificationOutlined style={{ color: '#1677ff' }} />
+            <span>Announcements</span>
+          </Space>
+        }
+        open={announcementModal}
+        onCancel={() => setAnnouncementModal(false)}
+        footer={
+          <Button type="primary" onClick={() => setAnnouncementModal(false)}>
+            Got it
+          </Button>
+        }
+        width={560}
+      >
+        {modalAnnouncements.map((ann, idx) => (
+          <div
+            key={ann._id}
+            style={{
+              padding: '14px 16px',
+              borderLeft: '4px solid #1677ff',
+              borderRadius: 8,
+              background: 'rgba(22, 119, 255, 0.04)',
+              marginBottom: idx < modalAnnouncements.length - 1 ? 12 : 0,
+            }}
+          >
+            <Typography.Text strong style={{ fontSize: 15 }}>{ann.title}</Typography.Text>
+            <div
+              style={{ marginTop: 8, fontSize: 13, lineHeight: 1.7 }}
+              dangerouslySetInnerHTML={{ __html: ann.message }}
+            />
+            {ann.startDate && (
+              <Typography.Text type="secondary" style={{ fontSize: 11, marginTop: 8, display: 'block' }}>
+                {new Date(ann.startDate).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </Typography.Text>
+            )}
+          </div>
+        ))}
+      </Modal>
     </ConfigProvider>
   );
 }

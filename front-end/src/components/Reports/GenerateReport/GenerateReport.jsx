@@ -13,7 +13,7 @@ import {
   Divider,
 } from "antd";
 import * as api from "../../../services/api";
-import * as XLSX from "xlsx";
+import { exportToExcelFile } from "../../../utils/excelExport";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import dayjs from "dayjs";
@@ -100,10 +100,7 @@ function normalizeSqdAnswer(val) {
 
 // Export helpers
 function exportToExcel(filename, rows) {
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Report");
-  XLSX.writeFile(wb, filename);
+  exportToExcelFile(filename, rows, "Report");
 }
 
 function exportToPdf(title, headers, bodyRows, filename) {
@@ -138,7 +135,19 @@ export default function GenerateReport() {
     customerTypes: [], // multi
     agencies: [], // multi
     services: [], // multi
+    surveyType: null, // "internal" | "external" | null (all)
   });
+
+  // Infer survey type for records that don't have surveyType stored
+  const inferSurveyType = (entry) => {
+    if (entry.surveyType) return entry.surveyType;
+    const labeled = entry.answersLabeled || {};
+    if (
+      labeled["Customer Type"] === "Government" &&
+      (labeled["Agency Name"] === "EMB Region III" || labeled["Employee Name"])
+    ) return "internal";
+    return "external";
+  };
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -229,6 +238,10 @@ export default function GenerateReport() {
       if (services?.length) {
         const svcArr = Array.isArray(labeled["Service Availed"]) ? labeled["Service Availed"] : [];
         if (!svcArr.some((s) => services.includes(s))) return false;
+      }
+      // Survey Type
+      if (filters.surveyType) {
+        if (inferSurveyType(entry) !== filters.surveyType) return false;
       }
       return true;
     });
@@ -620,7 +633,11 @@ export default function GenerateReport() {
   const onExportCcExcel = () =>
     exportToExcel(
       `cc-results-${new Date().toISOString().slice(0, 10)}.xlsx`,
-      ccRows
+      ccRows.map((r) => ({
+        "Citizens Answers": r.item,
+        "Response Count": r.count,
+        "Percentage": `${r.percentage}%`,
+      }))
     );
   const onExportSqdExcel = () =>
     exportToExcel(
@@ -746,7 +763,7 @@ export default function GenerateReport() {
           onFinish={() => {}}
           style={{ rowGap: 12 }}
           onReset={() =>
-            setFilters({ dateRange: null, regions: [], customerTypes: [], agencies: [], services: [] })
+            setFilters({ dateRange: null, regions: [], customerTypes: [], agencies: [], services: [], surveyType: null })
           }
         >
           <Form.Item label="Date Range">
@@ -754,6 +771,19 @@ export default function GenerateReport() {
               allowEmpty={[true, true]}
               value={filters.dateRange}
               onChange={(v) => setFilters((f) => ({ ...f, dateRange: v }))}
+            />
+          </Form.Item>
+          <Form.Item label="Survey Type">
+            <Select
+              allowClear
+              placeholder="All"
+              value={filters.surveyType}
+              onChange={(v) => setFilters((f) => ({ ...f, surveyType: v || null }))}
+              options={[
+                { value: "internal", label: "Internal" },
+                { value: "external", label: "External" },
+              ]}
+              style={{ minWidth: 140 }}
             />
           </Form.Item>
           <Form.Item label="Region">

@@ -1,4 +1,4 @@
-/* adminpage.css */
+/* adminpage.css — Corporate Theme */
 
 /* Style for the logo container in the Sider */
 .admin-logo-container {
@@ -7,12 +7,19 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .admin-logo {
-  height: 32px;
-  width: 32px;
+  height: 36px;
+  width: 36px;
   transition: all 0.3s;
+}
+
+.admin-title-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 /* Ensure dropdown link has a pointer and good alignment */
@@ -20,6 +27,13 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.user-dropdown-link:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
 /* Ensure the menu takes the full height available minus the logo and footer switch */
@@ -28,15 +42,72 @@
   background: transparent;
 }
 
-/* Style for the user dropdown link for better interaction */
-.user-dropdown-link {
+/* Corporate layout helpers */
+.admin-header-bar {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Scrollbar styling for sider */
+.ant-layout-sider::-webkit-scrollbar {
+  width: 4px;
+}
+.ant-layout-sider::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+/* iPad 9th gen portrait & tablets (768–1080px) */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .admin-logo-container {
+    height: 56px;
+    gap: 8px;
+  }
+
+  .admin-logo {
+    height: 30px;
+    width: 30px;
+  }
+
+  .user-dropdown-link {
     padding: 8px 12px;
-    border-radius: 8px;
-    transition: background-color 0.3s;
+    min-height: 44px;
+  }
 }
 
-.user-dropdown-link:hover {
-    background-color: rgba(0, 0, 0, 0.04);
+/* Mobile – auto-collapse sidebar */
+@media screen and (max-width: 767px) {
+  .admin-logo-container {
+    height: 48px;
+    gap: 6px;
+  }
+
+  .admin-logo {
+    height: 28px;
+    width: 28px;
+  }
 }
 
+/* Large desktops (1440px+) */
+@media screen and (min-width: 1440px) {
+  .admin-logo-container {
+    height: 72px;
+    gap: 14px;
+  }
 
+  .admin-logo {
+    height: 40px;
+    width: 40px;
+  }
+}
+
+/* Ultra-wide / 4K (1920px+) */
+@media screen and (min-width: 1920px) {
+  .admin-logo-container {
+    height: 80px;
+  }
+
+  .admin-logo {
+    height: 44px;
+    width: 44px;
+  }
+}

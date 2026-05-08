@@ -145,7 +145,7 @@ h1 {
   /* ✨ Adjust font size for Tags within the table for tablets */
   .questions-table-compact .ant-table-tbody .ant-tag {
     font-size: 9px; /* Smaller font for tags */
-    //padding: 2px 5px; /* Adjust padding to make them more compact */
+    /* padding: 2px 5px; */ /* Adjust padding to make them more compact */
   }
 }
 
@@ -169,5 +169,76 @@ h1 {
   .add-question-button {
     width: auto; /* Auto width on larger screens */
     display: inline-block; /* Display inline block on larger screens */
+  }
+}
+
+/* iPad 9th gen portrait (810px) — ensure touch-friendly and readable */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .data-config-container {
+    padding: 12px 10px;
+  }
+
+  /* Ensure table scrolls horizontally if needed */
+  .questions-table-compact .ant-table-content {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Touch-friendly action buttons in table */
+  .questions-table-compact .ant-btn {
+    min-height: 36px;
+    min-width: 36px;
+  }
+}
+
+/* Large desktops (1440px+) */
+@media screen and (min-width: 1440px) {
+  .data-config-container {
+    max-width: 1400px;
+    padding: 24px 28px;
+  }
+
+  .data-config-title {
+    font-size: 2.2em;
+  }
+
+  .search-input {
+    width: 500px;
+  }
+
+  .questions-table-compact .ant-table-tbody > tr > td {
+    font-size: 0.9em;
+    padding: 12px 18px;
+  }
+
+  .questions-table-compact .ant-table-thead > tr > th {
+    font-size: 13px;
+    padding: 14px 18px;
+  }
+}
+
+/* Ultra-wide / 4K (1920px+) */
+@media screen and (min-width: 1920px) {
+  .data-config-container {
+    max-width: 1700px;
+    padding: 28px 40px;
+  }
+
+  .data-config-title {
+    font-size: 2.4em;
+  }
+
+  .search-input {
+    width: 600px;
+  }
+
+  .questions-table-compact .ant-table-tbody > tr > td {
+    font-size: 0.95em;
+    padding: 14px 20px;
+  }
+
+  .questions-table-compact .ant-table-thead > tr > th {
+    font-size: 14px;
+    padding: 16px 20px;
   }
 }

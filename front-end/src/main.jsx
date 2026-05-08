@@ -17,10 +17,13 @@ if (import.meta && import.meta.env && import.meta.env.DEV) {
   });
 }
 
+// Derive basename from Vite base (strip trailing slash for Router)
+const BASE_PATH = (import.meta.env.BASE_URL || "/").replace(/\/$/, "") || "/";
+
 // Preload runtime config, then mount app
 preloadConfig().finally(() => {
   ReactDOM.createRoot(document.getElementById("root")).render(
-    <BrowserRouter>
+    <BrowserRouter basename={BASE_PATH}>
       <MainApp />
     </BrowserRouter>
   );

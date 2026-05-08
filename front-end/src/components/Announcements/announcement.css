@@ -1,12 +1,130 @@
 .announcements-admin {
   padding: 12px;
 }
-.announcements-client {
-  padding: 12px;
-}
-.announcements-client .ant-card {
-  box-shadow: none;
-  border-left: 4px solid #1677ff;
+
+.announcement-preview-body {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  padding: 16px;
+  line-height: 1.7;
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.02);
 }
 
-/* Colors for closed rows now come from Ant Design theme tokens via onRow() styles */
+.announcement-preview-body p {
+  margin: 0 0 8px;
+}
+
+/* Login panel banner styles */
+.login-announcements-banner {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  margin-top: -8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Header */
+.login-ann-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: rgba(0, 0, 0, 0.72);
+}
+
+/* Collapse overrides */
+.login-ann-collapse {
+  background: transparent !important;
+}
+
+.login-ann-collapse .ant-collapse-item {
+  border-radius: 10px !important;
+  margin-bottom: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  border: none !important;
+  border-left: 4px solid #1677ff !important;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.login-ann-collapse .ant-collapse-header {
+  padding: 10px 14px !important;
+  align-items: center !important;
+  color: rgba(0, 0, 0, 0.82) !important;
+}
+
+/* Expand arrow color */
+.login-ann-collapse .ant-collapse-expand-icon {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.login-ann-collapse .ant-collapse-content {
+  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: transparent !important;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.login-ann-collapse .ant-collapse-content-box {
+  padding: 10px 14px !important;
+}
+
+.login-ann-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+/* Body & date inside collapse */
+.login-ann-collapse .ann-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.login-ann-collapse .ann-date {
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* === iPad touch-friendly (768-1080px) === */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .login-ann-collapse .ant-collapse-header {
+    min-height: 44px;
+    padding: 12px 14px !important;
+  }
+
+  .login-ann-panel-title {
+    font-size: 14px;
+  }
+
+  .login-ann-collapse .ann-body {
+    font-size: 14px;
+  }
+}
+
+/* === Large desktops (1440px+) === */
+@media screen and (min-width: 1440px) {
+  .login-ann-header {
+    font-size: 15px;
+  }
+
+  .login-ann-panel-title {
+    font-size: 14px;
+  }
+
+  .login-ann-collapse .ann-body {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .announcement-preview-body {
+    font-size: 15px;
+  }
+}
