@@ -23,7 +23,7 @@ i18n
           feedbackText: "We want your feedback!",
 
           heroKicker: "Client Feedback Portal",
-          heroBigSlogan: "HELP US TO IMPROVE!",
+          heroBigSlogan: "HELP US IMPROVE!",
           heroSlogan: "Help us improve — share your experience in just a few minutes.",
           heroPillFast: "2-minute survey",
           heroPillConfidential: "Confidential",
@@ -91,7 +91,26 @@ i18n
           gender: {
             Male: "Male",
             Female: "Female",
+            "LGBTQ++": "LGBTQ++",
             RatherNotSay: "Rather Not Say",
+          },
+
+          surveyType: {
+            internal: "Internal Survey",
+            external: "External Survey",
+            info: "What's the difference?",
+          },
+          surveyTypeInfo: {
+            title: "Survey Types",
+            internalTitle: "Internal Survey",
+            internalDesc: "For EMB Region III employees. The client type is automatically set to \"Government\" and an optional field for your name is provided.",
+            externalTitle: "External Survey",
+            externalDesc: "For citizens, businesses, and other government agencies transacting with EMB Region III.",
+          },
+          internalSurveyBadge: "Internal Survey — EMB Region III Employee",
+          employeeName: {
+            label: "Employee Name (Optional)",
+            placeholder: "Enter your name (optional)",
           },
 
           step: {
@@ -261,6 +280,8 @@ i18n
             age: "Age",
             serviceAvailed: "Service Availed",
             assistPersonnel: "Assisted Personnel",
+            employeeName: "Employee Name",
+            agencyName: "Agency Name",
           },
 
           summary: {
@@ -364,7 +385,7 @@ i18n
           selectServicePlaceholder: "Pumili Transaksyon o Serbisyo",
           selectService: "Kailangang punan ang bahaging ito.",
           regionAgencyNote:
-            "Ang rehiyon at ahensya ay awtomatikong nang nakalagda.",
+            "Ang rehiyon at ahensya ay awtomatiko nang nakalagda.",
           selectAnswerPlaceholder: "Pumili ng Sagot",
           selectRequired: "Ang bahaging ito ay kailangang punan.",
 
@@ -389,13 +410,32 @@ i18n
           gender: {
             Male: "Lalaki",
             Female: "Babae",
+            "LGBTQ++": "LGBTQ++",
             RatherNotSay: "Mas mabuti nang hindi sabihin",
+          },
+
+          surveyType: {
+            internal: "Panloob na Survey",
+            external: "Panlabas na Survey",
+            info: "Ano ang pagkakaiba?",
+          },
+          surveyTypeInfo: {
+            title: "Mga Uri ng Survey",
+            internalTitle: "Panloob na Survey",
+            internalDesc: "Para sa mga empleyado ng EMB Region III. Awtomatikong itinakda ang uri ng kliyente bilang \"Gobyerno\" at mayroong opsyonal na field para sa iyong pangalan.",
+            externalTitle: "Panlabas na Survey",
+            externalDesc: "Para sa mga mamamayan, negosyo, at iba pang ahensya ng gobyerno na nakikipag-transaksyon sa EMB Region III.",
+          },
+          internalSurveyBadge: "Panloob na Survey — Empleyado ng EMB Region III",
+          employeeName: {
+            label: "Pangalan ng Empleyado (Opsyonal)",
+            placeholder: "Ilagay ang iyong pangalan (opsyonal)",
           },
 
           // Questions
           questions: {
             Q7: {
-              text: "Alin sa mga sumusunod ang naglalarawan sa yong kaalaman sa Citizen's Charter?",
+              text: "Alin sa mga sumusunod ang naglalarawan sa iyong kaalaman sa Citizen's Charter?",
               options: [
                 "Alam ko kung ano ang Citizen's Charter at nakita ko ito sa opisina.",
                 "Alam ko kung ano ang Citizen's Charter pero hindi ko ito nakita sa opisina.",
@@ -404,7 +444,7 @@ i18n
               ],
             },
             Q8: {
-              text: "Kung alam mo ang Citizen's Charter (sumagot ng 1-3 sa CC1), masasabi mo bang nasunod ang Citizen's Charter ng opisina?",
+              text: "Kung alam mo ang Citizen's Charter (sumagot ng 1-3 sa CC1), masasabi mo ba na madali itong makita at sundan?",
               options: [
                 "Madaling makita at sundan",
                 "Medyo madaling makita at sundan",
@@ -423,7 +463,7 @@ i18n
               ],
             },
             Q10: {
-              text: "Nasiyahan ako sa serbisyo na aking natanggap sa napuntahan na tanggapan.",
+              text: "Nasiyahan ako sa serbisyong aking natanggap sa napuntahan na tanggapan.",
               options: {
                 StronglyAgree: "Lubos na Sumasang-ayon",
                 Agree: "Sumasang-ayon",
@@ -434,7 +474,7 @@ i18n
               },
             },
             Q11: {
-              text: "Makatwiran ang oras na aking ginugol para sa pag proseso ng aking transaksyon.",
+              text: "Makatwiran ang oras na aking ginugol para sa pagproseso ng aking transaksyon.",
               options: {
                 StronglyAgree: "Lubos na Sumasang-ayon",
                 Agree: "Sumasang-ayon",
@@ -445,7 +485,7 @@ i18n
               },
             },
             Q12: {
-              text: "Ang opisina ay sumusunod sa mga kinakailangang dokumento at mga hakbang bata sa impormasyong ibinigay.",
+              text: "Ang opisina ay sumusunod sa mga kinakailangang dokumento at mga hakbang batay sa impormasyong ibinigay.",
               options: {
                 StronglyAgree: "Lubos na Sumasang-ayon",
                 Agree: "Sumasang-ayon",
@@ -456,7 +496,7 @@ i18n
               },
             },
             Q13: {
-              text: "Ang mga hakbang sa pagproseso, kasama na ang pagbayad ay madali at simple lamang.",
+              text: "Ang mga hakbang sa pagproseso, kasama na ang pagbayad, ay madali at simple lamang.",
               options: {
                 StronglyAgree: "Lubos na Sumasang-ayon",
                 Agree: "Sumasang-ayon",
@@ -467,7 +507,7 @@ i18n
               },
             },
             Q14: {
-              text: "Mabilis at madali akong nakahanap ng impormasyon tungkol sa aking transaksyon mula sa opisina o sa website na ito.",
+              text: "Mabilis at madali akong nakahanap ng impormasyon tungkol sa aking transaksyon mula sa opisina o sa website nito.",
               options: {
                 StronglyAgree: "Lubos na Sumasang-ayon",
                 Agree: "Sumasang-ayon",
@@ -478,7 +518,7 @@ i18n
               },
             },
             Q15: {
-              text: "Nagbayad ako ng makatwirang halaga para sa aking transaksyon. (Kung ang serbisyo ay ibinigay ng libre, piliin ang N/A na icon.",
+              text: "Nagbayad ako ng makatwirang halaga para sa aking transaksyon. (Kung ang serbisyo ay ibinigay ng libre, piliin ang N/A na icon.)",
               options: {
                 StronglyAgree: "Lubos na Sumasang-ayon",
                 Agree: "Sumasang-ayon",
@@ -500,7 +540,7 @@ i18n
               },
             },
             Q17: {
-              text: "Magalang akong trinato ng mga tauhan, at (kung sakali ako ay humingi ng tulong) alam ko na sila ay handang tumulong sa akin.",
+              text: "Magalang akong pinagsilbihan ng mga tauhan, at (kung sakali ako ay humingi ng tulong), alam ko na sila ay handang tumulong sa akin.",
               options: {
                 StronglyAgree: "Lubos na Sumasang-ayon",
                 Agree: "Sumasang-ayon",
@@ -511,7 +551,7 @@ i18n
               },
             },
             Q18: {
-              text: "Nakuha ko ang kinakailangan ko mula sa tanggapan ng gobyerno, kung tinanggihan man, ito ay sapat na ipinaliwanag sa akin.",
+              text: "Nakuha ko ang kinakailangan ko mula sa tanggapan ng gobyerno. Kung tinanggihan man, ito ay sapat na ipinaliwanag sa akin.",
               options: {
                 StronglyAgree: "Lubos na Sumasang-ayon",
                 Agree: "Sumasang-ayon",
@@ -522,7 +562,7 @@ i18n
               },
             },
             Q19: {
-              text: "Mga suhestyon kung paano pa mapapabuti ang aming serbisyo(opsyonal)?",
+              text: "Mga suhestyon kung paano pa mapapabuti ang aming serbisyo (opsyonal)?",
               options: [],
               placeholder: "Mga suhestyon o komento...", // FILIPINO
             },
@@ -553,6 +593,8 @@ i18n
             age: "Edad",
             serviceAvailed: "Serbisyong Ginamit",
             assistPersonnel: "Kawani na Tumulong",
+            employeeName: "Pangalan ng Empleyado",
+            agencyName: "Pangalan ng Ahensya",
           },
 
           summary: {

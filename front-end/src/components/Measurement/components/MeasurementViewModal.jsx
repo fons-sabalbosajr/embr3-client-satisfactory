@@ -6,44 +6,80 @@ import {
   Typography,
   Tabs,
   Tag,
-  Input,
   Row,
   Col,
   Card,
+  Divider,
+  Space,
+  Statistic,
 } from "antd";
+import {
+  UserOutlined,
+  FileTextOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  MinusCircleOutlined,
+} from "@ant-design/icons";
+import dayjs from "dayjs";
 import "./modalstyles.css";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 function MeasurementViewModal({ visible, onClose, record }) {
   if (!record) return null;
 
-  const primaryInfoFields = [
-    "Agency",
-    "Region",
-    "Customer Type",
-    "Age",
-    "Gender",
-    "Company Name",
+  const labeled = record.answersLabeled || {};
+
+  // Infer survey type
+  const surveyType =
+    record.surveyType ||
+    (labeled["Customer Type"] === "Government" &&
+    (labeled["Agency Name"] === "EMB Region III" || labeled["Employee Name"])
+      ? "internal"
+      : "external");
+
+  // ── Primary Info ──
+  const customerType = labeled["Customer Type"] || "—";
+  const primaryItems = [
+    { label: "Region", value: labeled["Region"] },
+    { label: "Agency", value: labeled["Agency"] },
+    { label: "Customer Type", value: customerType },
   ];
 
-  const primaryInfo = primaryInfoFields.map((field) => ({
-    label: field,
-    value: record.answersLabeled?.[field] || "",
-  }));
+  if (customerType === "Citizen") {
+    primaryItems.push(
+      { label: "Age", value: labeled["Age"] },
+      { label: "Gender", value: labeled["Gender"] }
+    );
+  }
+  if (customerType === "Business") {
+    primaryItems.push({ label: "Company Name", value: labeled["Company Name"] });
+  }
+  if (customerType === "Government") {
+    primaryItems.push(
+      { label: "Agency Name", value: labeled["Agency Name"] },
+      { label: "Employee Name", value: labeled["Employee Name"] }
+    );
+  }
+  if (labeled["Assisted Personnel"]) {
+    primaryItems.push({ label: "Assisted Personnel", value: labeled["Assisted Personnel"] });
+  }
 
+  // Service Availed
+  const serviceAvailed = labeled["Service Availed"];
+  const services = Array.isArray(serviceAvailed)
+    ? serviceAvailed
+    : serviceAvailed
+    ? [serviceAvailed]
+    : [];
+
+  // ── Citizens Charter ──
   const sqdKeywords = [
-    "responsiveness",
-    "reliability",
-    "access",
-    "communication",
-    "costs",
-    "integrity",
-    "assurance",
-    "outcome",
+    "responsiveness", "reliability", "access", "communication",
+    "costs", "integrity", "assurance", "outcome",
   ];
 
-  const citizensCharterData = Object.entries(record.answersLabeled || {})
+  const citizensCharterData = Object.entries(labeled)
     .filter(([q]) => q.toLowerCase().includes("citizen"))
     .map(([question, answer], index) => ({
       key: `CC${index + 1}`,
@@ -53,37 +89,27 @@ function MeasurementViewModal({ visible, onClose, record }) {
     }));
 
   const citizenColumns = [
-    {
-      title: "Question Code",
-      dataIndex: "code",
-      key: "code",
-      width: "10%",
-    },
-    {
-      title: "Question Description",
-      dataIndex: "question",
-      key: "question",
-      width: "55%",
-    },
+    { title: "Code", dataIndex: "code", key: "code", width: 70 },
+    { title: "Question", dataIndex: "question", key: "question" },
     {
       title: "Response",
       dataIndex: "answer",
       key: "answer",
-      width: "35%",
-        render: (text) => {
-          let color = "default";
-          const lower = String(text || "").toLowerCase();
-          if (lower === "yes") color = "green";
-          else if (lower === "no") color = "red";
-          return <Tag color={color}>{Array.isArray(text) ? text.join(", ") : text}</Tag>;
-        },
+      width: 140,
+      render: (text) => {
+        const lower = String(text || "").toLowerCase();
+        if (lower === "yes") return <Tag color="success">Yes</Tag>;
+        if (lower === "no") return <Tag color="error">No</Tag>;
+        return <Tag>{Array.isArray(text) ? text.join(", ") : text}</Tag>;
+      },
     },
   ];
 
+  // ── SQD ──
   const sqdMap = [
     { keyword: "responsiveness", label: "Responsiveness" },
     { keyword: "reliability", label: "Reliability" },
-    { keyword: "access", label: "Access and Facilities" },
+    { keyword: "access", label: "Access & Facilities" },
     { keyword: "communication", label: "Communication" },
     { keyword: "costs", label: "Costs" },
     { keyword: "integrity", label: "Integrity" },
@@ -94,152 +120,316 @@ function MeasurementViewModal({ visible, onClose, record }) {
   const sqdData = [];
   let sqdCounter = 0;
 
-  const sqd0Entry = Object.entries(record.answersLabeled || {}).find(
+  const sqd0Entry = Object.entries(labeled).find(
     ([q]) =>
       q.trim().toLowerCase() ===
       "i am satisfied with the service that i availed."
   );
   if (sqd0Entry) {
-    const [question, answer] = sqd0Entry;
-    sqdData.push({ key: `SQD0`, code: `SQD0`, category: "", question, answer });
+    sqdData.push({
+      key: "SQD0",
+      code: "SQD0",
+      category: "Overall Satisfaction",
+      question: sqd0Entry[0],
+      answer: sqd0Entry[1],
+    });
     sqdCounter = 1;
   }
 
-  Object.entries(record.answersLabeled || {}).forEach(([question, answer]) => {
-    const match = sqdMap.find(({ keyword }) => question.toLowerCase().includes(keyword));
+  Object.entries(labeled).forEach(([question, answer]) => {
+    const match = sqdMap.find(({ keyword }) =>
+      question.toLowerCase().includes(keyword)
+    );
     if (match) {
       const regex = new RegExp(`\\s*\\(${match.label}\\)\\s*$`, "i");
       const cleanedQuestion = question.replace(regex, "").trim();
-      sqdData.push({ key: `SQD${sqdCounter}`, code: `SQD${sqdCounter}`, category: match.label, question: cleanedQuestion, answer });
+      sqdData.push({
+        key: `SQD${sqdCounter}`,
+        code: `SQD${sqdCounter}`,
+        category: match.label,
+        question: cleanedQuestion,
+        answer,
+      });
       sqdCounter++;
     }
   });
 
+  const ratingColor = (text) => {
+    const lower = String(text || "").toLowerCase();
+    if (lower === "strongly agree") return "blue";
+    if (lower === "agree") return "green";
+    if (lower === "satisfactory" || lower === "neither agree nor disagree")
+      return "orange";
+    if (lower === "disagree") return "red";
+    if (lower === "strongly disagree") return "volcano";
+    return "default";
+  };
+
   const sqdColumns = [
-    { title: "Question Code", dataIndex: "code", key: "code", width: "10%" },
-    { title: "Category", dataIndex: "category", key: "category", width: "20%" },
-    { title: "Question Description", dataIndex: "question", key: "question", width: "45%" },
+    { title: "Code", dataIndex: "code", key: "code", width: 70 },
+    { title: "Category", dataIndex: "category", key: "category", width: 140 },
+    { title: "Question", dataIndex: "question", key: "question" },
     {
-      title: "Response",
+      title: "Rating",
       dataIndex: "answer",
       key: "answer",
-      width: "25%",
-      render: (text) => {
-        const lower = String(text || "").toLowerCase();
-        let color = "default";
-        if (["agree"].includes(lower)) color = "green";
-        else if (["strongly agree"].includes(lower)) color = "blue";
-        else if (["satisfactory"].includes(lower)) color = "orange";
-        else if (["disagree"].includes(lower)) color = "red";
-        else if (lower === "strongly disagree") color = "maroon";
-        return <Tag color={color}>{Array.isArray(text) ? text.join(", ") : text}</Tag>;
-      },
+      width: 150,
+      render: (text) => (
+        <Tag color={ratingColor(text)}>
+          {Array.isArray(text) ? text.join(", ") : text}
+        </Tag>
+      ),
     },
   ];
 
-  const remarks = Object.entries(record.answersLabeled || {}).find(
-    ([q]) => q.toLowerCase().includes("remarks") || q.toLowerCase().includes("suggestion")
+  // ── Summary Counts ──
+  const ccPositive = citizensCharterData.filter(({ answer }) =>
+    ["yes", "agree"].some((k) =>
+      String(answer || "").toLowerCase().includes(k)
+    )
+  ).length;
+  const ccNegative = citizensCharterData.length - ccPositive;
+
+  const sqdPositive = sqdData.filter(({ answer }) =>
+    ["strongly agree", "agree"].includes(String(answer || "").toLowerCase())
+  ).length;
+  const sqdNeutral = sqdData.filter(({ answer }) => {
+    const a = String(answer || "").toLowerCase();
+    return a === "satisfactory" || a === "neither agree nor disagree";
+  }).length;
+  const sqdNegative = sqdData.filter(({ answer }) =>
+    ["disagree", "strongly disagree"].includes(
+      String(answer || "").toLowerCase()
+    )
+  ).length;
+
+  // ── Remarks ──
+  const remarks = Object.entries(labeled).find(
+    ([q]) =>
+      q.toLowerCase().includes("remarks") ||
+      q.toLowerCase().includes("suggestion")
   )?.[1];
 
+  // ── Tabs ──
   const tabsItems = [
     {
-      key: "1",
-      label: "Summary Response",
+      key: "summary",
+      label: "Summary",
       children: (
-        <>
-          <Title level={5}>Citizen’s Charter Summary</Title>
-          <Row gutter={16}>
-            <Col span={6}>
-              <Card title="Positive" variant="plain" size="small">
-                <Title level={3} style={{ margin: 0, color: "#389e0d" }}>
-                  {Object.entries(record.answersLabeled || {}).filter(([q, a]) => q.toLowerCase().includes("citizen") && ["yes", "agree"].some((k) => String(a || "").toLowerCase().includes(k))).length}
-                </Title>
-              </Card>
+        <div className="view-modal-summary">
+          <Row gutter={[16, 16]}>
+            <Col span={24}>
+              <Title level={5} style={{ marginBottom: 12 }}>
+                Citizen's Charter
+              </Title>
+              <Row gutter={16}>
+                <Col xs={12} sm={8}>
+                  <Card
+                    size="small"
+                    className="view-modal-stat-card stat-positive"
+                  >
+                    <Statistic
+                      title="Positive"
+                      value={ccPositive}
+                      prefix={<CheckCircleOutlined />}
+                      valueStyle={{ color: "#389e0d" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={12} sm={8}>
+                  <Card
+                    size="small"
+                    className="view-modal-stat-card stat-negative"
+                  >
+                    <Statistic
+                      title="Negative"
+                      value={ccNegative}
+                      prefix={<CloseCircleOutlined />}
+                      valueStyle={{ color: "#cf1322" }}
+                    />
+                  </Card>
+                </Col>
+              </Row>
             </Col>
-            <Col span={6}>
-              <Card title="Negative" variant="plain" size="small">
-                <Title level={3} style={{ margin: 0, color: "#cf1322" }}>
-                  {Object.entries(record.answersLabeled || {}).filter(([q, a]) => q.toLowerCase().includes("citizen") && !["yes", "agree"].some((k) => a.toLowerCase().includes(k))).length}
-                </Title>
-              </Card>
+            <Col span={24}>
+              <Title level={5} style={{ marginBottom: 12 }}>
+                Service Quality Dimensions (SQD)
+              </Title>
+              <Row gutter={16}>
+                <Col xs={8}>
+                  <Card
+                    size="small"
+                    className="view-modal-stat-card stat-positive"
+                  >
+                    <Statistic
+                      title="Positive"
+                      value={sqdPositive}
+                      prefix={<CheckCircleOutlined />}
+                      valueStyle={{ color: "#389e0d" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={8}>
+                  <Card
+                    size="small"
+                    className="view-modal-stat-card stat-neutral"
+                  >
+                    <Statistic
+                      title="Neutral"
+                      value={sqdNeutral}
+                      prefix={<MinusCircleOutlined />}
+                      valueStyle={{ color: "#fa8c16" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={8}>
+                  <Card
+                    size="small"
+                    className="view-modal-stat-card stat-negative"
+                  >
+                    <Statistic
+                      title="Negative"
+                      value={sqdNegative}
+                      prefix={<CloseCircleOutlined />}
+                      valueStyle={{ color: "#cf1322" }}
+                    />
+                  </Card>
+                </Col>
+              </Row>
             </Col>
           </Row>
-
-          <Title level={5} style={{ marginTop: 24 }}>Service Quality Dimensions (SQD) Summary</Title>
-          <Row gutter={16}>
-            <Col span={6}>
-              <Card title="Positive" variant="plain" size="small">
-                <Title level={3} style={{ margin: 0, color: "#389e0d" }}>
-                  {Object.entries(record.answersLabeled || {}).filter(([q, a]) => sqdKeywords.some((k) => q.toLowerCase().includes(k)) && ["strongly agree", "agree"].includes(a.toLowerCase())).length}
-                </Title>
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card title="Neither Agree nor Disagree" variant="plain" size="small">
-                <Title level={3} style={{ margin: 0, color: "#fa8c16" }}>
-                  {Object.entries(record.answersLabeled || {}).filter(([q, a]) => {
-                    const al = String(a || "").toLowerCase();
-                    return sqdKeywords.some((k) => q.toLowerCase().includes(k)) && (al === 'satisfactory' || al === 'neither agree nor disagree');
-                  }).length}
-                </Title>
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card title="Negative" variant="plain" size="small">
-                <Title level={3} style={{ margin: 0, color: "#cf1322" }}>
-                  {Object.entries(record.answersLabeled || {}).filter(([q, a]) => sqdKeywords.some((k) => q.toLowerCase().includes(k)) && ["disagree", "strongly disagree"].includes(String(a || "").toLowerCase())).length}
-                </Title>
-              </Card>
-            </Col>
-          </Row>
-        </>
+        </div>
       ),
     },
     {
-      key: "2",
-      label: "Client Response",
+      key: "response",
+      label: "Detailed Response",
       children: (
-        <>
-          <Title level={5}>Citizen’s Charter</Title>
-          <div className="client-response-table">
-            <Table dataSource={citizensCharterData} columns={citizenColumns} pagination={false} size="small" style={{ marginBottom: 24 }} />
-          </div>
-
-          <Title level={5}>Service Quality Dimensions (SQD)</Title>
-          <div className="client-response-table">
-            <Table dataSource={sqdData} columns={sqdColumns} pagination={false} size="small" style={{ marginBottom: 24 }} />
-          </div>
-        </>
-      ),
-    },
-    {
-      key: "3",
-      label: "Remarks / Suggestions",
-      children: (
-        <>
-          {remarks && (
+        <div className="view-modal-response">
+          {citizensCharterData.length > 0 && (
             <>
-              <Title level={5}>Remarks / Suggestions</Title>
-              <Input.TextArea value={remarks} readOnly autoSize={{ minRows: 3 }} style={{ fontSize: "12px" }} />
+              <Title level={5}>Citizen's Charter</Title>
+              <Table
+                dataSource={citizensCharterData}
+                columns={citizenColumns}
+                pagination={false}
+                size="small"
+                className="view-modal-table"
+              />
+              <Divider style={{ margin: "16px 0" }} />
             </>
           )}
-        </>
+          <Title level={5}>Service Quality Dimensions (SQD)</Title>
+          <Table
+            dataSource={sqdData}
+            columns={sqdColumns}
+            pagination={false}
+            size="small"
+            className="view-modal-table"
+          />
+        </div>
+      ),
+    },
+    {
+      key: "remarks",
+      label: "Remarks",
+      children: (
+        <div className="view-modal-remarks">
+          {remarks ? (
+            <>
+              <Title level={5}>Remarks / Suggestions</Title>
+              <Card size="small" style={{ background: "#fafafa" }}>
+                <Text>{remarks}</Text>
+              </Card>
+            </>
+          ) : (
+            <Text type="secondary" italic>
+              No remarks or suggestions provided.
+            </Text>
+          )}
+        </div>
       ),
     },
   ];
 
   return (
-    <Modal open={visible} onCancel={onClose} onOk={onClose} width={900} title="Client Feedback Details">
-      <Title level={5}>Primary Info</Title>
-      <Descriptions bordered size="small" column={2}>
-        {primaryInfo.map(({ label, value }) => (
-          <Descriptions.Item key={label} label={label}>
-            {value}
-          </Descriptions.Item>
-        ))}
-      </Descriptions>
+    <Modal
+      open={visible}
+      onCancel={onClose}
+      footer={null}
+      width={960}
+      className="view-modal-root"
+      title={
+        <div className="view-modal-header">
+          <Space align="center">
+            <FileTextOutlined style={{ fontSize: 18 }} />
+            <span>Survey Response Details</span>
+            <Tag color={surveyType === "internal" ? "blue" : "green"}>
+              {surveyType === "internal" ? "Internal" : "External"}
+            </Tag>
+          </Space>
+          {record.submittedAt && (
+            <Text
+              type="secondary"
+              style={{ fontSize: 12, fontWeight: 400 }}
+            >
+              Submitted:{" "}
+              {dayjs(record.submittedAt).format("MMM D, YYYY h:mm A")}
+            </Text>
+          )}
+        </div>
+      }
+    >
+      {/* Client Information Card */}
+      <Card
+        size="small"
+        className="view-modal-info-card"
+        title={
+          <Space>
+            <UserOutlined />
+            <span>Client Information</span>
+          </Space>
+        }
+      >
+        <Descriptions
+          size="small"
+          column={{ xs: 1, sm: 2, md: 3 }}
+          bordered
+          className="view-modal-descriptions"
+        >
+          {primaryItems.map(({ label, value }) => (
+            <Descriptions.Item key={label} label={label}>
+              {value || <Text type="secondary">—</Text>}
+            </Descriptions.Item>
+          ))}
+        </Descriptions>
 
-      <Tabs defaultActiveKey="1" style={{ marginTop: 24 }} items={tabsItems} />
+        {services.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <Text
+              strong
+              style={{ fontSize: 12, display: "block", marginBottom: 6 }}
+            >
+              Service Availed
+            </Text>
+            <Space wrap size={[4, 4]}>
+              {services.map((s) => (
+                <Tag key={s} color="processing">
+                  {s}
+                </Tag>
+              ))}
+            </Space>
+          </div>
+        )}
+      </Card>
+
+      {/* Tabs */}
+      <Tabs
+        defaultActiveKey="summary"
+        items={tabsItems}
+        style={{ marginTop: 16 }}
+        className="view-modal-tabs"
+      />
     </Modal>
   );
 }

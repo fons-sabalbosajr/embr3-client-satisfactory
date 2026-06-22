@@ -292,6 +292,44 @@ body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-multiple
   color: rgba(255, 255, 255, 0.72) !important;
 }
 
+/* === Language dropdown (FloatButton) === */
+.survey-lang-dropdown .ant-dropdown-menu {
+  border-radius: 14px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(2, 6, 23, 0.10);
+  box-shadow: 0 18px 46px rgba(2, 8, 23, 0.18);
+}
+
+.survey-lang-dropdown .ant-dropdown-menu-item {
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(2, 6, 23, 0.88);
+}
+
+.survey-lang-dropdown .ant-dropdown-menu-item:hover,
+.survey-lang-dropdown .ant-dropdown-menu-item-active {
+  background: rgba(14, 165, 233, 0.10);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-lang-dropdown .ant-dropdown-menu {
+  background: rgba(2, 6, 23, 0.88);
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.50);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-lang-dropdown .ant-dropdown-menu-item {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-lang-dropdown .ant-dropdown-menu-item:hover,
+body[data-mantine-color-scheme="dark"] .survey-lang-dropdown .ant-dropdown-menu-item-active {
+  background: rgba(56, 189, 248, 0.18);
+}
+
 /* Scoped Select dropdown popup styling for Survey selects */
 .survey-select-dropdown.ant-select-dropdown {
   border-radius: 14px;
@@ -966,9 +1004,25 @@ body[data-mantine-color-scheme="dark"] .swal-agency-popup a[href^="tel"] {
 
   /* Buttons: keep touch-friendly on tablet */
   .survey-btn.ant-btn {
-    height: 38px;
-    font-size: 13px;
-    padding: 0 16px;
+    height: 42px;
+    font-size: 14px;
+    padding: 0 20px;
+  }
+
+  /* Ensure form controls are touch-friendly (min 44px) */
+  .survey-page-content .ant-select-single .ant-select-selector {
+    height: 44px !important;
+  }
+
+  .survey-page-content .ant-select-selection-item,
+  .survey-page-content .ant-select-selection-placeholder {
+    line-height: 42px !important;
+  }
+
+  .survey-page-content .ant-input,
+  .survey-page-content .ant-input-affix-wrapper,
+  .survey-page-content textarea {
+    min-height: 44px;
   }
 }
 
@@ -1190,5 +1244,138 @@ body[data-mantine-color-scheme="dark"] .swal-agency-popup a[href^="tel"] {
   .survey-footer {
     font-size: 9px;
     padding: 2px 0 !important;
+  }
+}
+
+/* === Large desktops (1440px+) === */
+@media screen and (min-width: 1440px) {
+  .survey-page-content.ant-card {
+    max-width: 1280px;
+    padding: 22px 28px;
+  }
+
+  .agency-header-inner-survey {
+    max-width: 1400px;
+    gap: 20px;
+  }
+
+  .logo-svg-emb,
+  .logo-svg-bp {
+    height: 62px;
+    width: 62px;
+  }
+
+  .republic-text {
+    font-size: 17px;
+  }
+
+  .department-text {
+    font-size: 17px;
+  }
+
+  .bureau-text {
+    font-size: 28px;
+  }
+
+  .address-text {
+    font-size: 13px;
+  }
+
+  .survey-title {
+    font-size: 26px !important;
+  }
+
+  .survey-subtitle {
+    font-size: 16px;
+  }
+
+  .survey-page-content .ant-form-item-label > label {
+    font-size: 17px;
+  }
+
+  .survey-page-content .ant-input,
+  .survey-page-content .ant-input-affix-wrapper,
+  .survey-page-content textarea {
+    font-size: 17px;
+    padding: 12px 14px;
+  }
+
+  .survey-page-content .ant-select-single .ant-select-selector {
+    height: 50px !important;
+  }
+
+  .survey-page-content .ant-select-selection-item,
+  .survey-page-content .ant-select-selection-placeholder {
+    line-height: 48px !important;
+    font-size: 17px;
+  }
+
+  .survey-page-content .ant-radio-wrapper {
+    font-size: 17px;
+  }
+
+  .survey-btn.ant-btn {
+    height: 46px;
+    padding: 0 28px;
+    font-size: 15px;
+  }
+
+  .survey-section-header-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .survey-section-title {
+    font-size: 20px !important;
+  }
+
+  .survey-step-panel {
+    padding: 18px;
+  }
+
+  .survey-steps .ant-steps-item-title {
+    font-size: 15px;
+  }
+}
+
+/* === Ultra-wide / 4K desktops (1920px+) === */
+@media screen and (min-width: 1920px) {
+  .survey-page-content.ant-card {
+    max-width: 1400px;
+    padding: 26px 36px;
+  }
+
+  .agency-header-inner-survey {
+    max-width: 1600px;
+  }
+
+  .logo-svg-emb,
+  .logo-svg-bp {
+    height: 70px;
+    width: 70px;
+  }
+
+  .bureau-text {
+    font-size: 32px;
+  }
+
+  .survey-title {
+    font-size: 28px !important;
+  }
+
+  .survey-page-content .ant-form-item-label > label {
+    font-size: 18px;
+  }
+
+  .survey-page-content .ant-input,
+  .survey-page-content .ant-input-affix-wrapper,
+  .survey-page-content textarea {
+    font-size: 18px;
+  }
+
+  .survey-btn.ant-btn {
+    height: 50px;
+    padding: 0 32px;
+    font-size: 16px;
   }
 }

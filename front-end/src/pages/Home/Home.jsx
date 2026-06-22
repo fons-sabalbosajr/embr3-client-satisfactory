@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FloatButton, Row, Col, Typography, Button, Select } from "antd";
-import { BulbOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import { FloatButton, Row, Col, Typography, Button, Select, Dropdown, Modal } from "antd";
+import { BulbOutlined, ArrowRightOutlined, InfoCircleOutlined, TeamOutlined, GlobalOutlined } from "@ant-design/icons";
 import {
   IconDeviceMobile,
   IconLock,
@@ -11,7 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { QRCodeSVG } from "qrcode.react";
 
-import { getFeedbacks } from "../../services/api";
+import { getFeedbackCount } from "../../services/api";
 import EMBLogo from "../../assets/emblogo.svg";
 import BPLogo from "../../assets/bplogo.svg";
 import Survey from "../../assets/surveyman.png";
@@ -39,14 +39,16 @@ function Home({ toggleColorScheme }) {
 
   const clientUrl = (() => {
     const base = import.meta.env.VITE_APP_URL || window.location.origin;
-    return `${base.replace(/\/+$/, "")}/client`;
+    const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+    return `${base.replace(/\/+$/, "")}${basePath}/client`;
   })();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await getFeedbacks();
-        setFeedbacks(res.data);
+        const res = await getFeedbackCount();
+        // Create a dummy array with the right length so feedbacks.length works
+        setFeedbacks(new Array(res.data.count || 0));
       } catch (err) {
         console.error("API ERROR:", err.message);
       }
@@ -54,9 +56,48 @@ function Home({ toggleColorScheme }) {
     fetchData();
   }, []);
 
-  const handleTakeSurveyClick = () => {
-    navigate(`/survey/page1?lang=${language}`);
+  const handleTakeSurvey = (type) => {
+    navigate(`/survey/page1?lang=${language}&type=${type}`);
   };
+
+  const showSurveyInfo = () => {
+    Modal.info({
+      title: t("surveyTypeInfo.title", "Survey Types"),
+      width: 520,
+      content: (
+        <div style={{ marginTop: 12 }}>
+          <p><strong><TeamOutlined /> {t("surveyTypeInfo.internalTitle", "Internal Survey")}</strong></p>
+          <p style={{ marginLeft: 24, color: "#555" }}>
+            {t("surveyTypeInfo.internalDesc", "For EMB Region III employees. The client type is automatically set to \"Government\" and an optional field for the employee name is shown.")}
+          </p>
+          <p style={{ marginTop: 16 }}><strong><GlobalOutlined /> {t("surveyTypeInfo.externalTitle", "External Survey")}</strong></p>
+          <p style={{ marginLeft: 24, color: "#555" }}>
+            {t("surveyTypeInfo.externalDesc", "For citizens, businesses, and other government agencies transacting with EMB Region III.")}
+          </p>
+        </div>
+      ),
+      okText: t("agencyPrompt.close", "Close"),
+    });
+  };
+
+  const surveyMenuItems = [
+    {
+      key: "internal",
+      icon: <TeamOutlined />,
+      label: t("surveyType.internal", "Internal Survey"),
+    },
+    {
+      key: "external",
+      icon: <GlobalOutlined />,
+      label: t("surveyType.external", "External Survey"),
+    },
+    { type: "divider" },
+    {
+      key: "info",
+      icon: <InfoCircleOutlined />,
+      label: t("surveyType.info", "What's the difference?"),
+    },
+  ];
 
   const languageOptions = [
     {
@@ -131,7 +172,7 @@ function Home({ toggleColorScheme }) {
                     <div className="hero-qr-wrapper">
                       <QRCodeSVG
                         value={clientUrl}
-                        size={130}
+                        size={200}
                         level="H"
                         bgColor="#ffffff"
                         fgColor="#0b4f6c"
@@ -173,15 +214,28 @@ function Home({ toggleColorScheme }) {
                     </div>
 
                     <div className="hero-cta-row">
-                      <Button
-                        type="primary"
-                        icon={<ArrowRightOutlined />}
-                        onClick={handleTakeSurveyClick}
-                        className="hero-button"
-                        size="large"
+                      <Dropdown
+                        menu={{
+                          items: surveyMenuItems,
+                          onClick: ({ key }) => {
+                            if (key === "info") {
+                              showSurveyInfo();
+                            } else {
+                              handleTakeSurvey(key);
+                            }
+                          },
+                        }}
+                        trigger={["click"]}
                       >
-                        {t("takeSurvey")}
-                      </Button>
+                        <Button
+                          type="primary"
+                          icon={<ArrowRightOutlined />}
+                          className="hero-button"
+                          size="large"
+                        >
+                          {t("takeSurvey")}
+                        </Button>
+                      </Dropdown>
 
                       <div className="language-select-wrapper">
                         <Select

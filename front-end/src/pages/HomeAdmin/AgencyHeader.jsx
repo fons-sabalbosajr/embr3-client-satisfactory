@@ -7,12 +7,7 @@ function AgencyHeader() {
   return (
     <header className="agency-header-home">
       <div className="agency-header-inner-home">
-        <div className="agency-header-top">
-          <div className="agency-header-logos">
-            <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb" />
-            <img src={BPLogo} alt="BP Logo" className="logo-svg-bp" />
-          </div>
-        </div>
+        <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb" />
         <div className="agency-header-text">
           <span className="republic-text">{t("agencyTitle")}</span>
           <span className="department-text">{t("department")}</span>
@@ -21,6 +16,7 @@ function AgencyHeader() {
             {t("address1")}, {t("address2")}
           </span>
         </div>
+        <img src={BPLogo} alt="BP Logo" className="logo-svg-bp" />
       </div>
     </header>
   );

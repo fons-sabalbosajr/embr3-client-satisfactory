@@ -5,7 +5,8 @@ export function preloadConfig() {
   if (!configPromise) {
     // Prefer explicit VITE_API_BASE; else derive from VITE_SOCKET_URL; else infer backend from Render hostname; else fallback to /api
     const ENV = typeof import.meta !== "undefined" ? import.meta.env : undefined;
-    let API_BASE = ENV?.VITE_API_BASE || "/api";
+    const viteBase = (ENV?.BASE_URL || "/").replace(/\/$/, "");
+    let API_BASE = ENV?.VITE_API_BASE || `${viteBase}/api`;
     if (!ENV?.VITE_API_BASE && ENV?.VITE_SOCKET_URL) {
       try {
         const u = new URL(ENV.VITE_SOCKET_URL, window.location.origin);

@@ -22,6 +22,19 @@ import "./measurementtable.css";
 import socket from "../../../utils/socket";
 
 function MeasurementTable({ data, onEdit, onDataRefresh }) {
+  // Infer survey type for records that don't have surveyType stored
+  const inferSurveyType = (record) => {
+    if (record.surveyType) return record.surveyType;
+    const labeled = record.answersLabeled || {};
+    if (
+      labeled["Customer Type"] === "Government" &&
+      (labeled["Agency Name"] === "EMB Region III" || labeled["Employee Name"])
+    ) {
+      return "internal";
+    }
+    return "external";
+  };
+
   const [tableData, setTableData] = useState([...data]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => {
@@ -84,6 +97,7 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
     }
   })();
   const perms = currentUser?.permissions || {};
+  const isDeveloper = (currentUser?.position || "").toLowerCase() === "developer";
 
   useEffect(() => {
     socket.emit("joinRoom", "questions-table");
@@ -120,7 +134,7 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!perms.canDelete && currentUser?.privilege !== "admin") {
+    if (!perms.canDelete && currentUser?.privilege !== "admin" && !isDeveloper) {
       notification.error({ message: "Permission denied" });
       return;
     }
@@ -129,7 +143,7 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
   };
 
   const handleEditSubmit = async (updated) => {
-    if (!perms.canEdit && currentUser?.privilege !== "admin") {
+    if (!perms.canEdit && currentUser?.privilege !== "admin" && !isDeveloper) {
       notification.error({ message: "Permission denied" });
       return;
     }
@@ -138,6 +152,24 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
   };
 
   const columns = [
+    {
+      title: "Survey Type",
+      key: "surveyType",
+      width: 120,
+      render: (_, record) => {
+        const type = inferSurveyType(record);
+        return (
+          <Tag color={type === "internal" ? "blue" : "green"}>
+            {type === "internal" ? "Internal" : "External"}
+          </Tag>
+        );
+      },
+      filters: [
+        { text: "Internal", value: "internal" },
+        { text: "External", value: "external" },
+      ],
+      onFilter: (value, record) => inferSurveyType(record) === value,
+    },
     {
       title: "Client Type",
       render: (_, record) => {

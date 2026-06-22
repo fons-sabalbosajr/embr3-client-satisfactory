@@ -1,7 +1,7 @@
 // src/mainApp.jsx
 import "./utils/devConsolePatch";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, lazy, Suspense } from "react";
 import { MantineProvider } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
 import { Routes, Route, Navigate } from "react-router-dom"; // Router is provided at root in main.jsx
@@ -12,16 +12,17 @@ import Menu from "./pages/AMenu/Menu";
 import VerifyPage from "./pages/VerifyEmail/VerifyEmail";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
 
-import Dashboard from "./components/Dashboard/Dashboard";
-import AccountSettings from "./components/Settings/AccountSettings/AccountSettings";
-import DeveloperSettings from "./components/Settings/DeveloperSettings/DeveloperSettings";
-import Measurement from "./components/Measurement/Measurement";
-import GenerateReport from "./components/Reports/GenerateReport/GenerateReport";
-import ExtractData from "./components/Reports/ExtractData/ExtractData";
-import Announcements from "./components/Announcements/Announcement";
-import DataConfig from "./components/Settings/DataConfig/DataConfig";
-import Accounts from "./components/Settings/Accounts/Accounts";
-import BackupData from "./components/Settings/Backup/Backup";
+// Lazy-loaded admin sub-routes for faster initial page load
+const Dashboard = lazy(() => import("./components/Dashboard/Dashboard"));
+const AccountSettings = lazy(() => import("./components/Settings/AccountSettings/AccountSettings"));
+const DeveloperSettings = lazy(() => import("./components/Settings/DeveloperSettings/DeveloperSettings"));
+const Measurement = lazy(() => import("./components/Measurement/Measurement"));
+const GenerateReport = lazy(() => import("./components/Reports/GenerateReport/GenerateReport"));
+const ExtractData = lazy(() => import("./components/Reports/ExtractData/ExtractData"));
+const Announcements = lazy(() => import("./components/Announcements/Announcement"));
+const DataConfig = lazy(() => import("./components/Settings/DataConfig/DataConfig"));
+const Accounts = lazy(() => import("./components/Settings/Accounts/Accounts"));
+const BackupData = lazy(() => import("./components/Settings/Backup/Backup"));
 import MaintenancePage from "./components/MaintenancePage";
 import RequirePermission from "./components/auth/RequirePermission";
 
@@ -128,7 +129,8 @@ const MainApp = () => {
       // Redirect to /admin after clearing auth (not the deep path)
       try {
         const { origin } = window.location;
-        window.location.replace(`${origin}/admin`);
+        const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+        window.location.replace(`${origin}${basePath}/admin`);
       } catch {
         window.location.reload();
       }

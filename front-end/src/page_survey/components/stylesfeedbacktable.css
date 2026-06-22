@@ -100,3 +100,18 @@ body[data-mantine-color-scheme="dark"] .feedback-label.disabled {
     border-radius: 8px !important;
   }
 }
+
+/* Large desktops (1440px+) */
+@media screen and (min-width: 1440px) {
+  .feedback-label {
+    font-size: 17px;
+  }
+
+  .feedback-select .ant-select-selector {
+    height: 48px !important;
+  }
+
+  .feedback-form-item {
+    padding: 18px 0;
+  }
+}

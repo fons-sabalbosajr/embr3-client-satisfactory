@@ -236,7 +236,9 @@ router.post("/forgot-password", async (req, res) => {
     const resetLink = `${getFrontendUrl(
       req
     )}/reset-password?token=${token}&email=${email}`;
-    await sendResetPasswordEmail(email, user.fullname, resetLink);
+    // Fire-and-forget to avoid slow SMTP blocking the response
+    sendResetPasswordEmail(email, user.fullname, resetLink)
+      .catch((emailErr) => console.error("❌ Reset password email failed:", emailErr));
 
     res.status(200).json({
       message: "Password reset email sent. Please check your inbox.",
@@ -306,7 +308,9 @@ router.put("/users/:id", authMiddleware, async (req, res) => {
     }
 
     const isSelf = requester._id.toString() === id;
-    const isAdmin = !!requester.permissions?.canManageUsers;
+    const isAdmin = !!requester.permissions?.canManageUsers ||
+      requester.privilege === "admin" ||
+      (requester.position || "").toLowerCase() === "developer";
 
     if (!isSelf && !isAdmin) {
       return res
@@ -370,6 +374,29 @@ router.put("/users/:id", authMiddleware, async (req, res) => {
     res.json({ message: "User updated successfully", user: safeUser });
   } catch (err) {
     console.error("Update user error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Delete user (admin / developer only)
+router.delete("/users/:id", authMiddleware, requirePermission("canManageUsers"), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent self-deletion
+    if (req.user.id === id) {
+      return res.status(400).json({ message: "You cannot delete your own account." });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await User.findByIdAndDelete(id);
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    console.error("Delete user error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });

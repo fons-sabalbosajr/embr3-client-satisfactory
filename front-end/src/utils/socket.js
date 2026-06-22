@@ -28,7 +28,12 @@ if (ENV?.VITE_SOCKET_URL) {
   }
 }
 
+// Derive socket.io path from Vite base (e.g., /ocsm/socket.io for subdirectory deploy)
+const viteBase = (typeof import.meta !== "undefined" ? import.meta.env?.BASE_URL : undefined) || "/";
+const sioPath = `${viteBase.replace(/\/$/, "")}/socket.io`;
+
 const socket = io(SOCKET_URL, {
+  path: sioPath,
   transports: ["websocket", "polling"],
   withCredentials: true,
   reconnectionAttempts: 8,

@@ -72,8 +72,19 @@ function Measurement() {
     setFiltered(result);
   };
 
+  const inferSurveyType = (item) => {
+    if (item.surveyType) return item.surveyType;
+    const labeled = item.answersLabeled || {};
+    if (
+      labeled["Customer Type"] === "Government" &&
+      (labeled["Agency Name"] === "EMB Region III" || labeled["Employee Name"])
+    ) return "internal";
+    return "external";
+  };
+
   const handleExport = () => {
     const exportData = filtered.map((item) => ({
+      "Survey Type": inferSurveyType(item) === "internal" ? "Internal" : "External",
       ...item.answersLabeled,
       submittedAt: dayjs(item.submittedAt).format("YYYY-MM-DD HH:mm:ss"),
     }));
@@ -104,18 +115,18 @@ function Measurement() {
   return (
     <Card title="Client Measurement Data">
       {contextHolder}
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={8}>
+      <Row gutter={[16, 12]} style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={12} md={8}>
           <Input.Search
             placeholder="Search..."
             onSearch={handleSearch}
             allowClear
           />
         </Col>
-        <Col span={8}>
-          <RangePicker onChange={handleDateFilter} />
+        <Col xs={24} sm={12} md={8}>
+          <RangePicker onChange={handleDateFilter} style={{ width: "100%" }} />
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={24} md={8}>
           <div
             style={{
               display: "flex",

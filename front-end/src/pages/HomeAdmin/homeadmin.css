@@ -25,6 +25,10 @@ body[data-mantine-color-scheme="dark"] .home-container {
   animation: gradientFlow 20s ease infinite;
 }
 
+body[data-mantine-color-scheme="dark"] .home-container::before {
+  opacity: 0.06;
+}
+
 @keyframes gradientFlow {
   0% {
     background-position: 0% 50%;
@@ -121,26 +125,46 @@ body[data-mantine-color-scheme="dark"] .home-container {
 
 .home-container {
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
-  overflow: hidden;
-  background: linear-gradient(135deg, #f0f2f5, #dfe6ed);
+  overflow-y: auto;
+  background: linear-gradient(-45deg, #19bafa, #ffe9c0, #d4ffe5, #afdaff);
+  background-size: 400% 400%;
+  animation: gradientFlow 20s ease infinite;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1; /* container above background */
+  z-index: 1;
+}
+
+/* Background image overlay (matches client home page) */
+.home-container::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("../../assets/bgemb.webp");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 0.10;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .form-wrapper {
   position: relative;
   z-index: 2;
   width: 100%;
-  max-width: 960px;
+  max-width: 520px;
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  margin: 120px auto 40px;
-  padding: 0 16px;
+  margin: auto;
+  padding: 20px 16px;
 }
 
 .auth-card {
@@ -201,17 +225,203 @@ body[data-mantine-color-scheme="dark"] .home-container {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+/* --- Agency Header (admin login) --- */
+.agency-header-home {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 10;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.55);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+body[data-mantine-color-scheme="dark"] .agency-header-home {
+  background: rgba(2, 6, 23, 0.55);
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+}
+
+.agency-header-inner-home {
+  margin: 0 auto;
+  max-width: 1400px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.agency-header-text {
+  margin-top: 0;
+  line-height: 1.15;
+  flex: 0 1 auto;
+}
+
+.logo-svg-emb,
+.logo-svg-bp {
+  height: 52px;
+  width: auto;
+  flex-shrink: 0;
+  filter: drop-shadow(0 6px 18px rgba(2, 8, 23, 0.18));
+}
+
+.republic-text {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(2, 6, 23, 0.75);
+}
+
+.department-text {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(2, 6, 23, 0.72);
+}
+
+.bureau-text {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.address-text {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(2, 6, 23, 0.55);
+}
+
+body[data-mantine-color-scheme="dark"] .republic-text,
+body[data-mantine-color-scheme="dark"] .department-text {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body[data-mantine-color-scheme="dark"] .address-text {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 @media screen and (max-width: 1080px) {
 
   .form-wrapper {
-    margin-top: 180px; /* Adjusted for better vertical centering */
+    margin-top: 180px;
   }
 
   .agency-header-inner {
     margin-top: 100px;
   }
 
+  .agency-header-inner-home {
+    gap: 10px;
+  }
+
+  .logo-svg-emb,
+  .logo-svg-bp {
+    height: 36px;
+  }
+
+  .republic-text,
+  .department-text {
+    font-size: 10px;
+  }
+
+  .bureau-text {
+    font-size: 12px;
+  }
+
+  .address-text {
+    font-size: 10px;
+  }
+
   .auth-card{
     margin-top: 0;
+  }
+
+  .form-wrapper {
+    padding: 20px 24px;
+  }
+
+  .auth-card {
+    max-width: 480px;
+  }
+}
+
+/* === iPad touch-friendly (768-1080px) === */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .auth-card .ant-input,
+  .auth-card .ant-input-password {
+    min-height: 44px;
+    font-size: 15px;
+  }
+
+  .auth-card .ant-btn {
+    min-height: 44px;
+    font-size: 15px;
+  }
+}
+
+/* === Large desktops (1440px+) === */
+@media screen and (min-width: 1440px) {
+  .agency-header-inner-home {
+    max-width: 1600px;
+    gap: 20px;
+  }
+
+  .logo-svg-emb,
+  .logo-svg-bp {
+    height: 60px;
+  }
+
+  .republic-text,
+  .department-text {
+    font-size: 14px;
+  }
+
+  .bureau-text {
+    font-size: 16px;
+  }
+
+  .address-text {
+    font-size: 13px;
+  }
+
+  .form-wrapper {
+    max-width: 560px;
+  }
+
+  .auth-card {
+    max-width: 560px;
+    border-radius: 20px;
+  }
+}
+
+/* === Ultra-wide / 4K desktops (1920px+) === */
+@media screen and (min-width: 1920px) {
+  .agency-header-inner-home {
+    max-width: 1800px;
+  }
+
+  .logo-svg-emb,
+  .logo-svg-bp {
+    height: 66px;
+  }
+
+  .form-wrapper {
+    max-width: 600px;
+  }
+
+  .auth-card {
+    max-width: 600px;
   }
 }

@@ -63,6 +63,8 @@ function Survey({ toggleColorScheme }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [searchParams] = useSearchParams();
   const language = searchParams.get("lang") || "en"; // fallback
+  const surveyType = searchParams.get("type") || "external"; // internal or external
+  const isInternalSurvey = surveyType === "internal";
   const [currentLang, setCurrentLang] = useState(language);
   const { t, i18n } = useTranslation();
   const [originalQuestionData, setOriginalQuestionData] = useState([]);
@@ -121,7 +123,7 @@ function Survey({ toggleColorScheme }) {
         setSQDQuestions(sqdQs);
 
         const q18 = questionsArray.find((q) => q.questionCode === "Q19");
-        const groupedSQD = chunk(sqdQs, 2);
+        const groupedSQD = chunk(sqdQs, 4);
 
         const filteredQuestions = [
           {
@@ -157,6 +159,9 @@ function Survey({ toggleColorScheme }) {
           ...prev,
           [`answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_region`]: AUTO_REGION,
           [`answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_agency`]: AUTO_AGENCY,
+          ...(isInternalSurvey
+            ? { [`answer_${MERGED_CUSTOMER_AGE_GENDER_QID}_customerType`]: "Government" }
+            : {}),
         }));
 
         setLoading(false);
@@ -183,7 +188,7 @@ function Survey({ toggleColorScheme }) {
 
   const currentQuestion = allQuestions[currentQuestionIndex] || null;
 
-  const ccGroups = useMemo(() => chunk(ccQuestions || [], 2), [ccQuestions]);
+  const ccGroups = useMemo(() => [ccQuestions || []], [ccQuestions]);
 
   useEffect(() => {
     if (!currentQuestion) return;
@@ -391,7 +396,7 @@ function Survey({ toggleColorScheme }) {
 
   const handleSubmit = async (formValues) => {
     try {
-      await submitFeedback({ answers: formValues, deviceId });
+      await submitFeedback({ answers: formValues, deviceId, surveyType });
 
       await Swal.fire({
         icon: "success",
@@ -463,6 +468,7 @@ function Survey({ toggleColorScheme }) {
           formItemName={formItemName}
           form={form}
           options={question.options}
+          isInternalSurvey={isInternalSurvey}
         />
       );
     }
@@ -660,28 +666,14 @@ function Survey({ toggleColorScheme }) {
                 })}
               </Title>
             </div>
-            <Paragraph className="survey-subtitle">
-              {t("survey.subtitle", {
-                defaultValue:
-                  "Takes about 2–3 minutes.",
-              })}
-            </Paragraph>
+
           </div>
           <div className="survey-intro-right">
             <div className="survey-section-pill">
               <span className="survey-section-pill-icon">{sectionMeta.icon}</span>
               <span className="survey-section-pill-text">{sectionMeta.title}</span>
             </div>
-            {currentQuestion?.questionType === "merged_sqd_table" && (
-              <Text className="survey-group-indicator">
-                {t("survey.group", { defaultValue: "Group" })} {currentSQDGroupIndex + 1} / {currentQuestion.groupedSQD.length}
-              </Text>
-            )}
-            {currentQuestion?._id === MERGED_CCSQD_QID && ccGroups.length > 1 && (
-              <Text className="survey-group-indicator">
-                {t("survey.page", { defaultValue: "Page" })} {currentCCPageIndex + 1} / {ccGroups.length}
-              </Text>
-            )}
+
           </div>
         </div>
 
@@ -831,6 +823,7 @@ function Survey({ toggleColorScheme }) {
               i18n.changeLanguage(key); // <-- make it global
             },
           }}
+          overlayClassName="survey-lang-dropdown"
           placement="topRight"
           trigger={["click"]}
         >

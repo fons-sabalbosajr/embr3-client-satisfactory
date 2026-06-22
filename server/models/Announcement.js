@@ -7,9 +7,12 @@ const announcementSchema = new mongoose.Schema({
   startDate: { type: Date },
   endDate: { type: Date },
   target: { type: String, enum: ['client','admin','both'], default: 'both' },
+  displayMode: { type: String, enum: ['banner','modal','both'], default: 'banner' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now },
   active: { type: Boolean, default: true },
+  emailSent: { type: Boolean, default: false },
+  emailSentAt: { type: Date },
 });
 
 // Extra safety: sanitize message before save
