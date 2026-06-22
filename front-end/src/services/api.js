@@ -4,7 +4,7 @@ import { getDecryptedItem, getOpaqueItem, setOpaqueItem, removeOpaqueItem } from
 // Base URL strategy:
 // - Prefer VITE_API_BASE when deploying frontend and backend on different domains (e.g., Render multi-service)
 // - If missing, try to infer backend from current hostname (Render: remove "-measurement" suffix)
-// - Fallback to same-origin "/api" (works in dev with Vite proxy and when backend serves the SPA)
+// - Fallback to same-origin "${BASE_URL}/api" so subdirectory deployments like /ocsm work
 function inferBackendApiBase() {
   try {
     if (typeof window === "undefined") return null;
@@ -18,7 +18,9 @@ function inferBackendApiBase() {
   return null;
 }
 
-const baseURL = import.meta?.env?.VITE_API_BASE || inferBackendApiBase() || "/api";
+const viteBase = (import.meta?.env?.BASE_URL || "/").replace(/\/$/, "");
+const sameOriginApiBase = `${viteBase}/api` || "/api";
+const baseURL = import.meta?.env?.VITE_API_BASE || inferBackendApiBase() || sameOriginApiBase;
 const API = axios.create({ baseURL });
 
 // Add request interceptor to include auth token

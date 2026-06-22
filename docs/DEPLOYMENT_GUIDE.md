@@ -1,4 +1,30 @@
-# EMB Region III — Online Client Satisfaction Measurement
+EMB_CSM/embr3-client-satisfactory (main)
+$ cd front-end
+embr3-client-satisfactory/front-end (main)
+$ npm install
+
+> front-end@0.0.0 postinstall
+> node scripts/patch-ajv.cjs
+
+[patch-ajv] Patched eslint/lib/shared/ajv.js
+[patch-ajv] Patched @eslint\eslintrc\dist\eslintrc-universal.cjs
+[patch-ajv] Patched @eslint\eslintrc\dist\eslintrc.cjs
+[patch-ajv] Done.
+
+added 2 packages, removed 4 packages, changed 2 packages, and audited 540 packages in 11s
+
+82 packages are looking for funding
+  run `npm fund` for details
+
+25 vulnerabilities (2 low, 9 moderate, 13 high, 1 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.# EMB Region III — Online Client Satisfaction Measurement
 
 ## Hostinger KVM 2 VPS Deployment Guide
 
