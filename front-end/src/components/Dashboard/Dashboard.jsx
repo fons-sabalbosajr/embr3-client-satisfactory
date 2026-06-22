@@ -18,9 +18,10 @@ import {
 import {
   BarChartOutlined,
   PieChartOutlined,
-  QuestionCircleOutlined,
-  CheckCircleOutlined,
   StarOutlined,
+  RiseOutlined,
+  FileDoneOutlined,
+  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import {
   BarChart,
@@ -54,7 +55,7 @@ function Dashboard() {
 
   const [ccResponseCounts, setCcResponseCounts] = useState([]);
   const [ccBreakdownTiles, setCcBreakdownTiles] = useState([]);
-  const [ccTotals, setCcTotals] = useState({ Yes: 0, No: 0, "N/A": 0 });
+  const [ccTotals, setCcTotals] = useState({ Positive: 0, Neutral: 0, Negative: 0 });
   const [sqdBreakdownTiles, setSqdBreakdownTiles] = useState([]);
   const [allSurveys, setAllSurveys] = useState([]);
   const [detailModal, setDetailModal] = useState({
@@ -107,21 +108,42 @@ function Dashboard() {
   };
 
   // --- Normalizers (component scope) ---
+  // Classify a Citizen's Charter answer into Positive / Neutral / Negative.
+  // CC answers are full-text options (awareness, visibility, helpfulness),
+  // so a plain Yes/No match misses everything. Legacy Yes/No is still handled.
   function normalizeCcAnswer(val) {
-    if (!val || typeof val !== "string") return null;
-    const s = val.trim().toLowerCase();
-    // Direct matches
-    if (s === "yes" || s === "y") return "Yes";
-    if (s === "no" || s === "n") return "No";
-    // Word-boundary search inside longer sentences like "1. Yes..."
-    if (/\byes\b/i.test(val)) return "Yes";
-    if (/\bno\b/i.test(val)) return "No";
-    // Normalize N/A variants
-    const cleaned = s.replace(/[^a-z]/g, ""); // remove non-letters
-    if (cleaned === "na" || cleaned === "notapplicable") return "N/A";
-    if (s === "n/a" || s === "n.a" || s === "n a") return "N/A";
-    if (s.includes("skip question")) return "N/A";
-    return null;
+    if (!val) return null;
+    const raw = Array.isArray(val) ? val.join(" ") : String(val);
+    const s = raw.trim().toLowerCase();
+    if (!s) return null;
+
+    // N/A variants -> Neutral bucket
+    const cleaned = s.replace(/[^a-z]/g, "");
+    if (cleaned === "na" || cleaned === "notapplicable") return "Neutral";
+    if (s.includes("skip question")) return "Neutral";
+
+    const positive = [
+      "i know what a cc is and i saw",
+      "learned of the cc only when i saw",
+      "easy to see", // also matches "somewhat easy to see"
+      "help very much",
+      "somewhat helped",
+    ];
+    const negative = [
+      "did not see this office",
+      "do not know what a cc is",
+      "difficult to see",
+      "not visible at all",
+      "did not help",
+    ];
+    if (positive.some((k) => s.includes(k))) return "Positive";
+    if (negative.some((k) => s.includes(k))) return "Negative";
+
+    // Legacy simple answers
+    if (s === "yes" || s === "y" || /\byes\b/i.test(raw)) return "Positive";
+    if (s === "no" || s === "n" || /\bno\b/i.test(raw)) return "Negative";
+
+    return "Neutral";
   }
 
   function normalizeSqdAnswer(val) {
@@ -272,13 +294,13 @@ function Dashboard() {
 
         function makeCcBreakdown(entries, keyMap) {
           return Object.entries(keyMap).map(([short, key]) => {
-            const counts = { Yes: 0, No: 0, "N/A": 0 };
+            const counts = { Positive: 0, Neutral: 0, Negative: 0 };
             entries.forEach((e) => {
               const a = normalizeCcAnswer(e.answers?.[key]);
               if (a && Object.prototype.hasOwnProperty.call(counts, a))
                 counts[a] += 1;
             });
-            const total = counts.Yes + counts.No + counts["N/A"];
+            const total = counts.Positive + counts.Neutral + counts.Negative;
             return { question: short, counts, total };
           });
         }
@@ -311,12 +333,12 @@ function Dashboard() {
         // Compute CC totals for summary chart
         const totals = ccTiles.reduce(
           (acc, t) => {
-            acc.Yes += t.counts["Yes"] || 0;
-            acc.No += t.counts["No"] || 0;
-            acc["N/A"] += t.counts["N/A"] || 0;
+            acc.Positive += t.counts["Positive"] || 0;
+            acc.Neutral += t.counts["Neutral"] || 0;
+            acc.Negative += t.counts["Negative"] || 0;
             return acc;
           },
-          { Yes: 0, No: 0, "N/A": 0 }
+          { Positive: 0, Neutral: 0, Negative: 0 }
         );
         setCcTotals(totals);
         setSqdBreakdownTiles(makeSqdBreakdown(data, sqdKeys));
@@ -336,17 +358,13 @@ function Dashboard() {
               "—";
             const assistedPersonnel = labeled["Assisted Personnel"] || null;
 
-            const ccScores = Object.values(ccKeys)
-              .map((key) => scoreMap[entry.answers?.[key]] || null)
-              .filter((val) => val !== null);
-
-            const avgCcScore = ccScores.length
-              ? Number(
-                  (
-                    ccScores.reduce((a, b) => a + b, 0) / ccScores.length
-                  ).toFixed(2)
-                )
-              : null;
+            const ccClassified = Object.values(ccKeys)
+              .map((key) => normalizeCcAnswer(entry.answers?.[key]))
+              .filter((v) => v !== null);
+            const ccPositive = ccClassified.filter(
+              (v) => v === "Positive"
+            ).length;
+            const ccTotal = ccClassified.length;
 
             const sqdResponsesRaw = Object.values(sqdKeys)
               .map((key) => entry.answers?.[key])
@@ -381,7 +399,8 @@ function Dashboard() {
               },
               assistedPersonnel,
               surveyDate: new Date(entry.submittedAt).toLocaleDateString(),
-              averageCcScore: avgCcScore,
+              ccPositive,
+              ccTotal,
               averageSqdScore: avgSqdScore,
               sqdPositive,
               sqdNegative,
@@ -492,13 +511,13 @@ function Dashboard() {
 
     const makeCc = (entries, keyMap) => {
       return Object.entries(keyMap).map(([short, key]) => {
-        const counts = { Yes: 0, No: 0, "N/A": 0 };
+        const counts = { Positive: 0, Neutral: 0, Negative: 0 };
         entries.forEach((e) => {
           const a = normalizeCcAnswer(e.answers?.[key]);
           if (a && Object.prototype.hasOwnProperty.call(counts, a))
             counts[a] += 1;
         });
-        const total = counts.Yes + counts.No + counts["N/A"];
+        const total = counts.Positive + counts.Neutral + counts.Negative;
         return { question: short, counts, total };
       });
     };
@@ -525,12 +544,12 @@ function Dashboard() {
     setCcBreakdownTiles(ccTiles);
     const totals = ccTiles.reduce(
       (acc, t) => {
-        acc.Yes += t.counts["Yes"] || 0;
-        acc.No += t.counts["No"] || 0;
-        acc["N/A"] += t.counts["N/A"] || 0;
+        acc.Positive += t.counts["Positive"] || 0;
+        acc.Neutral += t.counts["Neutral"] || 0;
+        acc.Negative += t.counts["Negative"] || 0;
         return acc;
       },
-      { Yes: 0, No: 0, "N/A": 0 }
+      { Positive: 0, Neutral: 0, Negative: 0 }
     );
     setCcTotals(totals);
     setSqdBreakdownTiles(makeSqd(filtered, sqdKeys));
@@ -618,7 +637,7 @@ function Dashboard() {
     let counts;
 
     if (section === "cc") {
-      counts = { Yes: 0, No: 0, "N/A": 0 };
+      counts = { Positive: 0, Neutral: 0, Negative: 0 };
       surveysToUse.forEach((entry) => {
         const raw = entry.answers?.[key];
         const answer = normalizeCcAnswer(raw);
@@ -726,12 +745,14 @@ function Dashboard() {
       key: "surveyDate",
     },
     {
-      title: "Avg. CC Score",
-      dataIndex: "averageCcScore",
-      key: "averageCcScore",
-      render: (score) =>
-        score !== null ? (
-          <Text strong>{score}</Text>
+      title: "CC Positive",
+      dataIndex: "ccPositive",
+      key: "ccPositive",
+      render: (val, record) =>
+        record.ccTotal ? (
+          <Text strong>
+            {val}/{record.ccTotal}
+          </Text>
         ) : (
           <Text type="secondary">—</Text>
         ),
@@ -767,9 +788,14 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      <Title level={2} className="dashboard-title">
-        <BarChartOutlined /> Admin Dashboard
-      </Title>
+      <div className="dashboard-header">
+        <Title level={3} className="dashboard-title">
+          <BarChartOutlined /> Admin Dashboard
+        </Title>
+        <Text type="secondary" className="dashboard-subtitle">
+          Client satisfaction overview &amp; survey analytics
+        </Text>
+      </div>
 
       {loading ? (
         <div className="dashboard-loading">
@@ -794,40 +820,63 @@ function Dashboard() {
             />
           </div>
           {/* Key Statistics */}
-          <Row gutter={[24, 24]}>
+          <Row gutter={[20, 20]}>
             <Col xs={12} md={12} lg={6}>
-              <Card className="dashboard-card">
-                <Statistic
-                  title="Total Questions"
-                  value={stats.totalQuestions}
-                  prefix={<QuestionCircleOutlined />}
-                  valueStyle={{ color: "#3f8600" }}
-                />
+              <Card className="dashboard-card kpi-tile kpi-blue">
+                <div className="kpi-tile-inner">
+                  <div className="kpi-icon">
+                    <FileDoneOutlined />
+                  </div>
+                  <Statistic
+                    title="Total Surveys Completed"
+                    value={stats.totalSurveys}
+                  />
+                </div>
               </Card>
             </Col>
             <Col xs={12} md={12} lg={6}>
-              <Card className="dashboard-card">
-                <Statistic
-                  title="Total Surveys Completed"
-                  value={stats.totalSurveys}
-                  prefix={<CheckCircleOutlined />}
-                  valueStyle={{ color: "#0050b3" }}
-                />
+              <Card className="dashboard-card kpi-tile kpi-orange">
+                <div className="kpi-tile-inner">
+                  <div className="kpi-icon">
+                    <StarOutlined />
+                  </div>
+                  <Statistic
+                    title="Avg. Overall Score"
+                    value={(stats.averageOverallScore / 5) * 100}
+                    precision={1}
+                    suffix="%"
+                  />
+                </div>
               </Card>
             </Col>
             <Col xs={12} md={12} lg={6}>
-              <Card className="dashboard-card">
-                <Statistic
-                  title="Avg. Overall Survey Score"
-                  value={(stats.averageOverallScore / 5) * 100}
-                  precision={1}
-                  suffix="%"
-                  prefix={<StarOutlined />}
-                  valueStyle={{ color: "#d46b08" }}
-                />
+              <Card className="dashboard-card kpi-tile kpi-green">
+                <div className="kpi-tile-inner">
+                  <div className="kpi-icon">
+                    <RiseOutlined />
+                  </div>
+                  <Statistic
+                    title="Satisfaction Rate"
+                    value={stats.sqdOverallScore ?? 0}
+                    precision={1}
+                    suffix="%"
+                  />
+                </div>
               </Card>
             </Col>
-            {/* SQD Overall Score card temporarily removed as requested */}
+            <Col xs={12} md={12} lg={6}>
+              <Card className="dashboard-card kpi-tile kpi-purple">
+                <div className="kpi-tile-inner">
+                  <div className="kpi-icon">
+                    <SafetyCertificateOutlined />
+                  </div>
+                  <Statistic
+                    title="Total Questions"
+                    value={stats.totalQuestions}
+                  />
+                </div>
+              </Card>
+            </Col>
           </Row>
 
           {/* Question Type Distribution */}
@@ -936,22 +985,24 @@ function Dashboard() {
                         />
                         <Pie
                           data={[
-                            { name: "Yes", value: ccTotals.Yes },
-                            { name: "No", value: ccTotals.No },
-                            { name: "N/A", value: ccTotals["N/A"] },
+                            { name: "Positive", value: ccTotals.Positive },
+                            { name: "Neutral", value: ccTotals.Neutral },
+                            { name: "Negative", value: ccTotals.Negative },
                           ]}
                           dataKey="value"
                           nameKey="name"
                           cx="50%"
                           cy="50%"
-                          outerRadius="95%"
+                          innerRadius="55%"
+                          outerRadius="90%"
+                          paddingAngle={2}
                           label={false}
                           labelLine={false}
                         >
                           {[
-                            { name: "Yes", color: "#389e0d" },
-                            { name: "No", color: "#f5222d" },
-                            { name: "N/A", color: "#8c8c8c" },
+                            { name: "Positive", color: "#52c41a" },
+                            { name: "Neutral", color: "#faad14" },
+                            { name: "Negative", color: "#ff4d4f" },
                           ].map((seg, idx) => (
                             <Cell key={`cell-${idx}`} fill={seg.color} />
                           ))}
@@ -975,9 +1026,9 @@ function Dashboard() {
                       <BarChart
                         data={ccBreakdownTiles.map((t) => ({
                           question: t.question,
-                          Yes: t.counts["Yes"] || 0,
-                          No: t.counts["No"] || 0,
-                          "N/A": t.counts["N/A"] || 0,
+                          Positive: t.counts["Positive"] || 0,
+                          Neutral: t.counts["Neutral"] || 0,
+                          Negative: t.counts["Negative"] || 0,
                         }))}
                         margin={{ top: 8, right: 0, left: 0, bottom: 8 }}
                       >
@@ -986,9 +1037,9 @@ function Dashboard() {
                         <YAxis allowDecimals={false} />
                         <RechartsTooltip />
                         <Legend />
-                        <Bar dataKey="Yes" stackId="a" fill="#389e0d" />
-                        <Bar dataKey="No" stackId="a" fill="#f5222d" />
-                        <Bar dataKey="N/A" stackId="a" fill="#8c8c8c" />
+                        <Bar dataKey="Positive" stackId="a" fill="#52c41a" />
+                        <Bar dataKey="Neutral" stackId="a" fill="#faad14" />
+                        <Bar dataKey="Negative" stackId="a" fill="#ff4d4f" />
                       </BarChart>
                     </ResponsiveContainer>
                     <Text
@@ -1047,16 +1098,20 @@ function Dashboard() {
                                 gap: 6,
                               }}
                             >
-                              <Tooltip title="Yes">
+                              <Tooltip title="Positive">
                                 <Tag color="green">
-                                  Yes: {tile.counts["Yes"]}
+                                  Positive: {tile.counts["Positive"]}
                                 </Tag>
                               </Tooltip>
-                              <Tooltip title="No">
-                                <Tag color="red">No: {tile.counts["No"]}</Tag>
+                              <Tooltip title="Neutral">
+                                <Tag color="orange">
+                                  Neutral: {tile.counts["Neutral"]}
+                                </Tag>
                               </Tooltip>
-                              <Tooltip title="N/A">
-                                <Tag>N/A: {tile.counts["N/A"]}</Tag>
+                              <Tooltip title="Negative">
+                                <Tag color="red">
+                                  Negative: {tile.counts["Negative"]}
+                                </Tag>
                               </Tooltip>
                             </div>
                             <Text type="secondary" style={{ fontSize: 11 }}>
@@ -1248,10 +1303,14 @@ function Dashboard() {
                 {detailModal.section === "cc" ? (
                   <>
                     <Tag color="green">
-                      Yes: {detailModal.counts["Yes"] || 0}
+                      Positive: {detailModal.counts["Positive"] || 0}
                     </Tag>
-                    <Tag color="red">No: {detailModal.counts["No"] || 0}</Tag>
-                    <Tag>N/A: {detailModal.counts["N/A"] || 0}</Tag>
+                    <Tag color="orange">
+                      Neutral: {detailModal.counts["Neutral"] || 0}
+                    </Tag>
+                    <Tag color="red">
+                      Negative: {detailModal.counts["Negative"] || 0}
+                    </Tag>
                   </>
                 ) : (
                   <>
@@ -1291,9 +1350,9 @@ function Dashboard() {
                     options={
                       detailModal.section === "cc"
                         ? [
-                            { label: "Yes", value: "Yes" },
-                            { label: "No", value: "No" },
-                            { label: "N/A", value: "N/A" },
+                            { label: "Positive", value: "Positive" },
+                            { label: "Neutral", value: "Neutral" },
+                            { label: "Negative", value: "Negative" },
                           ]
                         : [
                             { label: "SA", value: "Strongly Agree" },
@@ -1344,9 +1403,12 @@ function Dashboard() {
                     render: (ans) => {
                       if (!ans) return <Text>—</Text>;
                       if (detailModal.section === "cc") {
-                        if (ans === "Yes") return <Tag color="green">Yes</Tag>;
-                        if (ans === "No") return <Tag color="red">No</Tag>;
-                        if (ans === "N/A") return <Tag>N/A</Tag>;
+                        if (ans === "Positive")
+                          return <Tag color="green">Positive</Tag>;
+                        if (ans === "Negative")
+                          return <Tag color="red">Negative</Tag>;
+                        if (ans === "Neutral")
+                          return <Tag color="orange">Neutral</Tag>;
                         return <Tag>{ans}</Tag>;
                       }
                       // SQD Likert coloring

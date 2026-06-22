@@ -1,12 +1,31 @@
 import React, { useEffect, useState } from "react";
-import { Button, Card, Input, DatePicker, Row, Col, Tooltip, message } from "antd";
-import { ExportOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Card,
+  Input,
+  DatePicker,
+  Row,
+  Col,
+  Tooltip,
+  message,
+  Typography,
+  Statistic,
+  Space,
+} from "antd";
+import {
+  ExportOutlined,
+  DatabaseOutlined,
+  TeamOutlined,
+  UserOutlined,
+  CalendarOutlined,
+} from "@ant-design/icons";
 import MeasurementTable from "../Measurement/components/MeasurementTable";
 import MeasurementFormModal from "../Measurement/components/MeasurementFormModal";
 import { getFeedbacks } from "../../services/api";
 import { exportToExcelFile } from "../../utils/excelExport";
 import dayjs from "dayjs";
 import socket from "../../utils/socket"; // Ensure this path is correct
+import "./measurement.css";
 
 const { RangePicker } = DatePicker;
 
@@ -113,41 +132,101 @@ function Measurement() {
   };
 
   return (
-    <Card title="Client Measurement Data">
+    <div className="measurement-page">
       {contextHolder}
-      <Row gutter={[16, 12]} style={{ marginBottom: 16 }}>
-        <Col xs={24} sm={12} md={8}>
-          <Input.Search
-            placeholder="Search..."
-            onSearch={handleSearch}
-            allowClear
-          />
+      <div className="measurement-header">
+        <Typography.Title level={3} className="measurement-title">
+          <DatabaseOutlined /> Client Measurement Data
+        </Typography.Title>
+        <Typography.Text type="secondary">
+          Browse, filter, and export individual client satisfaction responses.
+        </Typography.Text>
+      </div>
+
+      <Row gutter={[16, 16]} className="measurement-stats">
+        <Col xs={12} sm={6}>
+          <Card size="small" className="ms-stat-card ms-blue">
+            <Statistic
+              title="Total Responses"
+              value={data.length}
+              prefix={<DatabaseOutlined />}
+            />
+          </Card>
         </Col>
-        <Col xs={24} sm={12} md={8}>
-          <RangePicker onChange={handleDateFilter} style={{ width: "100%" }} />
+        <Col xs={12} sm={6}>
+          <Card size="small" className="ms-stat-card ms-cyan">
+            <Statistic
+              title="Internal"
+              value={data.filter((d) => inferSurveyType(d) === "internal").length}
+              prefix={<TeamOutlined />}
+              valueStyle={{ color: "#13c2c2" }}
+            />
+          </Card>
         </Col>
-        <Col xs={24} sm={24} md={8}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: 12,
-            }}
-          >
-            <Tooltip title="Export to Excel">
-              <Button type="primary" onClick={handleExport}>
-                <ExportOutlined />
-              </Button>
-            </Tooltip>
-          </div>
+        <Col xs={12} sm={6}>
+          <Card size="small" className="ms-stat-card ms-green">
+            <Statistic
+              title="External"
+              value={data.filter((d) => inferSurveyType(d) === "external").length}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: "#52c41a" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card size="small" className="ms-stat-card ms-orange">
+            <Statistic
+              title="Today"
+              value={
+                data.filter((d) =>
+                  dayjs(d.submittedAt).isSame(dayjs(), "day")
+                ).length
+              }
+              prefix={<CalendarOutlined />}
+              valueStyle={{ color: "#fa8c16" }}
+            />
+          </Card>
         </Col>
       </Row>
 
-      <MeasurementTable
-        data={filtered}
-        onEdit={openEditModal}
-        onDataRefresh={fetchData}
-      />
+      <Card className="measurement-table-card">
+        <Row gutter={[16, 12]} style={{ marginBottom: 16 }} align="middle">
+          <Col xs={24} sm={12} md={8}>
+            <Input.Search
+              placeholder="Search responses..."
+              onSearch={handleSearch}
+              allowClear
+            />
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <RangePicker onChange={handleDateFilter} style={{ width: "100%" }} />
+          </Col>
+          <Col xs={24} sm={24} md={8}>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <Space>
+                <Typography.Text type="secondary">
+                  Showing {filtered.length} of {data.length}
+                </Typography.Text>
+                <Tooltip title="Export filtered data to Excel">
+                  <Button
+                    type="primary"
+                    icon={<ExportOutlined />}
+                    onClick={handleExport}
+                  >
+                    Export
+                  </Button>
+                </Tooltip>
+              </Space>
+            </div>
+          </Col>
+        </Row>
+
+        <MeasurementTable
+          data={filtered}
+          onEdit={openEditModal}
+          onDataRefresh={fetchData}
+        />
+      </Card>
 
       <MeasurementFormModal
         visible={modalVisible}
@@ -155,7 +234,7 @@ function Measurement() {
         onSave={handleSave}
         record={editRecord}
       />
-    </Card>
+    </div>
   );
 }
 

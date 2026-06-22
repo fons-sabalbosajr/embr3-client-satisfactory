@@ -37,6 +37,11 @@ function AdminMenu({ selectedKey, onMenuClick, menuTheme = "light" }) {
         }
         return item;
       })
+      .filter((it) => {
+        // App Logs is restricted to admins / developers
+        if (it.key === "app-logs") return canManageUsers || isDeveloper;
+        return true;
+      })
       .filter((it) => !(it.key === "settings" && (!it.children || it.children.length === 0)));
   }, [perms, user]);
   const defaultOpenKeys = useMemo(() => {

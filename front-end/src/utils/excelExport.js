@@ -18,8 +18,19 @@ export async function exportToExcelFile(filename, rows, sheetName = "Sheet1") {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet(sheetName);
 
-  // Derive columns from first row keys
-  const keys = Object.keys(rows[0]);
+  // Derive columns from the union of all row keys (preserving first-seen order).
+  // Using only the first row can drop columns when some rows omit a key
+  // (e.g. "Service Availed" missing on records without that field).
+  const keys = [];
+  const seen = new Set();
+  rows.forEach((row) => {
+    Object.keys(row || {}).forEach((key) => {
+      if (!seen.has(key)) {
+        seen.add(key);
+        keys.push(key);
+      }
+    });
+  });
   worksheet.columns = keys.map((key) => ({
     header: key,
     key,

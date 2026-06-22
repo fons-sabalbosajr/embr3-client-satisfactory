@@ -1,0 +1,67 @@
+/* measurement.css — Client Measurement Data page */
+
+.measurement-page {
+  padding: 4px 4px 16px;
+}
+
+.measurement-header {
+  margin-bottom: 20px;
+}
+
+.measurement-title {
+  margin: 0 0 2px 0 !important;
+  font-weight: 700;
+  color: #1a1a2e;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+body[data-theme="dark"] .measurement-title {
+  color: #eaeaea;
+}
+
+.measurement-stats {
+  margin-bottom: 20px;
+}
+
+.ms-stat-card {
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ms-stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.ms-stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.ms-blue::before { background: #1677ff; }
+.ms-cyan::before { background: #13c2c2; }
+.ms-green::before { background: #52c41a; }
+.ms-orange::before { background: #fa8c16; }
+
+.ms-stat-card .ant-statistic-title {
+  font-size: 13px !important;
+}
+
+.ms-stat-card .ant-statistic-content {
+  font-size: 22px !important;
+  font-weight: 700;
+}
+
+.measurement-table-card {
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}

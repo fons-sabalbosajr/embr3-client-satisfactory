@@ -10,6 +10,11 @@ import {
   Tag,
   Space,
   Tabs,
+  Card,
+  Typography,
+  Row,
+  Col,
+  Statistic,
 } from "antd";
 import {
   EditOutlined,
@@ -20,6 +25,8 @@ import {
   BookOutlined,
   CheckSquareOutlined,
   DownCircleOutlined,
+  DatabaseOutlined,
+  UnorderedListOutlined,
 } from "@ant-design/icons";
 import Swal from "sweetalert2";
 import io from "socket.io-client";
@@ -416,7 +423,7 @@ function DataConfig() {
       dataIndex: "questionCode",
       key: "questionCode",
       sorter: (a, b) => a.questionCode.localeCompare(b.questionCode),
-      width: "15%",
+      width: 120,
       ...getColumnSearchProps("questionCode"),
     },
     // Note: Service categories apply to 'Services Availed' OPTIONS, not per-question.
@@ -425,7 +432,7 @@ function DataConfig() {
       dataIndex: "questionType",
       key: "questionType",
       sorter: (a, b) => a.questionType.localeCompare(b.questionType),
-      width: "12%",
+      width: 150,
       render: (type) => getQuestionTypeTag(type),
       filters: typeFilters,
       onFilter: (value, record) => record.questionType === value,
@@ -436,7 +443,7 @@ function DataConfig() {
       key: "questionText",
       sorter: (a, b) => a.questionText.localeCompare(b.questionText),
       ellipsis: true,
-      width: "30%",
+      width: 360,
       ...getColumnSearchProps("questionText"),
     },
     {
@@ -515,14 +522,15 @@ function DataConfig() {
           </div>
         );
       },
-      width: "30%",
+      width: 440,
     },
     {
       title: "User",
       dataIndex: "user",
       key: "user",
       sorter: (a, b) => a.user.localeCompare(b.user),
-      width: "10%",
+      width: 180,
+      ellipsis: true,
       filters: userFilters,
       onFilter: (value, record) => record.user === value,
     },
@@ -558,26 +566,115 @@ function DataConfig() {
           </Dropdown>
         );
       },
-      width: "10%",
+      width: 88,
       align: "center",
+      fixed: "right",
     },
   ];
 
   return (
     <div className="data-config-container">
-      <h1 className="data-config-title">Question Management 📚</h1>
+      <div className="data-config-header">
+        <div className="data-config-header-text">
+          <Typography.Title level={3} className="data-config-title">
+            <DatabaseOutlined /> Question Management
+          </Typography.Title>
+          <Typography.Text type="secondary">
+            Manage survey questions, response types, and service categories.
+          </Typography.Text>
+        </div>
+      </div>
 
-      <Space className="table-controls" style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }}>
-        <Input placeholder="Search questions by code, text, type, or user..." prefix={<SearchOutlined />} value={globalSearchText} onChange={(e) => setGlobalSearchText(e.target.value)} className="search-input" allowClear />
-        <Space>
-          <Button onClick={() => setCatModalOpen(true)} icon={<BookOutlined />}>Manage Service Categories</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal} disabled={!perms.canCreate} title={!perms.canCreate ? "You don't have permission to add questions" : undefined}>
-            Add New Question
-          </Button>
+      <Row gutter={[16, 16]} className="data-config-stats">
+        <Col xs={12} sm={6}>
+          <Card size="small" className="dc-stat-card">
+            <Statistic
+              title="Total Questions"
+              value={questions.length}
+              prefix={<UnorderedListOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card size="small" className="dc-stat-card">
+            <Statistic
+              title="Text"
+              value={questions.filter((q) => q.questionType === "text").length}
+              valueStyle={{ color: "#1677ff" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card size="small" className="dc-stat-card">
+            <Statistic
+              title="Dropdown"
+              value={
+                questions.filter((q) => q.questionType === "dropdown").length
+              }
+              valueStyle={{ color: "#52c41a" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card size="small" className="dc-stat-card">
+            <Statistic
+              title="Radio"
+              value={questions.filter((q) => q.questionType === "radio").length}
+              valueStyle={{ color: "#fa8c16" }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Card className="dc-table-card" bodyStyle={{ padding: 16 }}>
+        <Space
+          className="table-controls"
+          style={{
+            marginBottom: 16,
+            width: "100%",
+            justifyContent: "space-between",
+          }}
+          wrap
+        >
+          <Input
+            placeholder="Search questions by code, text, type, or user..."
+            prefix={<SearchOutlined />}
+            value={globalSearchText}
+            onChange={(e) => setGlobalSearchText(e.target.value)}
+            className="search-input"
+            allowClear
+          />
+          <Space wrap>
+            <Button onClick={() => setCatModalOpen(true)} icon={<BookOutlined />}>
+              Manage Service Categories
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={showAddModal}
+              disabled={!perms.canCreate}
+              title={
+                !perms.canCreate
+                  ? "You don't have permission to add questions"
+                  : undefined
+              }
+            >
+              Add New Question
+            </Button>
+          </Space>
         </Space>
-      </Space>
 
-      <Table columns={columns} dataSource={filteredQuestions} rowKey="_id" loading={loading} pagination={{ pageSize: 10, position: ["topRight"] }} bordered className="questions-table-compact" size="small" />
+        <Table
+          columns={columns}
+          dataSource={filteredQuestions}
+          rowKey="_id"
+          loading={loading}
+          pagination={{ pageSize: 10, position: ["bottomRight"] }}
+          className="questions-table-compact"
+          size="middle"
+          scroll={{ x: 1338 }}
+        />
+      </Card>
 
       <Modal title="Add New Question" open={isAddModalVisible} onOk={handleAddOk} onCancel={handleAddCancel} confirmLoading={loading}>
         <Form form={addForm} layout="vertical" initialValues={addFormInitialValues}>

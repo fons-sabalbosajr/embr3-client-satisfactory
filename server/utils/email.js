@@ -506,6 +506,47 @@ export const sendAccountApprovedEmail = async (to, name, loginUrl) => {
 };
 
 /**
+ * Announcement broadcast email — sent from the announcements admin module.
+ */
+export const sendAnnouncementEmail = async (to, name, title, messageHtml) => {
+  const safeName = escapeHtml(name || "User");
+  const safeTitle = escapeHtml(title || "Announcement");
+
+  const body = `
+    <p style="margin:0 0 6px;font-size:15px;font-weight:600;color:${BRAND.textDark};">Hello, ${safeName}</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:${BRAND.textMuted};">
+      A new announcement has been published in the
+      <strong style="color:${BRAND.textDark};">Online Customer Satisfaction Measurement Portal</strong>.
+    </p>
+    ${infoBox("#F0F7FF", BRAND.blue, `
+      <p style="margin:0 0 8px;font-size:13px;color:${BRAND.textMuted};line-height:1.6;">
+        <strong style="color:${BRAND.textDark};">Announcement Title</strong>
+      </p>
+      <p style="margin:0;font-size:15px;font-weight:600;color:${BRAND.textDark};">${safeTitle}</p>
+    `)}
+    <div style="margin:16px 0 0;font-size:14px;line-height:1.7;color:${BRAND.textMuted};">
+      ${messageHtml || ""}
+    </div>
+    ${separator()}
+    <p style="margin:0;font-size:12px;color:${BRAND.textLight};line-height:1.6;">
+      This message was sent from the announcements module of the EMB Region III Online CSM Portal.
+    </p>`;
+
+  const html = corporateEmail({
+    headerTitle: "Portal Announcement",
+    headerSubtitle: "Administrative Broadcast",
+    headerAccent: BRAND.blue,
+    body,
+  });
+
+  return sendMailUnified({
+    to,
+    subject: `${safeTitle} \u2014 EMB Region III Online CSM Portal`,
+    html,
+  });
+};
+
+/**
  * Test/Diagnostic Email — sent from admin panel to verify SMTP configuration.
  */
 export const sendTestEmail = async (to) => {

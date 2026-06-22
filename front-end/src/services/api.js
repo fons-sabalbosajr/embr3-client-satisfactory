@@ -82,6 +82,15 @@ export const updateFeedback = (id, updatedFeedback) =>
 
 export const getClientSatisfactoryData = () => API.get("/client-satisfactory");
 
+// Lightweight count helper for the public Home page.
+// Derives the total submissions count from the existing endpoint so the
+// caller can read `res.data.count`.
+export const getFeedbackCount = async () => {
+  const res = await API.get("/client-satisfactory");
+  const count = Array.isArray(res?.data) ? res.data.length : 0;
+  return { data: { count } };
+};
+
 export const forgotPassword = (email) =>
   API.post("/auth/forgot-password", { email });
 export const resetPassword = (payload) =>
@@ -98,12 +107,19 @@ export const updatePreferences = (prefs) => API.put(`/auth/preferences`, prefs);
 // Database / infrastructure helpers for DeveloperSettings.DangerZone
 export const getDbStatus = () => API.get(`/admin/db/status`);
 export const connectDb = () => API.post(`/admin/db/connect`);
+export const getDbStats = () => API.get(`/admin/db/stats`);
+export const getDbCollections = () => API.get(`/admin/db/collections`);
+
+// Application logs (admin)
+export const getAppLogs = (params) => API.get(`/admin/logs`, { params });
+export const clearAppLogs = (params) => API.delete(`/admin/logs`, { params });
 
 // Announcements
 export const getAnnouncements = (params) => API.get('/announcements', { params });
 export const createAnnouncement = (payload) => API.post('/announcements', payload);
 export const updateAnnouncement = (id, payload) => API.put(`/announcements/${id}`, payload);
 export const deleteAnnouncement = (id) => API.delete(`/announcements/${id}`);
+export const sendAnnouncementEmailApi = (id) => API.post(`/announcements/${id}/send-email`);
 
 // Service Categories (for Services Availed)
 export const getServiceCategories = () => API.get('/service-categories');

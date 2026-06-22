@@ -5,6 +5,7 @@ import {
   FileTextOutlined,
   NotificationOutlined,
   SettingOutlined,
+  FileSearchOutlined,
   // You might want to import more specific icons for sub-items like:
   // PieChartOutlined, // For Measurement
   // DownloadOutlined, // For Extract Data
@@ -42,6 +43,11 @@ const menuItems = [
     key: "announcements",
     icon: <NotificationOutlined />,
     label: "Announcements",
+  },
+  {
+    key: "app-logs",
+    icon: <FileSearchOutlined />,
+    label: "App Logs",
   },
   {
     key: "settings",

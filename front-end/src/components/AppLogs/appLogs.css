@@ -1,10 +1,10 @@
-/* backup.css — Database Backup & Diagnostics */
+/* appLogs.css — Application Logs page */
 
-.backup-page {
+.applogs-page {
   padding: 4px 4px 16px;
 }
 
-.backup-header {
+.applogs-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -13,7 +13,7 @@
   margin-bottom: 20px;
 }
 
-.backup-title {
+.applogs-title {
   margin: 0 0 2px 0 !important;
   font-weight: 700;
   color: #1a1a2e;
@@ -22,31 +22,35 @@
   gap: 10px;
 }
 
-body[data-theme="dark"] .backup-title {
+body[data-theme="dark"] .applogs-title {
   color: #eaeaea;
 }
 
-.backup-card {
-  border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+.applogs-stats {
+  margin-bottom: 20px;
 }
 
-.backup-stat-card {
+.al-stat-card {
   border-radius: 10px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.backup-stat-card:hover {
+.al-stat-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
 }
 
-.backup-stat-card .ant-statistic-title {
+.al-stat-card .ant-statistic-title {
   font-size: 13px !important;
 }
 
-.backup-stat-card .ant-statistic-content {
-  font-size: 20px !important;
+.al-stat-card .ant-statistic-content {
+  font-size: 22px !important;
   font-weight: 700;
+}
+
+.applogs-table-card {
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }

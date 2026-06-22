@@ -23,6 +23,7 @@ const Announcements = lazy(() => import("./components/Announcements/Announcement
 const DataConfig = lazy(() => import("./components/Settings/DataConfig/DataConfig"));
 const Accounts = lazy(() => import("./components/Settings/Accounts/Accounts"));
 const BackupData = lazy(() => import("./components/Settings/Backup/Backup"));
+const AppLogs = lazy(() => import("./components/AppLogs/AppLogs"));
 import MaintenancePage from "./components/MaintenancePage";
 import RequirePermission from "./components/auth/RequirePermission";
 
@@ -228,6 +229,14 @@ const MainApp = () => {
           <Route path="reports/generate-report" element={<GenerateReport />} />
           <Route path="reports/extract" element={<ExtractData />} />
           <Route path="announcements" element={<Announcements />} />
+          <Route
+            path="logs"
+            element={
+              <RequirePermission anyOf={["canManageUsers"]}>
+                <AppLogs />
+              </RequirePermission>
+            }
+          />
           <Route
             path="settings/account"
             element={

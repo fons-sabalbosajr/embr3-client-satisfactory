@@ -31,7 +31,12 @@ function ExtractData() {
         const data = Array.isArray(res?.data) ? res.data : [];
         const mapped = data.map((entry) => {
           const labeled = entry.answersLabeled || {};
-          const services = labeled['Service Availed'] || [];
+          const rawServices = labeled['Service Availed'];
+          const services = Array.isArray(rawServices)
+            ? rawServices
+            : rawServices
+            ? [rawServices]
+            : [];
           const assisted = labeled['Assisted Personnel'] || '';
           const companyOrAgency =
             labeled['Company Name'] ||

@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { authMiddleware } from "../middleware/auth.js";
 import { requirePermission } from "../middleware/permission.js";
 import { getEmailHealth, sendTestEmail } from "../utils/email.js";
+import Log from "../models/Log.js";
 
 const router = express.Router();
 
@@ -99,6 +100,79 @@ router.get(
   }
 );
 
+// GET /api/admin/db/stats — detailed database + per-collection statistics
+router.get(
+  "/db/stats",
+  authMiddleware,
+  requirePermission("canManageUsers"),
+  async (req, res) => {
+    try {
+      const conn = mongoose.connection;
+      const db = conn.db;
+      if (!db) return res.status(500).json({ message: "Database not available" });
+
+      let dbStats = {};
+      try {
+        dbStats = await db.stats();
+      } catch (e) {
+        dbStats = {};
+      }
+
+      const cols = await db.listCollections().toArray();
+      const collections = [];
+      for (const c of cols) {
+        try {
+          const count = await db.collection(c.name).estimatedDocumentCount();
+          let cs = {};
+          try {
+            cs = await db.command({ collStats: c.name });
+          } catch {
+            cs = {};
+          }
+          collections.push({
+            name: c.name,
+            type: c.type || "collection",
+            count,
+            size: cs.size || 0,
+            storageSize: cs.storageSize || 0,
+            totalIndexSize: cs.totalIndexSize || 0,
+            nindexes: cs.nindexes || 0,
+          });
+        } catch (e) {
+          collections.push({ name: c.name, count: null });
+        }
+      }
+      collections.sort((a, b) => a.name.localeCompare(b.name));
+
+      res.json({
+        connection: {
+          state: connectionStateName(conn.readyState),
+          readyState: conn.readyState,
+          name: conn.name || db.databaseName || null,
+          host: conn.host || null,
+          port: conn.port || null,
+          mongooseVersion: mongoose.version,
+        },
+        db: {
+          name: db.databaseName,
+          collections: dbStats.collections || collections.length,
+          objects: dbStats.objects || 0,
+          dataSize: dbStats.dataSize || 0,
+          storageSize: dbStats.storageSize || 0,
+          indexes: dbStats.indexes || 0,
+          indexSize: dbStats.indexSize || 0,
+          avgObjSize: dbStats.avgObjSize || 0,
+        },
+        collections,
+        generatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("Error getting DB stats:", err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 // GET /api/admin/db/export?collection=NAME&format=json|csv
 router.get(
   "/db/export",
@@ -186,6 +260,82 @@ router.post(
     } catch (err) {
       console.error("Test email send error:", err);
       res.status(500).json({ ok: false, error: err.message || String(err) });
+    }
+  }
+);
+
+// GET /api/admin/logs — paginated application logs with optional filters
+router.get(
+  "/logs",
+  authMiddleware,
+  requirePermission("canManageUsers"),
+  async (req, res) => {
+    try {
+      const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+      const pageSize = Math.min(
+        200,
+        Math.max(1, parseInt(req.query.pageSize, 10) || 25)
+      );
+      const { level, search } = req.query;
+
+      const filter = {};
+      if (level && ["info", "warn", "error", "audit"].includes(level)) {
+        filter.level = level;
+      }
+      if (search) {
+        const rx = new RegExp(
+          String(search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+          "i"
+        );
+        filter.$or = [
+          { message: rx },
+          { path: rx },
+          { userName: rx },
+          { method: rx },
+        ];
+      }
+
+      const [items, total, levelCounts] = await Promise.all([
+        Log.find(filter)
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * pageSize)
+          .limit(pageSize)
+          .lean(),
+        Log.countDocuments(filter),
+        Log.aggregate([{ $group: { _id: "$level", count: { $sum: 1 } } }]),
+      ]);
+
+      const counts = { info: 0, warn: 0, error: 0, audit: 0 };
+      for (const lc of levelCounts) {
+        if (lc._id && counts[lc._id] !== undefined) counts[lc._id] = lc.count;
+      }
+
+      res.json({ items, total, page, pageSize, counts });
+    } catch (err) {
+      console.error("Error fetching logs:", err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// DELETE /api/admin/logs — clear logs (optionally older than N days)
+router.delete(
+  "/logs",
+  authMiddleware,
+  requirePermission("canManageUsers"),
+  async (req, res) => {
+    try {
+      const olderThanDays = parseInt(req.query.olderThanDays, 10);
+      let filter = {};
+      if (Number.isFinite(olderThanDays) && olderThanDays > 0) {
+        const cutoff = new Date(Date.now() - olderThanDays * 86400000);
+        filter = { createdAt: { $lt: cutoff } };
+      }
+      const result = await Log.deleteMany(filter);
+      res.json({ deletedCount: result.deletedCount || 0 });
+    } catch (err) {
+      console.error("Error clearing logs:", err);
+      res.status(500).json({ error: err.message });
     }
   }
 );

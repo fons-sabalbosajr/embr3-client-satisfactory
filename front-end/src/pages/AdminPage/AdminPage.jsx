@@ -250,6 +250,8 @@ function AdminPage() {
   // Effect for saving dark mode preference
   useEffect(() => {
     setEncryptedItem("darkMode", JSON.stringify(isDarkMode));
+    // Expose theme to plain CSS (modals/portals render at document.body level)
+    document.body.setAttribute("data-theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode]);
 
   const handleLogout = () => {
@@ -275,6 +277,7 @@ function AdminPage() {
     "/admin/reports/generate-report": "generate-report",
     "/admin/reports/extract": "extract-data",
     "/admin/announcements": "announcements",
+    "/admin/logs": "app-logs",
     "/admin/settings/data-config": "data-configuration",
     "/admin/settings/account": "account-settings",
     "/admin/settings/developer": "developer-settings",
@@ -288,6 +291,7 @@ function AdminPage() {
     "generate-report": "/admin/reports/generate-report",
     "extract-data": "/admin/reports/extract",
     announcements: "/admin/announcements",
+    "app-logs": "/admin/logs",
     "data-configuration": "/admin/settings/data-config",
     "account-settings": "/admin/settings/account",
     "developer-settings": "/admin/settings/developer",
@@ -410,8 +414,10 @@ function AdminPage() {
                   style={{
                     color: contrastText(currentTheme.components.Layout.siderBg),
                     fontSize: "10px",
-                    lineHeight: ".5",
+                    lineHeight: "1.3",
                     whiteSpace: "nowrap",
+                    display: "block",
+                    marginTop: 2,
                   }}
                 >
                   Online Client Satisfaction <br /> Measurement

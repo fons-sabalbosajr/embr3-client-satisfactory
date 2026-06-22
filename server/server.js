@@ -19,6 +19,7 @@ import configRoute from "./routes/config.js";
 import adminRoute from "./routes/admin.js";
 import announcementsRoute from "./routes/announcements.js";
 import serviceCategoriesRoute from "./routes/serviceCategories.js";
+import requestLogger from "./middleware/requestLogger.js";
 
 dotenv.config();
 
@@ -129,6 +130,9 @@ app.use("/api/auth/resend-verification", authLimiter);
 
 // Limit JSON body size
 app.use(express.json({ limit: "500kb" }));
+
+// Application request/audit logging (records mutations and errors)
+app.use(requestLogger);
 
 // Register socket.io instance on app for controllers
 app.set("io", io);

@@ -9,6 +9,72 @@
   border-radius: 8px;
 }
 
+.data-config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.data-config-header .data-config-title {
+  margin: 0 0 2px 0 !important;
+  color: #1a1a2e;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+body[data-theme="dark"] .data-config-header .data-config-title {
+  color: #eaeaea;
+}
+
+.data-config-stats {
+  margin-bottom: 20px;
+}
+
+.dc-stat-card {
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.dc-stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.dc-stat-card .ant-statistic-title {
+  font-size: 13px !important;
+}
+
+.dc-stat-card .ant-statistic-content {
+  font-size: 22px !important;
+  font-weight: 700;
+}
+
+.dc-table-card {
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.questions-table-compact .ant-table-wrapper,
+.questions-table-compact .ant-table-container,
+.questions-table-compact .ant-table-content {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.questions-table-compact .ant-table {
+  min-width: 1338px;
+}
+
+.questions-table-compact .ant-table-cell {
+  word-break: normal;
+}
+
 h1 {
   color: #1890ff;
   margin-bottom: 24px;
@@ -23,6 +89,7 @@ h1 {
 
 .search-input {
   width: 400px;
+  max-width: 100%;
 }
 
 /* --- Table Controls (Search & Add Button) --- */
@@ -140,6 +207,10 @@ h1 {
   .questions-table-compact .ant-table-thead > tr > th {
     font-size: 11px; /* Adjust header font size */
     padding: 10px 12px;
+  }
+
+  .questions-table-compact .ant-table {
+    min-width: 1338px;
   }
 
   /* ✨ Adjust font size for Tags within the table for tablets */

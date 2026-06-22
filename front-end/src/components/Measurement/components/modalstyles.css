@@ -167,3 +167,59 @@
 .view-modal-remarks {
   min-height: 80px;
 }
+
+.view-modal-remarks-card {
+  background: #fafafa;
+}
+
+[data-theme="dark"] .view-modal-remarks-card {
+  background: #1f1f1f;
+}
+
+/* ── Dark mode overrides ──
+   These components hardcode light backgrounds/text that break under antd's
+   dark algorithm. `data-theme="dark"` is set on <body> by the admin layout,
+   so portal-rendered modals inherit it too. */
+[data-theme="dark"] .view-modal-descriptions .ant-descriptions-item-label {
+  background: #1f1f1f;
+  color: #d0d0d0;
+}
+
+[data-theme="dark"] .view-modal-table .ant-table-thead > tr > th {
+  background: #1f1f1f;
+}
+
+[data-theme="dark"] .csm-banner-content {
+  color: #e6e6e6;
+}
+
+[data-theme="dark"] .new-row-highlight {
+  background-color: #112a3a !important;
+}
+
+[data-theme="dark"] .client-types-1 .ant-alert,
+[data-theme="dark"] .client-types-2 .ant-alert,
+[data-theme="dark"] .client-types-3 .ant-alert {
+  background: linear-gradient(-45deg, #15233a, #1a2740, #1f2a45);
+  background-size: 400% 400%;
+  color: #e6e6e6;
+}
+
+[data-theme="dark"] .client-types-1 .ant-alert *,
+[data-theme="dark"] .client-types-2 .ant-alert *,
+[data-theme="dark"] .client-types-3 .ant-alert * {
+  color: #e6e6e6;
+}
+
+@keyframes flashRowDark {
+  0% {
+    background-color: #15406b;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+[data-theme="dark"] .new-row-highlight {
+  animation: flashRowDark 2s ease-out;
+}

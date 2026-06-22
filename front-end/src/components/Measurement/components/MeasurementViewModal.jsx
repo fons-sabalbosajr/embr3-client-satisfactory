@@ -183,12 +183,38 @@ function MeasurementViewModal({ visible, onClose, record }) {
   ];
 
   // ── Summary Counts ──
-  const ccPositive = citizensCharterData.filter(({ answer }) =>
-    ["yes", "agree"].some((k) =>
-      String(answer || "").toLowerCase().includes(k)
-    )
-  ).length;
-  const ccNegative = citizensCharterData.length - ccPositive;
+  // Classify Citizen's Charter answers by their actual option text.
+  // CC answers are full-text options (e.g. "Easy to See", "Did not help"),
+  // not "Yes"/"Agree", so they must be matched against the real choices.
+  const classifyCC = (answer) => {
+    const a = String(Array.isArray(answer) ? answer.join(" ") : answer || "")
+      .toLowerCase()
+      .trim();
+    if (!a || a === "n/a" || a === "na") return "na";
+    const positive = [
+      "i know what a cc is and i saw",
+      "learned of the cc only when i saw",
+      "easy to see", // also matches "somewhat easy to see"
+      "help very much",
+      "somewhat helped",
+      "yes",
+    ];
+    const negative = [
+      "did not see this office",
+      "do not know what a cc is",
+      "difficult to see",
+      "not visible at all",
+      "did not help",
+    ];
+    if (positive.some((k) => a.includes(k))) return "positive";
+    if (negative.some((k) => a.includes(k))) return "negative";
+    return "neutral";
+  };
+
+  const ccClassified = citizensCharterData.map(({ answer }) => classifyCC(answer));
+  const ccPositive = ccClassified.filter((c) => c === "positive").length;
+  const ccNeutral = ccClassified.filter((c) => c === "neutral").length;
+  const ccNegative = ccClassified.filter((c) => c === "negative").length;
 
   const sqdPositive = sqdData.filter(({ answer }) =>
     ["strongly agree", "agree"].includes(String(answer || "").toLowerCase())
@@ -223,7 +249,7 @@ function MeasurementViewModal({ visible, onClose, record }) {
                 Citizen's Charter
               </Title>
               <Row gutter={16}>
-                <Col xs={12} sm={8}>
+                <Col xs={8}>
                   <Card
                     size="small"
                     className="view-modal-stat-card stat-positive"
@@ -236,7 +262,20 @@ function MeasurementViewModal({ visible, onClose, record }) {
                     />
                   </Card>
                 </Col>
-                <Col xs={12} sm={8}>
+                <Col xs={8}>
+                  <Card
+                    size="small"
+                    className="view-modal-stat-card stat-neutral"
+                  >
+                    <Statistic
+                      title="Neutral"
+                      value={ccNeutral}
+                      prefix={<MinusCircleOutlined />}
+                      valueStyle={{ color: "#fa8c16" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={8}>
                   <Card
                     size="small"
                     className="view-modal-stat-card stat-negative"
@@ -338,7 +377,7 @@ function MeasurementViewModal({ visible, onClose, record }) {
           {remarks ? (
             <>
               <Title level={5}>Remarks / Suggestions</Title>
-              <Card size="small" style={{ background: "#fafafa" }}>
+              <Card size="small" className="view-modal-remarks-card">
                 <Text>{remarks}</Text>
               </Card>
             </>

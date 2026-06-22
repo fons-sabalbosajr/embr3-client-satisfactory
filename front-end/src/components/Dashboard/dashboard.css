@@ -6,9 +6,13 @@
   border-radius: 6px;
 }
 
+.dashboard-header {
+  margin-bottom: 24px;
+}
+
 .dashboard-title {
   text-align: left;
-  margin-bottom: 24px;
+  margin-bottom: 2px !important;
   color: #1a1a2e;
   font-size: 1.5em;
   font-weight: 700;
@@ -17,6 +21,14 @@
   justify-content: flex-start;
   gap: 8px;
   letter-spacing: -0.3px;
+}
+
+.dashboard-subtitle {
+  font-size: 13px;
+}
+
+body[data-theme="dark"] .dashboard-title {
+  color: #eaeaea;
 }
 
 .dashboard-card {
@@ -30,6 +42,63 @@
 .dashboard-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
+}
+
+/* ── Modern KPI tiles ── */
+.kpi-tile .ant-card-body {
+  padding: 18px 20px;
+}
+
+.kpi-tile-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.kpi-icon {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+}
+
+.kpi-tile {
+  position: relative;
+}
+
+.kpi-tile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.kpi-blue::before { background: #1677ff; }
+.kpi-orange::before { background: #fa8c16; }
+.kpi-green::before { background: #52c41a; }
+.kpi-purple::before { background: #722ed1; }
+
+.kpi-blue .kpi-icon { background: linear-gradient(135deg, #1677ff, #4096ff); }
+.kpi-orange .kpi-icon { background: linear-gradient(135deg, #fa8c16, #ffa940); }
+.kpi-green .kpi-icon { background: linear-gradient(135deg, #52c41a, #73d13d); }
+.kpi-purple .kpi-icon { background: linear-gradient(135deg, #722ed1, #9254de); }
+
+.kpi-tile .ant-statistic-title {
+  font-size: 13px !important;
+  margin-bottom: 2px;
+}
+
+.kpi-tile .ant-statistic-content {
+  font-size: 26px !important;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 /* Specific styling for Ant Design Statistic values */
