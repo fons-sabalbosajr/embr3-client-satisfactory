@@ -211,11 +211,14 @@ if (IS_PROD) {
   const distPath = path.default.join(__dirname, "../front-end/dist");
 
   app.use(express.static(distPath));
-  // SPA fallback: serve index.html for any non-API route
-  app.get("*", (req, res) => {
-    if (!req.path.startsWith("/api") && !req.path.startsWith("/socket.io")) {
-      res.sendFile(path.default.join(distPath, "index.html"));
+  // SPA fallback: serve index.html for any non-API/non-socket route.
+  // Use plain middleware instead of app.get("*") because Express 5 rejects
+  // the legacy wildcard pattern through path-to-regexp.
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
+      return next();
     }
+    return res.sendFile(path.default.join(distPath, "index.html"));
   });
 }
 
