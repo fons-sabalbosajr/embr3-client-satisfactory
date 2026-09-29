@@ -19,6 +19,7 @@ import configRoute from "./routes/config.js";
 import adminRoute from "./routes/admin.js";
 import announcementsRoute from "./routes/announcements.js";
 import serviceCategoriesRoute from "./routes/serviceCategories.js";
+import veraRoute from "./routes/vera.js";
 import requestLogger from "./middleware/requestLogger.js";
 
 dotenv.config();
@@ -128,6 +129,17 @@ app.use("/api/auth/signup", authLimiter);
 app.use("/api/auth/forgot-password", authLimiter);
 app.use("/api/auth/resend-verification", authLimiter);
 
+// VERA chat burst limiter (the public landing-page chat has a tighter per-IP
+// ceiling of its own inside routes/vera.js).
+const veraLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, code: "rate_limited", message: "Too many assistant requests, please slow down." },
+});
+app.use("/api/vera", veraLimiter);
+
 // Limit JSON body size
 app.use(express.json({ limit: "500kb" }));
 
@@ -196,6 +208,7 @@ app.use("/api/config", configRoute);
 app.use("/api/admin", adminRoute);
 app.use("/api/announcements", announcementsRoute);
 app.use("/api/service-categories", serviceCategoriesRoute);
+app.use("/api/vera", veraRoute);
 
 // Lightweight health endpoint for Render/uptime checks
 app.get("/api/health", (req, res) => {

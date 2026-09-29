@@ -24,6 +24,8 @@ const DataConfig = lazy(() => import("./components/Settings/DataConfig/DataConfi
 const Accounts = lazy(() => import("./components/Settings/Accounts/Accounts"));
 const BackupData = lazy(() => import("./components/Settings/Backup/Backup"));
 const AppLogs = lazy(() => import("./components/AppLogs/AppLogs"));
+const VeraSettings = lazy(() => import("./components/Settings/VeraSettings/VeraSettings"));
+import Landing from "./pages/Landing/Landing";
 import MaintenancePage from "./components/MaintenancePage";
 import RequirePermission from "./components/auth/RequirePermission";
 
@@ -181,8 +183,22 @@ const MainApp = () => {
       }}
     >
       <Routes>
+        {/* Corporate landing page. The legacy portal chooser stays at /menu. */}
         <Route
           path="/"
+          element={
+            maintenanceMode && !isDeveloper ? (
+              <MaintenancePage />
+            ) : (
+              <Landing
+                toggleColorScheme={toggleColorScheme}
+                colorScheme={colorScheme}
+              />
+            )
+          }
+        />
+        <Route
+          path="/menu"
           element={
             maintenanceMode && !isDeveloper ? (
               <MaintenancePage />
@@ -269,6 +285,14 @@ const MainApp = () => {
             element={
               <RequirePermission anyOf={["canManageUsers"]}>
                 <BackupData />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="settings/vera"
+            element={
+              <RequirePermission anyOf={["canManageUsers"]}>
+                <VeraSettings />
               </RequirePermission>
             }
           />

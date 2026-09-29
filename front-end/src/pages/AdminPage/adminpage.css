@@ -55,3 +55,11 @@
   background: rgba(255, 255, 255, 0.15);
   border-radius: 2px;
 }
+
+/* Backdrop behind the sidebar when it is opened as an overlay on phones */
+.admin-sider-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1190;
+}

@@ -26,6 +26,7 @@ function AdminMenu({ selectedKey, onMenuClick, menuTheme = "light" }) {
             if (ch.key === "developer-settings") return isDeveloper;
             if (ch.key === "account-settings") return true; // self settings allowed
             if (ch.key === "backup-data") return canManageUsers || isDeveloper;
+            if (ch.key === "vera-settings") return canManageUsers || isDeveloper;
             if (ch.key === "data-configuration") return !!perms.canEdit || canManageUsers || isDeveloper;
             return true;
           });
@@ -48,7 +49,7 @@ function AdminMenu({ selectedKey, onMenuClick, menuTheme = "light" }) {
     if (["generate-report", "extract-data"].includes(selectedKey))
       return ["reports"];
     if (
-      ["data-configuration", "account-settings", "backup-data"].includes(
+      ["data-configuration", "account-settings", "developer-settings", "backup-data", "vera-settings"].includes(
         selectedKey
       )
     )

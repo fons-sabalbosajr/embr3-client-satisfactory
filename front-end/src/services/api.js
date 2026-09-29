@@ -131,3 +131,14 @@ export const deleteServiceCategory = (id) => API.delete(`/service-categories/${i
 
 // Admin utility: sync Q5 services from env on server
 export const syncServicesFromEnv = () => API.post('/question/sync-services-from-env');
+
+// VERA — Virtual Evaluation & Response Assistant
+export const getVeraStatus = () => API.get('/vera/status');
+export const veraChat = (payload, config) => API.post('/vera/chat', payload, config);
+export const getVeraInsights = () => API.get('/vera/insights');
+export const getVeraPublicStatus = () => API.get('/vera/public-status');
+export const veraPublicChat = (payload, config) => API.post('/vera/public-chat', payload, config);
+export const getVeraSettings = () => API.get('/vera/settings');
+export const updateVeraSettings = (payload) => API.put('/vera/settings', payload);
+export const testVeraConnection = () => API.post('/vera/settings/test');
+export const clearVeraKey = () => API.delete('/vera/settings/key');

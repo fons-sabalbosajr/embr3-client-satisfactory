@@ -38,6 +38,8 @@ import {
 } from "recharts";
 import * as api from "../../services/api";
 import socket from "../../utils/socket";
+import { classifyCcAnswer, SENTIMENT } from "../../utils/responseClassifier";
+import VeraCard from "../Vera/VeraCard";
 import "./dashboard.css";
 
 const { Title, Text } = Typography;
@@ -112,37 +114,13 @@ function Dashboard() {
   // CC answers are full-text options (awareness, visibility, helpfulness),
   // so a plain Yes/No match misses everything. Legacy Yes/No is still handled.
   function normalizeCcAnswer(val) {
-    if (!val) return null;
-    const raw = Array.isArray(val) ? val.join(" ") : String(val);
-    const s = raw.trim().toLowerCase();
-    if (!s) return null;
-
-    // N/A variants -> Neutral bucket
-    const cleaned = s.replace(/[^a-z]/g, "");
-    if (cleaned === "na" || cleaned === "notapplicable") return "Neutral";
-    if (s.includes("skip question")) return "Neutral";
-
-    const positive = [
-      "i know what a cc is and i saw",
-      "learned of the cc only when i saw",
-      "easy to see", // also matches "somewhat easy to see"
-      "help very much",
-      "somewhat helped",
-    ];
-    const negative = [
-      "did not see this office",
-      "do not know what a cc is",
-      "difficult to see",
-      "not visible at all",
-      "did not help",
-    ];
-    if (positive.some((k) => s.includes(k))) return "Positive";
-    if (negative.some((k) => s.includes(k))) return "Negative";
-
-    // Legacy simple answers
-    if (s === "yes" || s === "y" || /\byes\b/i.test(raw)) return "Positive";
-    if (s === "no" || s === "n" || /\bno\b/i.test(raw)) return "Negative";
-
+    // Shared classifier (utils/responseClassifier) — same buckets as the
+    // Measurement view modal so both screens agree. N/A lands in Neutral here
+    // so the three-way CC chart still accounts for every answered item.
+    const c = classifyCcAnswer(val);
+    if (!c) return null;
+    if (c === SENTIMENT.POSITIVE) return "Positive";
+    if (c === SENTIMENT.NEGATIVE) return "Negative";
     return "Neutral";
   }
 
@@ -788,13 +766,16 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      <div className="dashboard-header">
-        <Title level={3} className="dashboard-title">
-          <BarChartOutlined /> Admin Dashboard
-        </Title>
-        <Text type="secondary" className="dashboard-subtitle">
-          Client satisfaction overview &amp; survey analytics
-        </Text>
+      <div className="dashboard-header dashboard-header-row">
+        <div>
+          <Title level={3} className="dashboard-title">
+            <BarChartOutlined /> Admin Dashboard
+          </Title>
+          <Text type="secondary" className="dashboard-subtitle">
+            Client satisfaction overview &amp; survey analytics
+          </Text>
+        </div>
+        <VeraCard />
       </div>
 
       {loading ? (

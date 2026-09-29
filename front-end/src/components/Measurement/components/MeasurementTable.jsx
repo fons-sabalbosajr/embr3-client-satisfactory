@@ -155,11 +155,11 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
     {
       title: "Survey Type",
       key: "surveyType",
-      width: 120,
+      width: 110,
       render: (_, record) => {
         const type = inferSurveyType(record);
         return (
-          <Tag color={type === "internal" ? "blue" : "green"}>
+          <Tag color={type === "internal" ? "blue" : "green"} style={{ marginInlineEnd: 0 }}>
             {type === "internal" ? "Internal" : "External"}
           </Tag>
         );
@@ -171,14 +171,17 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
       onFilter: (value, record) => inferSurveyType(record) === value,
     },
     {
-      title: "Client Type",
+      title: "Client",
+      key: "client",
+      width: 220,
       render: (_, record) => {
-        const company = record.answersLabeled?.["Company Name"];
-        const type = record.answersLabeled?.["Customer Type"];
-        return company ? (
+        const labeled = record.answersLabeled || {};
+        const name = labeled["Company Name"] || labeled["Agency Name"] || labeled["Employee Name"];
+        const type = labeled["Customer Type"];
+        return name ? (
           <div>
-            <div style={{ fontWeight: 500 }}>{company}</div>
-            <div style={{ fontSize: 12, color: "#888" }}>{type}</div>
+            <div className="measurement-client-name" title={name}>{name}</div>
+            <div className="measurement-client-type">{type}</div>
           </div>
         ) : (
           <div>{type}</div>
@@ -200,6 +203,9 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
     {
       title: "Gender",
       dataIndex: ["answersLabeled", "Gender"],
+      width: 100,
+      responsive: ["md"],
+      render: (v) => v || <span style={{ color: "#bbb" }}>—</span>,
       filters: Array.from(
         new Set(
           tableData.map((d) => d.answersLabeled?.["Gender"]).filter(Boolean)
@@ -213,8 +219,11 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
 
     {
       title: "Service Availed",
+      key: "services",
+      width: 320,
       render: (_, record) => {
-        const services = record.answersLabeled?.["Service Availed"] || [];
+        const raw = record.answersLabeled?.["Service Availed"];
+        const services = Array.isArray(raw) ? raw : raw ? [raw] : [];
         const serviceColors = {
           "ECC Online": "#0b5f74",
           "CNC Online": "#bc6e00",
@@ -232,17 +241,17 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
           "PCO Online": "#263238",
         };
 
+        if (!services.length) return <span style={{ color: "#bbb" }}>—</span>;
         return (
           <div className="service-tags-container">
             {services.map((service) => (
               <Tag
                 key={service}
+                title={service}
                 style={{
-                  backgroundColor: serviceColors[service] || "#aaa",
+                  backgroundColor: serviceColors[service] || "#5b6b7a",
                   color: "#fff",
                   border: "none",
-                  marginBottom: 4,
-                  display: "inline-block",
                 }}
               >
                 {service}
@@ -253,26 +262,44 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
       },
       filters: Array.from(
         new Set(
-          tableData.flatMap((d) => d.answersLabeled?.["Service Availed"] || [])
+          tableData.flatMap((d) => {
+            const raw = d.answersLabeled?.["Service Availed"];
+            return Array.isArray(raw) ? raw : raw ? [raw] : [];
+          })
         )
       ).map((service) => ({
         text: service,
         value: service,
       })),
-      onFilter: (value, record) =>
-        (record.answersLabeled?.["Service Availed"] || []).includes(value),
+      filterSearch: true,
+      onFilter: (value, record) => {
+        const raw = record.answersLabeled?.["Service Availed"];
+        const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+        return list.includes(value);
+      },
     },
     {
-      title: "Submitted At",
+      title: "Submitted",
       dataIndex: "submittedAt",
-      render: (d) => dayjs(d).format("MM/DD/YYYY hh:mm A"),
-      //sorter: (a, b) => new Date(b.submittedAt) - new Date(a.submittedAt),
-      //defaultSortOrder: "descend",
+      key: "submittedAt",
+      width: 150,
+      render: (d) => (
+        <div style={{ whiteSpace: "nowrap" }}>
+          <div>{dayjs(d).format("MM/DD/YYYY")}</div>
+          <div style={{ fontSize: 12, color: "#888" }}>{dayjs(d).format("hh:mm A")}</div>
+        </div>
+      ),
+      sorter: (a, b) => new Date(a.submittedAt) - new Date(b.submittedAt),
+      defaultSortOrder: "descend",
     },
     {
       title: "Actions",
+      key: "actions",
+      width: 118,
+      fixed: "right",
+      align: "center",
       render: (_, record) => (
-        <>
+        <div className="measurement-actions">
           <Tooltip title="Review">
             <Button
               type="primary"
@@ -287,22 +314,21 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
               size="small"
               icon={<EditOutlined />}
               onClick={() => setEditing(record)}
-              style={{ marginLeft: 8 }}
             />
           </Tooltip>
           <Popconfirm
             title="Confirm delete?"
             onConfirm={() => handleDelete(record._id)}
+            placement="topRight"
           >
             <Button
               icon={<DeleteOutlined />}
               danger
               type="primary"
               size="small"
-              style={{ marginLeft: 8 }}
             />
           </Popconfirm>
-        </>
+        </div>
       ),
     },
   ];
@@ -351,10 +377,14 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
         columns={columns}
         rowClassName={(record) => (record._new ? "new-row-highlight" : "")}
         size="small"
+        className="measurement-table"
+        scroll={{ x: 900 }}
         pagination={{
           current: currentPage,
           pageSize,
           showSizeChanger: true,
+          responsive: true,
+          showTotal: (total, range) => `${range[0]}–${range[1]} of ${total}`,
           pageSizeOptions: ["5", "10", "20", "50", "100"],
           onChange: (page, size) => {
             setCurrentPage(page);

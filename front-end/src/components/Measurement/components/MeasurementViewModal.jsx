@@ -19,11 +19,54 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   MinusCircleOutlined,
+  StopOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import {
+  classifyCcAnswer,
+  classifySqdAnswer,
+  normalizeSqdAnswer,
+  isCcQuestion,
+  isSqdQuestion,
+  tallySentiment,
+  SENTIMENT,
+} from "../../../utils/responseClassifier";
 import "./modalstyles.css";
 
 const { Title, Text } = Typography;
+
+const SENTIMENT_TAG = {
+  [SENTIMENT.POSITIVE]: "success",
+  [SENTIMENT.NEUTRAL]: "warning",
+  [SENTIMENT.NEGATIVE]: "error",
+  [SENTIMENT.NA]: "default",
+};
+
+function SentimentTiles({ tally }) {
+  const tiles = [
+    { key: "positive", title: "Positive", icon: <CheckCircleOutlined />, color: "#389e0d", cls: "stat-positive" },
+    { key: "neutral", title: "Neutral", icon: <MinusCircleOutlined />, color: "#fa8c16", cls: "stat-neutral" },
+    { key: "negative", title: "Negative", icon: <CloseCircleOutlined />, color: "#cf1322", cls: "stat-negative" },
+    { key: "na", title: "N/A", icon: <StopOutlined />, color: "#8c8c8c", cls: "stat-na" },
+  ];
+  return (
+    <Row gutter={[12, 12]}>
+      {tiles.map((t) => (
+        <Col xs={12} sm={6} key={t.key}>
+          <Card size="small" className={`view-modal-stat-card ${t.cls}`}>
+            <Statistic
+              title={t.title}
+              value={tally[t.key]}
+              suffix={<span className="view-modal-stat-of">/ {tally.total}</span>}
+              prefix={t.icon}
+              valueStyle={{ color: t.color }}
+            />
+          </Card>
+        </Col>
+      ))}
+    </Row>
+  );
+}
 
 function MeasurementViewModal({ visible, onClose, record }) {
   if (!record) return null;
@@ -74,34 +117,30 @@ function MeasurementViewModal({ visible, onClose, record }) {
     : [];
 
   // ── Citizens Charter ──
-  const sqdKeywords = [
-    "responsiveness", "reliability", "access", "communication",
-    "costs", "integrity", "assurance", "outcome",
-  ];
-
   const citizensCharterData = Object.entries(labeled)
-    .filter(([q]) => q.toLowerCase().includes("citizen"))
+    .filter(([q]) => isCcQuestion(q))
     .map(([question, answer], index) => ({
       key: `CC${index + 1}`,
       code: `CC${index + 1}`,
       question,
       answer,
+      sentiment: classifyCcAnswer(answer),
     }));
 
+  const answerText = (text) => (Array.isArray(text) ? text.join(", ") : text);
+
   const citizenColumns = [
-    { title: "Code", dataIndex: "code", key: "code", width: 70 },
+    { title: "Code", dataIndex: "code", key: "code", width: 64 },
     { title: "Question", dataIndex: "question", key: "question" },
     {
       title: "Response",
-      dataIndex: "answer",
       key: "answer",
-      width: 140,
-      render: (text) => {
-        const lower = String(text || "").toLowerCase();
-        if (lower === "yes") return <Tag color="success">Yes</Tag>;
-        if (lower === "no") return <Tag color="error">No</Tag>;
-        return <Tag>{Array.isArray(text) ? text.join(", ") : text}</Tag>;
-      },
+      width: 220,
+      render: (_, row) => (
+        <Tag color={SENTIMENT_TAG[row.sentiment] || "default"} className="view-modal-answer-tag">
+          {answerText(row.answer) || "—"}
+        </Tag>
+      ),
     },
   ];
 
@@ -120,114 +159,52 @@ function MeasurementViewModal({ visible, onClose, record }) {
   const sqdData = [];
   let sqdCounter = 0;
 
-  const sqd0Entry = Object.entries(labeled).find(
-    ([q]) =>
-      q.trim().toLowerCase() ===
-      "i am satisfied with the service that i availed."
-  );
-  if (sqd0Entry) {
-    sqdData.push({
-      key: "SQD0",
-      code: "SQD0",
-      category: "Overall Satisfaction",
-      question: sqd0Entry[0],
-      answer: sqd0Entry[1],
-    });
-    sqdCounter = 1;
-  }
-
   Object.entries(labeled).forEach(([question, answer]) => {
-    const match = sqdMap.find(({ keyword }) =>
-      question.toLowerCase().includes(keyword)
-    );
-    if (match) {
-      const regex = new RegExp(`\\s*\\(${match.label}\\)\\s*$`, "i");
-      const cleanedQuestion = question.replace(regex, "").trim();
-      sqdData.push({
-        key: `SQD${sqdCounter}`,
-        code: `SQD${sqdCounter}`,
-        category: match.label,
-        question: cleanedQuestion,
-        answer,
-      });
-      sqdCounter++;
-    }
+    if (!isSqdQuestion(question)) return;
+    const match = sqdMap.find(({ keyword }) => question.toLowerCase().includes(keyword));
+    const cleanedQuestion = question.replace(/\s*\([^)]*\)\s*$/, "").trim();
+    sqdData.push({
+      key: `SQD${sqdCounter}`,
+      code: `SQD${sqdCounter}`,
+      category: match ? match.label : "Overall Satisfaction",
+      question: cleanedQuestion,
+      answer,
+      normalized: normalizeSqdAnswer(answer),
+      sentiment: classifySqdAnswer(answer),
+    });
+    sqdCounter++;
   });
 
-  const ratingColor = (text) => {
-    const lower = String(text || "").toLowerCase();
-    if (lower === "strongly agree") return "blue";
-    if (lower === "agree") return "green";
-    if (lower === "satisfactory" || lower === "neither agree nor disagree")
-      return "orange";
-    if (lower === "disagree") return "red";
-    if (lower === "strongly disagree") return "volcano";
+  const ratingColor = (label) => {
+    if (label === "Strongly Agree") return "blue";
+    if (label === "Agree") return "green";
+    if (label === "Neither Agree nor Disagree") return "orange";
+    if (label === "Disagree") return "red";
+    if (label === "Strongly Disagree") return "volcano";
     return "default";
   };
 
   const sqdColumns = [
-    { title: "Code", dataIndex: "code", key: "code", width: 70 },
-    { title: "Category", dataIndex: "category", key: "category", width: 140 },
+    { title: "Code", dataIndex: "code", key: "code", width: 64 },
+    { title: "Category", dataIndex: "category", key: "category", width: 150, responsive: ["sm"] },
     { title: "Question", dataIndex: "question", key: "question" },
     {
       title: "Rating",
-      dataIndex: "answer",
       key: "answer",
-      width: 150,
-      render: (text) => (
-        <Tag color={ratingColor(text)}>
-          {Array.isArray(text) ? text.join(", ") : text}
+      width: 190,
+      render: (_, row) => (
+        <Tag color={ratingColor(row.normalized)} className="view-modal-answer-tag">
+          {row.normalized || answerText(row.answer) || "—"}
         </Tag>
       ),
     },
   ];
 
   // ── Summary Counts ──
-  // Classify Citizen's Charter answers by their actual option text.
-  // CC answers are full-text options (e.g. "Easy to See", "Did not help"),
-  // not "Yes"/"Agree", so they must be matched against the real choices.
-  const classifyCC = (answer) => {
-    const a = String(Array.isArray(answer) ? answer.join(" ") : answer || "")
-      .toLowerCase()
-      .trim();
-    if (!a || a === "n/a" || a === "na") return "na";
-    const positive = [
-      "i know what a cc is and i saw",
-      "learned of the cc only when i saw",
-      "easy to see", // also matches "somewhat easy to see"
-      "help very much",
-      "somewhat helped",
-      "yes",
-    ];
-    const negative = [
-      "did not see this office",
-      "do not know what a cc is",
-      "difficult to see",
-      "not visible at all",
-      "did not help",
-    ];
-    if (positive.some((k) => a.includes(k))) return "positive";
-    if (negative.some((k) => a.includes(k))) return "negative";
-    return "neutral";
-  };
-
-  const ccClassified = citizensCharterData.map(({ answer }) => classifyCC(answer));
-  const ccPositive = ccClassified.filter((c) => c === "positive").length;
-  const ccNeutral = ccClassified.filter((c) => c === "neutral").length;
-  const ccNegative = ccClassified.filter((c) => c === "negative").length;
-
-  const sqdPositive = sqdData.filter(({ answer }) =>
-    ["strongly agree", "agree"].includes(String(answer || "").toLowerCase())
-  ).length;
-  const sqdNeutral = sqdData.filter(({ answer }) => {
-    const a = String(answer || "").toLowerCase();
-    return a === "satisfactory" || a === "neither agree nor disagree";
-  }).length;
-  const sqdNegative = sqdData.filter(({ answer }) =>
-    ["disagree", "strongly disagree"].includes(
-      String(answer || "").toLowerCase()
-    )
-  ).length;
+  // Counted from the same classifier the Dashboard uses, so a fully positive
+  // response can never show a negative count here.
+  const ccTally = tallySentiment(citizensCharterData.map((d) => d.answer), classifyCcAnswer);
+  const sqdTally = tallySentiment(sqdData.map((d) => d.answer), classifySqdAnswer);
 
   // ── Remarks ──
   const remarks = Object.entries(labeled).find(
@@ -243,98 +220,18 @@ function MeasurementViewModal({ visible, onClose, record }) {
       label: "Summary",
       children: (
         <div className="view-modal-summary">
-          <Row gutter={[16, 16]}>
+          <Row gutter={[16, 20]}>
             <Col span={24}>
               <Title level={5} style={{ marginBottom: 12 }}>
                 Citizen's Charter
               </Title>
-              <Row gutter={16}>
-                <Col xs={8}>
-                  <Card
-                    size="small"
-                    className="view-modal-stat-card stat-positive"
-                  >
-                    <Statistic
-                      title="Positive"
-                      value={ccPositive}
-                      prefix={<CheckCircleOutlined />}
-                      valueStyle={{ color: "#389e0d" }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={8}>
-                  <Card
-                    size="small"
-                    className="view-modal-stat-card stat-neutral"
-                  >
-                    <Statistic
-                      title="Neutral"
-                      value={ccNeutral}
-                      prefix={<MinusCircleOutlined />}
-                      valueStyle={{ color: "#fa8c16" }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={8}>
-                  <Card
-                    size="small"
-                    className="view-modal-stat-card stat-negative"
-                  >
-                    <Statistic
-                      title="Negative"
-                      value={ccNegative}
-                      prefix={<CloseCircleOutlined />}
-                      valueStyle={{ color: "#cf1322" }}
-                    />
-                  </Card>
-                </Col>
-              </Row>
+              <SentimentTiles tally={ccTally} />
             </Col>
             <Col span={24}>
               <Title level={5} style={{ marginBottom: 12 }}>
                 Service Quality Dimensions (SQD)
               </Title>
-              <Row gutter={16}>
-                <Col xs={8}>
-                  <Card
-                    size="small"
-                    className="view-modal-stat-card stat-positive"
-                  >
-                    <Statistic
-                      title="Positive"
-                      value={sqdPositive}
-                      prefix={<CheckCircleOutlined />}
-                      valueStyle={{ color: "#389e0d" }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={8}>
-                  <Card
-                    size="small"
-                    className="view-modal-stat-card stat-neutral"
-                  >
-                    <Statistic
-                      title="Neutral"
-                      value={sqdNeutral}
-                      prefix={<MinusCircleOutlined />}
-                      valueStyle={{ color: "#fa8c16" }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={8}>
-                  <Card
-                    size="small"
-                    className="view-modal-stat-card stat-negative"
-                  >
-                    <Statistic
-                      title="Negative"
-                      value={sqdNegative}
-                      prefix={<CloseCircleOutlined />}
-                      valueStyle={{ color: "#cf1322" }}
-                    />
-                  </Card>
-                </Col>
-              </Row>
+              <SentimentTiles tally={sqdTally} />
             </Col>
           </Row>
         </div>
@@ -354,6 +251,7 @@ function MeasurementViewModal({ visible, onClose, record }) {
                 pagination={false}
                 size="small"
                 className="view-modal-table"
+                scroll={{ x: 520 }}
               />
               <Divider style={{ margin: "16px 0" }} />
             </>
@@ -365,6 +263,7 @@ function MeasurementViewModal({ visible, onClose, record }) {
             pagination={false}
             size="small"
             className="view-modal-table"
+            scroll={{ x: 520 }}
           />
         </div>
       ),
@@ -396,11 +295,12 @@ function MeasurementViewModal({ visible, onClose, record }) {
       open={visible}
       onCancel={onClose}
       footer={null}
-      width={960}
+      width="min(960px, calc(100vw - 24px))"
+      centered
       className="view-modal-root"
       title={
         <div className="view-modal-header">
-          <Space align="center">
+          <Space align="center" wrap>
             <FileTextOutlined style={{ fontSize: 18 }} />
             <span>Survey Response Details</span>
             <Tag color={surveyType === "internal" ? "blue" : "green"}>
@@ -453,7 +353,7 @@ function MeasurementViewModal({ visible, onClose, record }) {
             </Text>
             <Space wrap size={[4, 4]}>
               {services.map((s) => (
-                <Tag key={s} color="processing">
+                <Tag key={s} color="processing" className="view-modal-answer-tag">
                   {s}
                 </Tag>
               ))}

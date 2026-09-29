@@ -1,5 +1,5 @@
 // AdminPage.jsx
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, Suspense } from "react";
 import { Modal } from "antd";
 import {
   Layout,
@@ -12,6 +12,8 @@ import {
   Switch,
   Space,
   Button,
+  Grid,
+  Spin,
 } from "antd";
 import {
   UserOutlined,
@@ -21,6 +23,7 @@ import {
   CaretRightFilled,
   CaretLeftFilled,
   MailOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 
 import { getCachedConfig } from "../../utils/config";
@@ -33,6 +36,7 @@ import {
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import EMBLogo from "../../assets/emblogo.svg";
 import AdminMenu from "../../components/AdminMenu/AdminMenu";
+import VeraChat from "../../components/Vera/VeraChat";
 import * as api from "../../services/api";
 import "./adminpage.css";
 
@@ -282,6 +286,7 @@ function AdminPage() {
     "/admin/settings/account": "account-settings",
     "/admin/settings/developer": "developer-settings",
     "/admin/settings/backup": "backup-data",
+    "/admin/settings/vera": "vera-settings",
   };
 
   // Map Ant Design menu item keys back to full URL paths for navigation
@@ -296,6 +301,7 @@ function AdminPage() {
     "account-settings": "/admin/settings/account",
     "developer-settings": "/admin/settings/developer",
     "backup-data": "/admin/settings/backup",
+    "vera-settings": "/admin/settings/vera",
   };
 
   // Derive the selected key based on the current URL path
@@ -306,6 +312,7 @@ function AdminPage() {
     if (path) {
       navigate(path);
     }
+    if (isMobile) setCollapsed(true);
   };
 
   const userMenuItems = [
@@ -370,6 +377,13 @@ function AdminPage() {
   const {
     token: { colorBgContainer, borderRadius },
   } = theme.useToken();
+  const screens = Grid.useBreakpoint();
+  // Phones/small tablets: the sidebar becomes an overlay drawer (collapsed to
+  // zero width) so the content keeps the full viewport width.
+  const isMobile = screens.md === false;
+  useEffect(() => {
+    if (isMobile) setCollapsed(true);
+  }, [isMobile]);
 
   // console.log("Is Dark Mode:", isDarkMode);
   // console.log("Actual colorBgContainer value:", colorBgContainer);
@@ -384,6 +398,7 @@ function AdminPage() {
           onCollapse={(value) => setCollapsed(value)}
           trigger={null} // We'll use a custom trigger in the Header
           width={220}
+          collapsedWidth={isMobile ? 0 : 80}
           style={{
             overflow: "auto",
             height: "100vh",
@@ -391,6 +406,8 @@ function AdminPage() {
             left: 0,
             top: 0,
             bottom: 0,
+            zIndex: isMobile ? 1200 : 10,
+            boxShadow: isMobile && !collapsed ? "0 0 32px rgba(0,0,0,0.35)" : "none",
             background: currentTheme.components.Layout.siderBg,
             color: contrastText(currentTheme.components.Layout.siderBg),
           }}
@@ -436,10 +453,18 @@ function AdminPage() {
             }
           />
         </Sider>
+        {isMobile && !collapsed && (
+          <div
+            className="admin-sider-backdrop"
+            onClick={() => setCollapsed(true)}
+            aria-hidden="true"
+          />
+        )}
         <Layout
           style={{
-            marginLeft: collapsed ? 80 : 220,
+            marginLeft: isMobile ? 0 : collapsed ? 80 : 220,
             transition: "margin-left 0.2s",
+            minWidth: 0,
           }}
         >
           <Header
@@ -448,7 +473,7 @@ function AdminPage() {
               position: "sticky", // ✅ this keeps it visible while scrolling
               top: 0,
               zIndex: 1000, // ensures it stays above content
-              padding: "0 24px",
+              padding: isMobile ? "0 12px" : "0 24px",
               background: currentTheme.components.Layout.headerBg,
               color: contrastText(currentTheme.components.Layout.headerBg),
               display: "flex",
@@ -460,15 +485,14 @@ function AdminPage() {
           >
             <Button
               type="primary"
-              icon={collapsed ? <CaretRightFilled /> : <CaretLeftFilled />}
+              aria-label={collapsed ? "Open navigation" : "Close navigation"}
+              icon={isMobile ? <MenuOutlined /> : collapsed ? <CaretRightFilled /> : <CaretLeftFilled />}
               onClick={() => setCollapsed(!collapsed)}
-              style={{
-                fontSize: "14px",
-                width: 25,
-                height: 25,
-                borderRadius: "50%",
-                right: 35,
-              }}
+              style={
+                isMobile
+                  ? { width: 36, height: 36, borderRadius: 8 }
+                  : { fontSize: "14px", width: 25, height: 25, borderRadius: "50%", right: 35 }
+              }
             />
             <Space align="center" size="middle">
               <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
@@ -478,9 +502,11 @@ function AdminPage() {
                 />
               </Dropdown>
 
-              <Text style={{ color: contrastText(currentTheme.components.Layout.headerBg) }}>
-                {userName}
-              </Text>
+              {!isMobile && (
+                <Text style={{ color: contrastText(currentTheme.components.Layout.headerBg) }}>
+                  {userName}
+                </Text>
+              )}
               <Switch
                 checked={isDarkMode}
                 onChange={setIsDarkMode}
@@ -491,7 +517,7 @@ function AdminPage() {
           </Header>
           <Content
             style={{
-              margin: "12px 16px",
+              margin: isMobile ? "8px" : "12px 16px",
               background: isDarkMode ? "#1d1d1d" : "#ffffff",
               borderRadius: borderRadius,
               overflow: "auto",
@@ -505,7 +531,9 @@ function AdminPage() {
                 transition: "box-shadow 0.3s ease-in-out",
               }}
             >
-              <Outlet />
+              <Suspense fallback={<div style={{ display: "flex", justifyContent: "center", padding: 60 }}><Spin size="large" /></div>}>
+                <Outlet />
+              </Suspense>
             </div>
           </Content>
           <Footer
@@ -521,6 +549,8 @@ function AdminPage() {
             {new Date().getFullYear()}
           </Footer>
         </Layout>
+        {/* VERA — single admin-realm chat instance, page-aware via selectedKey */}
+        <VeraChat realm="admin" activeMenu={selectedKey} isMobile={isMobile} />
       </Layout>
     </ConfigProvider>
   );

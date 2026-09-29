@@ -2,6 +2,7 @@
 
 .measurement-page {
   padding: 4px 4px 16px;
+  min-width: 0;
 }
 
 .measurement-header {
@@ -15,6 +16,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 body[data-theme="dark"] .measurement-title {
@@ -31,6 +33,7 @@ body[data-theme="dark"] .measurement-title {
   transition: box-shadow 0.2s ease, transform 0.2s ease;
   position: relative;
   overflow: hidden;
+  height: 100%;
 }
 
 .ms-stat-card:hover {
@@ -54,6 +57,9 @@ body[data-theme="dark"] .measurement-title {
 
 .ms-stat-card .ant-statistic-title {
   font-size: 13px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ms-stat-card .ant-statistic-content {
@@ -64,4 +70,133 @@ body[data-theme="dark"] .measurement-title {
 .measurement-table-card {
   border-radius: 10px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Toolbar: filters on the left, count + export on the right. Wraps into
+   stacked rows as the viewport narrows instead of squeezing the inputs. */
+.measurement-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.measurement-toolbar-filters {
+  display: flex;
+  gap: 12px;
+  flex: 1 1 480px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.measurement-search {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.measurement-range {
+  flex: 1 1 240px;
+  min-width: 220px;
+}
+
+.measurement-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.measurement-count {
+  white-space: nowrap;
+}
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+.measurement-table .ant-table {
+  font-size: 13px;
+}
+
+.measurement-table .ant-table-thead > tr > th {
+  white-space: nowrap;
+}
+
+.measurement-table .measurement-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.measurement-table .measurement-client-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.measurement-table .measurement-client-type {
+  font-size: 12px;
+  color: #888;
+}
+
+/* Phones: full-bleed table, compact paddings, stacked toolbar. */
+@media (max-width: 767px) {
+  .measurement-page {
+    padding: 0 0 16px;
+  }
+
+  .measurement-header {
+    margin-bottom: 14px;
+  }
+
+  .measurement-title {
+    font-size: 20px !important;
+  }
+
+  .measurement-stats {
+    margin-bottom: 14px;
+  }
+
+  .ms-stat-card .ant-card-body {
+    padding: 10px 12px 10px 16px;
+  }
+
+  .ms-stat-card .ant-statistic-content {
+    font-size: 20px !important;
+  }
+
+  .measurement-table-card > .ant-card-body {
+    padding: 12px;
+  }
+
+  .measurement-toolbar {
+    margin-bottom: 12px;
+  }
+
+  .measurement-toolbar-filters,
+  .measurement-search,
+  .measurement-range {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
+  .measurement-toolbar-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+
+  .measurement-table .ant-table-pagination.ant-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+}
+
+@media (max-width: 400px) {
+  .measurement-table .ant-pagination-options {
+    display: none;
+  }
 }

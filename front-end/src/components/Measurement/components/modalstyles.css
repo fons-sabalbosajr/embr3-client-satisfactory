@@ -149,6 +149,43 @@
   font-size: 22px;
 }
 
+.view-modal-stat-of {
+  font-size: 12px;
+  font-weight: 400;
+  color: #8c8c8c;
+  margin-left: 2px;
+}
+
+.view-modal-stat-card.stat-positive { border-top: 3px solid #52c41a; }
+.view-modal-stat-card.stat-neutral { border-top: 3px solid #fa8c16; }
+.view-modal-stat-card.stat-negative { border-top: 3px solid #ff4d4f; }
+.view-modal-stat-card.stat-na { border-top: 3px solid #bfbfbf; }
+
+/* Answer tags carry full option text — let them wrap instead of clipping. */
+.view-modal-answer-tag {
+  white-space: normal !important;
+  line-height: 1.4;
+  padding: 2px 8px;
+  height: auto;
+}
+
+/* Small screens: tighter modal chrome so the content gets the width. */
+@media (max-width: 575px) {
+  .view-modal-root .ant-modal-body {
+    padding: 12px;
+  }
+  .view-modal-root .ant-modal-header {
+    padding: 12px 12px 8px;
+  }
+  .view-modal-descriptions .ant-descriptions-item-label {
+    white-space: normal;
+    width: 40%;
+  }
+  .view-modal-stat-card .ant-statistic-content {
+    font-size: 18px;
+  }
+}
+
 .view-modal-table .ant-table-thead > tr > th {
   font-size: 11px;
   padding: 6px 10px !important;

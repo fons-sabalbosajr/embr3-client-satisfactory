@@ -10,7 +10,6 @@ import {
   message,
   Typography,
   Statistic,
-  Space,
 } from "antd";
 import {
   ExportOutlined,
@@ -23,6 +22,7 @@ import MeasurementTable from "../Measurement/components/MeasurementTable";
 import MeasurementFormModal from "../Measurement/components/MeasurementFormModal";
 import { getFeedbacks } from "../../services/api";
 import { exportToExcelFile } from "../../utils/excelExport";
+import { buildResponseRows, inferSurveyType } from "../../utils/responseExport";
 import dayjs from "dayjs";
 import socket from "../../utils/socket"; // Ensure this path is correct
 import "./measurement.css";
@@ -37,6 +37,7 @@ function Measurement() {
   const [dateRange, setDateRange] = useState([]);
   const [editRecord, setEditRecord] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -76,6 +77,7 @@ function Measurement() {
     if (search) {
       result = result.filter((item) =>
         Object.values(item.answersLabeled || {})
+          .flat()
           .join(" ")
           .toLowerCase()
           .includes(search.toLowerCase())
@@ -91,24 +93,25 @@ function Measurement() {
     setFiltered(result);
   };
 
-  const inferSurveyType = (item) => {
-    if (item.surveyType) return item.surveyType;
-    const labeled = item.answersLabeled || {};
-    if (
-      labeled["Customer Type"] === "Government" &&
-      (labeled["Agency Name"] === "EMB Region III" || labeled["Employee Name"])
-    ) return "internal";
-    return "external";
-  };
-
-  const handleExport = () => {
-    const exportData = filtered.map((item) => ({
-      "Survey Type": inferSurveyType(item) === "internal" ? "Internal" : "External",
-      ...item.answersLabeled,
-      submittedAt: dayjs(item.submittedAt).format("YYYY-MM-DD HH:mm:ss"),
-    }));
-
-    exportToExcelFile("ClientMeasurements.xlsx", exportData, "Measurements");
+  const handleExport = async () => {
+    if (!filtered.length) {
+      messageApi.warning("There are no responses to export.");
+      return;
+    }
+    setExporting(true);
+    try {
+      // One row per response; "Service Availed" (a multi-select array) is
+      // flattened to "A; B" so it survives the trip into a spreadsheet cell.
+      const exportData = buildResponseRows(filtered);
+      const stamp = dayjs().format("YYYY-MM-DD");
+      await exportToExcelFile(`ClientMeasurements-${stamp}.xlsx`, exportData, "Measurements");
+      messageApi.success(`Exported ${exportData.length} response(s).`);
+    } catch (err) {
+      console.error("Export failed:", err);
+      messageApi.error("Export failed. Please try again.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const openEditModal = (record) => {
@@ -143,8 +146,8 @@ function Measurement() {
         </Typography.Text>
       </div>
 
-      <Row gutter={[16, 16]} className="measurement-stats">
-        <Col xs={12} sm={6}>
+      <Row gutter={[12, 12]} className="measurement-stats">
+        <Col xs={12} sm={12} md={6}>
           <Card size="small" className="ms-stat-card ms-blue">
             <Statistic
               title="Total Responses"
@@ -153,7 +156,7 @@ function Measurement() {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={6}>
+        <Col xs={12} sm={12} md={6}>
           <Card size="small" className="ms-stat-card ms-cyan">
             <Statistic
               title="Internal"
@@ -163,7 +166,7 @@ function Measurement() {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={6}>
+        <Col xs={12} sm={12} md={6}>
           <Card size="small" className="ms-stat-card ms-green">
             <Statistic
               title="External"
@@ -173,7 +176,7 @@ function Measurement() {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={6}>
+        <Col xs={12} sm={12} md={6}>
           <Card size="small" className="ms-stat-card ms-orange">
             <Statistic
               title="Today"
@@ -190,36 +193,40 @@ function Measurement() {
       </Row>
 
       <Card className="measurement-table-card">
-        <Row gutter={[16, 12]} style={{ marginBottom: 16 }} align="middle">
-          <Col xs={24} sm={12} md={8}>
+        <div className="measurement-toolbar">
+          <div className="measurement-toolbar-filters">
             <Input.Search
               placeholder="Search responses..."
               onSearch={handleSearch}
+              onChange={(e) => {
+                if (!e.target.value) handleSearch("");
+              }}
               allowClear
+              className="measurement-search"
             />
-          </Col>
-          <Col xs={24} sm={12} md={8}>
-            <RangePicker onChange={handleDateFilter} style={{ width: "100%" }} />
-          </Col>
-          <Col xs={24} sm={24} md={8}>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <Space>
-                <Typography.Text type="secondary">
-                  Showing {filtered.length} of {data.length}
-                </Typography.Text>
-                <Tooltip title="Export filtered data to Excel">
-                  <Button
-                    type="primary"
-                    icon={<ExportOutlined />}
-                    onClick={handleExport}
-                  >
-                    Export
-                  </Button>
-                </Tooltip>
-              </Space>
-            </div>
-          </Col>
-        </Row>
+            <RangePicker
+              onChange={handleDateFilter}
+              className="measurement-range"
+              placeholder={["Start date", "End date"]}
+            />
+          </div>
+          <div className="measurement-toolbar-actions">
+            <Typography.Text type="secondary" className="measurement-count">
+              Showing <strong>{filtered.length}</strong> of {data.length}
+            </Typography.Text>
+            <Tooltip title="Export filtered data to Excel (includes Service Availed)">
+              <Button
+                type="primary"
+                icon={<ExportOutlined />}
+                onClick={handleExport}
+                loading={exporting}
+                disabled={!filtered.length}
+              >
+                Export
+              </Button>
+            </Tooltip>
+          </div>
+        </div>
 
         <MeasurementTable
           data={filtered}

@@ -1,14 +1,18 @@
 .service-tags-container {
   display: flex;
   flex-wrap: wrap;
+  gap: 4px;
   /* allow the tag list to flow and wrap within the table cell */
 }
 
 .service-tags-container .ant-tag {
-  margin-right: 6px;
-  text-align: center;
-  white-space: nowrap; /* let tag width follow its text content */
-  overflow: visible;
-  display: inline-block;
+  margin: 0;
+  max-width: 100%;
+  white-space: normal; /* long service names wrap inside the tag */
+  line-height: 1.35;
+  padding: 2px 8px;
+  height: auto;
+  text-align: left;
   box-sizing: border-box;
+  border-radius: 6px;
 }

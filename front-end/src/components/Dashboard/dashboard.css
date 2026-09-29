@@ -10,6 +10,15 @@
   margin-bottom: 24px;
 }
 
+/* Title on the left, VERA tips card on the right; stacks on narrow screens. */
+.dashboard-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 .dashboard-title {
   text-align: left;
   margin-bottom: 2px !important;

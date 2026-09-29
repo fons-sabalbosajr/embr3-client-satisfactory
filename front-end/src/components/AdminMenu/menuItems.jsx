@@ -70,6 +70,10 @@ const menuItems = [
         key: "backup-data",
         label: "Backup Data",
       },
+      {
+        key: "vera-settings",
+        label: "VERA Assistant",
+      },
     ],
   },
 ];

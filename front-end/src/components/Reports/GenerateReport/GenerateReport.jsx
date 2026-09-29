@@ -13,7 +13,8 @@ import {
   Divider,
 } from "antd";
 import * as api from "../../../services/api";
-import { exportToExcelFile } from "../../../utils/excelExport";
+import { exportWorkbook } from "../../../utils/excelExport";
+import { buildResponseRows } from "../../../utils/responseExport";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import dayjs from "dayjs";
@@ -99,8 +100,14 @@ function normalizeSqdAnswer(val) {
 }
 
 // Export helpers
-function exportToExcel(filename, rows) {
-  exportToExcelFile(filename, rows, "Report");
+// Every report workbook carries the aggregated table on the first sheet and the
+// individual responses behind it (filtered the same way), so the reader can see
+// which services each respondent availed without a second export.
+function exportToExcel(filename, rows, responses = []) {
+  exportWorkbook(filename, [
+    { name: "Report", rows },
+    { name: "Responses", rows: buildResponseRows(responses) },
+  ]);
 }
 
 function exportToPdf(title, headers, bodyRows, filename) {
@@ -637,7 +644,8 @@ export default function GenerateReport() {
         "Citizens Answers": r.item,
         "Response Count": r.count,
         "Percentage": `${r.percentage}%`,
-      }))
+      })),
+      filteredSurveys
     );
   const onExportSqdExcel = () =>
     exportToExcel(
@@ -652,7 +660,8 @@ export default function GenerateReport() {
         "N/A": r.na,
         "Total Response": r.total,
         "Percentage Score": `${r.percentage}%`,
-      }))
+      })),
+      filteredSurveys
     );
   const onExportServicesExcel = () =>
     exportToExcel(
@@ -661,7 +670,8 @@ export default function GenerateReport() {
         "Type of Service": r.service,
         "Response Count": r.count,
         "Percentage Score": `${r.percentage}%`,
-      }))
+      })),
+      filteredSurveys
     );
   const onExportGenderExcel = () =>
     exportToExcel(
@@ -670,7 +680,8 @@ export default function GenerateReport() {
         "Respondent Sex/Gender": r.gender,
         "External Service Availed Response Count": r.external,
         "Internal Service Availed Response Count": r.internal,
-      }))
+      })),
+      filteredSurveys
     );
   const onExportCustomerExcel = () =>
     exportToExcel(
@@ -679,7 +690,8 @@ export default function GenerateReport() {
         "Customer Type": r.customerType,
         "External Service Availed Response Count": r.external,
         "Internal Service Availed Response Count": r.internal,
-      }))
+      })),
+      filteredSurveys
     );
 
   const onExportCcPdf = () => {

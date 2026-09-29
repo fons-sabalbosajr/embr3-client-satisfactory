@@ -1,0 +1,456 @@
+/* VERA — floating chatbot. Navy #0C2340 (OCSM admin), blue #1677ff, light
+   #e6f4ff with a blue→teal→green flame accent. Responsive + accessible (focus
+   rings, reduced motion, mobile full-width sheet). Dark mode follows the admin
+   layout's body[data-theme="dark"]. */
+
+.vera-root {
+  --vera-blue: #1677ff;
+  --vera-teal: #13c2c2;
+  --vera-green: #52c41a;
+  --vera-navy: #0c2340;
+  --vera-grad: linear-gradient(135deg, #1677ff 0%, #13c2c2 55%, #52c41a 100%);
+  --vera-surface: #ffffff;
+  --vera-surface-2: #f6f9fc;
+  --vera-surface-3: #fbfdff;
+  --vera-border: #e4ebf2;
+  --vera-text: #1f2f45;
+  --vera-muted: #5a7089;
+  position: fixed;
+  z-index: 1000;
+  font-family: "Inter", "Plus Jakarta Sans", "Poppins", sans-serif;
+}
+
+body[data-theme="dark"] .vera-root {
+  --vera-surface: #16233a;
+  --vera-surface-2: #12203a;
+  --vera-surface-3: #0f1a2b;
+  --vera-border: #24365a;
+  --vera-text: #e6eefc;
+  --vera-muted: #9db4cf;
+}
+
+/* ── Launcher ─────────────────────────────────────────────────────────────── */
+.vera-launcher {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 20px 0 8px;
+  border: none;
+  border-radius: 26px;
+  background: var(--vera-navy);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(12, 35, 64, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.vera-launcher:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(12, 35, 64, 0.4); }
+.vera-launcher:focus-visible { outline: 3px solid #91caff; outline-offset: 2px; }
+.vera-launcher-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px rgba(19, 194, 194, 0.25);
+}
+.vera-launcher-label { line-height: 1; white-space: nowrap; }
+
+/* Public mount sits above the landing page's theme toggle. */
+.vera-root-public .vera-launcher { bottom: 84px; }
+.vera-root-public .vera-window { bottom: 84px; }
+.vera-root-public .vera-nudge { bottom: 144px; }
+
+/* ── Window ───────────────────────────────────────────────────────────────── */
+.vera-window {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  width: 390px;
+  max-width: calc(100vw - 32px);
+  height: 580px;
+  /* dvh tracks the viewport as it actually is on mobile browsers; vh is the
+     fallback for browsers without dvh. */
+  max-height: calc(100vh - 56px);
+  max-height: calc(100dvh - 56px);
+  background: var(--vera-surface);
+  color: var(--vera-text);
+  border-radius: 16px;
+  box-shadow: 0 18px 48px rgba(12, 35, 64, 0.3);
+  overflow: hidden;
+  animation: vera-pop 0.16s ease-out;
+}
+@keyframes vera-pop { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+.vera-window-min { height: auto; }
+
+.vera-window-mobile {
+  right: 0;
+  left: 0;
+  bottom: 0 !important;
+  width: 100%;
+  max-width: 100%;
+  height: 84vh;
+  height: 84dvh;
+  max-height: 84dvh;
+  border-radius: 16px 16px 0 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .vera-window-mobile {
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.vera-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--vera-navy);
+  background-image: linear-gradient(135deg, #0a1b33 0%, #0c2340 60%, #0958d9 170%);
+  color: #fff;
+}
+.vera-header-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.vera-header-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fff;
+  flex: 0 0 auto;
+}
+.vera-header-name { font-size: 16px; font-weight: 700; line-height: 1.1; }
+.vera-header-sub { display: flex; align-items: center; gap: 6px; font-size: 11.5px; opacity: 0.9; white-space: nowrap; }
+.vera-status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.vera-status-dot.online { background: #52c41a; box-shadow: 0 0 0 3px rgba(82, 196, 26, 0.25); }
+.vera-status-dot.lite { background: #13c2c2; box-shadow: 0 0 0 3px rgba(19, 194, 194, 0.22); }
+.vera-status-dot.off { background: #8c8c8c; box-shadow: 0 0 0 3px rgba(140, 140, 140, 0.22); }
+
+.vera-header-actions { display: flex; gap: 4px; }
+.vera-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #cfe0ff;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.vera-icon-btn:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.vera-icon-btn:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
+
+.vera-full-name {
+  padding: 6px 14px;
+  font-size: 11px;
+  color: var(--vera-muted);
+  background: var(--vera-surface-2);
+  border-bottom: 1px solid var(--vera-border);
+}
+
+/* ── Messages ─────────────────────────────────────────────────────────────── */
+.vera-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  background: var(--vera-surface-3);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overscroll-behavior: contain;
+}
+.vera-msg { display: flex; }
+.vera-msg-user { justify-content: flex-end; }
+.vera-msg-assistant { justify-content: flex-start; }
+
+.vera-bubble {
+  max-width: 86%;
+  padding: 9px 12px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.vera-msg-assistant .vera-bubble {
+  background: var(--vera-surface);
+  color: var(--vera-text);
+  border: 1px solid var(--vera-border);
+  border-bottom-left-radius: 4px;
+}
+.vera-msg-user .vera-bubble {
+  background: var(--vera-grad);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.vera-bubble-insights {
+  border-left: 3px solid var(--vera-teal) !important;
+  font-variant-numeric: tabular-nums;
+}
+.vera-bubble-error { background: #fff2f0 !important; border-color: #ffccc7 !important; color: #a8071a !important; }
+.vera-bubble-warn { margin-right: 6px; }
+.vera-bubble-note {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--vera-border);
+  font-size: 11px;
+  color: var(--vera-muted);
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+/* Thinking state */
+.vera-thinking { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.vera-thinking-flame { display: inline-flex; line-height: 0; }
+.vera-thinking-text { font-size: 12.5px; color: var(--vera-muted); font-style: italic; }
+.vera-cancel-btn {
+  border: 1px solid var(--vera-border);
+  background: var(--vera-surface);
+  color: var(--vera-muted);
+  font-size: 11px;
+  border-radius: 10px;
+  padding: 1px 9px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.vera-cancel-btn:hover { background: #fff2f0; color: #a8071a; border-color: #ffccc7; }
+.vera-cancel-btn:focus-visible { outline: 2px solid #69b1ff; outline-offset: 1px; }
+
+.vera-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  border: 1px solid #ffccc7;
+  background: #fff;
+  color: #a8071a;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 3px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.vera-retry-btn:hover { background: #fff1f0; }
+.vera-retry-btn:focus-visible { outline: 2px solid #ff7875; outline-offset: 1px; }
+
+.vera-typing { display: inline-flex; gap: 4px; align-items: center; }
+.vera-typing span {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #9db4cf; display: inline-block;
+  animation: vera-blink 1.2s infinite ease-in-out;
+}
+.vera-typing span:nth-child(2) { animation-delay: 0.2s; }
+.vera-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes vera-blink { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
+
+/* Starter questions */
+.vera-starters { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.vera-starters-label { font-size: 11px; color: var(--vera-muted); margin-bottom: 2px; }
+.vera-starter-chip {
+  text-align: left;
+  padding: 8px 11px;
+  border: 1px solid #bfdbff;
+  border-radius: 10px;
+  background: #e6f4ff;
+  color: #0958d9;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.vera-starter-chip:hover { background: #d6ebff; border-color: #69b1ff; }
+.vera-starter-chip:focus-visible { outline: 2px solid #69b1ff; outline-offset: 1px; }
+body[data-theme="dark"] .vera-starter-chip { background: #14294a; border-color: #2a4a80; color: #91caff; }
+body[data-theme="dark"] .vera-starter-chip:hover { background: #1a3560; }
+
+/* ── Quick actions ────────────────────────────────────────────────────────── */
+.vera-quick-actions {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--vera-border);
+  background: var(--vera-surface);
+  flex-wrap: wrap;
+}
+.vera-quick-actions:empty { display: none; }
+.vera-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--vera-border);
+  border-radius: 16px;
+  background: var(--vera-surface-2);
+  color: var(--vera-text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.vera-quick-btn:hover { background: #e6f4ff; }
+.vera-quick-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.vera-quick-btn:focus-visible { outline: 2px solid #69b1ff; outline-offset: 1px; }
+.vera-quick-clear { margin-left: auto; color: #a8071a; border-color: #ffd6d0; background: #fff5f4; }
+.vera-quick-clear:hover { background: #ffe7e3; }
+body[data-theme="dark"] .vera-quick-btn:hover { background: #1a3560; }
+body[data-theme="dark"] .vera-quick-clear { background: #3a1d1d; border-color: #5c2a2a; color: #ff9c8f; }
+
+/* ── Input ────────────────────────────────────────────────────────────────── */
+.vera-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--vera-border);
+  background: var(--vera-surface);
+}
+.vera-input {
+  flex: 1;
+  resize: none;
+  max-height: 96px;
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 1px solid var(--vera-border);
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  font-family: inherit;
+  color: var(--vera-text);
+  background: var(--vera-surface);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.vera-input:focus { border-color: #69b1ff; box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15); }
+.vera-input:disabled { opacity: 0.6; }
+.vera-send-btn {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: var(--vera-grad);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.vera-send-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.vera-send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.vera-send-btn:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; }
+
+.vera-disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 10px;
+  font-size: 10.5px;
+  color: var(--vera-muted);
+  background: var(--vera-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vera-window, .vera-launcher, .vera-send-btn, .vera-nudge-anim { animation: none; transition: none; }
+  .vera-typing span { animation: none; opacity: 0.6; }
+}
+
+/* ── Tablet ─────────────────────────────────────────────────────────────── */
+@media (max-width: 991px) {
+  .vera-window {
+    width: 440px;
+    height: 620px;
+    max-height: calc(100dvh - 96px);
+    right: 24px;
+    bottom: 24px;
+  }
+  .vera-bubble { max-width: 90%; }
+}
+
+/* ── Phone ──────────────────────────────────────────────────────────────── */
+@media (max-width: 576px) {
+  .vera-launcher { bottom: 20px; right: 20px; padding: 0; width: 52px; height: 52px; justify-content: center; }
+  .vera-launcher-label { display: none; }
+  .vera-launcher-icon { width: 40px; height: 40px; }
+  .vera-root-public .vera-launcher { bottom: 80px; right: 16px; }
+  .vera-nudge { bottom: 84px; right: 16px; left: 16px; max-width: none; }
+  .vera-root-public .vera-nudge { bottom: 144px; }
+}
+
+/* ── Contextual nudge bubble ────────────────────────────────────────────── */
+.vera-nudge {
+  position: fixed;
+  right: 32px;
+  bottom: 88px;
+  z-index: 1001;
+  max-width: 290px;
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px 14px 14px;
+  background: var(--vera-surface);
+  color: var(--vera-text);
+  border: 1px solid var(--vera-border);
+  border-radius: 14px 14px 4px 14px;
+  box-shadow: 0 12px 30px rgba(12, 35, 64, 0.22);
+}
+.vera-nudge-anim { animation: vera-nudge-in 0.36s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes vera-nudge-in { from { opacity: 0; transform: translateY(10px) scale(0.94); } to { opacity: 1; transform: none; } }
+.vera-nudge-icon {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0fbfb;
+  box-shadow: inset 0 0 0 2px rgba(19, 194, 194, 0.25);
+}
+.vera-nudge-body { display: flex; flex-direction: column; gap: 8px; }
+.vera-nudge-text { margin: 0; font-size: 13px; line-height: 1.5; color: var(--vera-text); }
+.vera-nudge-cta {
+  align-self: flex-start;
+  border: none;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: var(--vera-grad);
+}
+.vera-nudge-cta:focus-visible { outline: 3px solid #91caff; outline-offset: 2px; }
+.vera-nudge-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: #94a3b8;
+}
