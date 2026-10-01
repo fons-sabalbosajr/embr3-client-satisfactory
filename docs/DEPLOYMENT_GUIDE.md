@@ -1,30 +1,4 @@
-EMB_CSM/embr3-client-satisfactory (main)
-$ cd front-end
-embr3-client-satisfactory/front-end (main)
-$ npm install
-
-> front-end@0.0.0 postinstall
-> node scripts/patch-ajv.cjs
-
-[patch-ajv] Patched eslint/lib/shared/ajv.js
-[patch-ajv] Patched @eslint\eslintrc\dist\eslintrc-universal.cjs
-[patch-ajv] Patched @eslint\eslintrc\dist\eslintrc.cjs
-[patch-ajv] Done.
-
-added 2 packages, removed 4 packages, changed 2 packages, and audited 540 packages in 11s
-
-82 packages are looking for funding
-  run `npm fund` for details
-
-25 vulnerabilities (2 low, 9 moderate, 13 high, 1 critical)
-
-To address issues that do not require attention, run:
-  npm audit fix
-
-To address all issues (including breaking changes), run:
-  npm audit fix --force
-
-Run `npm audit` for details.# EMB Region III — Online Client Satisfaction Measurement
+# EMB Region III — Online Client Satisfaction Measurement
 
 ## Hostinger KVM 2 VPS Deployment Guide
 
@@ -53,6 +27,15 @@ This guide walks through deploying the EMBR3 OCSM application to a **Hostinger K
 
 ## 1. Architecture Overview
 
+> **How the live EMB R3 VPS actually runs:** OCSM is one of six applications
+> sharing `embr3-onlinesystems.cloud`, served under the `/ocsm/` path prefix on
+> backend port **5001**. Bare `/api/` and `/socket.io/` at the domain root belong
+> to **HRPMS** on port 5000, and `/` redirects to `/hrpms/`. See
+> `deploy/nginx-embr3.conf` for the routing and its constraints.
+>
+> The diagram below describes a **dedicated single-app host**, which is what
+> `deploy/setup-vps.sh` builds.
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Hostinger KVM 2 VPS  (Ubuntu 22.04/24.04 LTS)         │
@@ -64,10 +47,11 @@ This guide walks through deploying the EMBR3 OCSM application to a **Hostinger K
 │                           │  • gzip / cache     │        │
 │                           │  • SSL termination  │        │
 │                           └──────┬─────────────┘        │
-│                                  │ /api/* /socket.io/*   │
+│                                  │ /ocsm/api/*           │
+│                                  │ /ocsm/socket.io/*     │
 │                           ┌──────▽─────────────┐        │
 │                           │  Node.js (Express)  │        │
-│                           │  Port 5000          │        │
+│                           │  Port 5001          │        │
 │                           │  + Socket.IO        │        │
 │                           └──────┬─────────────┘        │
 │                                  │                       │
@@ -257,12 +241,27 @@ sudo systemctl enable embr3-server
 
 ### 5.6 Configure Nginx
 
+> ⚠️ **On the existing EMB R3 VPS, do not follow the commands below.** That host
+> serves six applications from one shared server block at
+> `/etc/nginx/sites-available/embr3-hr-pms`. Installing a second site file that
+> claims the same `server_name` will shadow or break the others. Edit the shared
+> file by hand instead, using `deploy/nginx-embr3.conf` as the reference for the
+> OCSM blocks:
+>
+> ```bash
+> sudo nano /etc/nginx/sites-available/embr3-hr-pms
+> sudo nginx -t && sudo systemctl reload nginx
+> ```
+>
+> `deploy/nginx-embr3.conf` is an excerpt of `location` blocks, not a complete
+> site file — it cannot be copied into `sites-available` as-is.
+
+For a **dedicated host running only OCSM**, generate a complete config with
+`deploy/setup-vps.sh`, then enable TLS:
+
 ```bash
-sudo cp /opt/embr3-csm/deploy/nginx-embr3.conf /etc/nginx/sites-available/embr3-csm
-sudo ln -sf /etc/nginx/sites-available/embr3-csm /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t
-sudo systemctl reload nginx
+sudo ./deploy/setup-vps.sh
+sudo certbot --nginx -d yourdomain.com
 ```
 
 ---
@@ -274,7 +273,7 @@ sudo systemctl reload nginx
 | Variable | Required | Example | Description |
 |----------|----------|---------|-------------|
 | `NODE_ENV` | ✅ | `production` | Enables production mode |
-| `PORT` | ✅ | `5000` | Backend server port |
+| `PORT` | ✅ | `5001` | Backend port. 5000 is HRPMS on the shared VPS |
 | `SERVER_HOST` | ✅ | `127.0.0.1` | Bind to localhost only (Nginx handles public) |
 | `MONGO_URI` | ✅ | `mongodb+srv://user:pass@cluster.mongodb.net/db` | MongoDB Atlas connection string |
 | `JWT_SECRET` | ✅ | *(64+ char random string)* | JWT signing secret |
@@ -348,7 +347,7 @@ sudo systemctl status embr3-server
 
 ### Verify
 - **Frontend**: Open `http://YOUR_VPS_IP` (or `https://yourdomain.com`)
-- **Backend health**: `curl http://localhost:5000/api/health`
+- **Backend health**: `curl http://localhost:5001/api/health`
 - **Admin panel**: Navigate to `/admin`
 - **Survey**: Navigate to `/client`
 
@@ -377,7 +376,7 @@ Run these checks after deployment:
 sudo systemctl status embr3-server
 
 # 2. Backend responds on localhost
-curl -s http://127.0.0.1:5000/api/health
+curl -s http://127.0.0.1:5001/api/health
 # Expected: {"status":"ok"}
 
 # 3. Nginx is running
@@ -543,7 +542,7 @@ sudo -u embapp npm run build
 grep -A5 "socket.io" /etc/nginx/sites-available/embr3-csm
 
 # Check backend Socket.IO is listening
-curl http://127.0.0.1:5000/socket.io/?EIO=4&transport=polling
+curl http://127.0.0.1:5001/socket.io/?EIO=4&transport=polling
 ```
 
 ### Emails not sending
@@ -602,4 +601,4 @@ sudo systemctl restart embr3-server
 | Renew SSL | `sudo certbot renew` |
 | Check disk space | `df -h` |
 | Rebuild frontend | `cd /opt/embr3-csm/front-end && npm run build` |
-| Health check | `curl http://localhost:5000/api/health` |
+| Health check | `curl http://localhost:5001/api/health` |

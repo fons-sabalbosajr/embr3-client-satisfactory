@@ -24,7 +24,7 @@ DOMAIN=""  # Set your domain, e.g., csm.emb3.gov.ph (leave empty for IP-only acc
 BACKEND_PORT="5001"
 
 # NOTE: this script sets up a single app at the domain ROOT. The live VPS serves
-# OCSM under /ocsm/ alongside HRPMS — see deploy/nginx-embr3.conf before using
+# OCSM under /ocsm/ alongside five other apps — see deploy/nginx-embr3.conf before using
 # this on a host that already runs another app.
 
 echo "============================================="
