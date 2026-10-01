@@ -9,9 +9,16 @@
 
 set -euo pipefail
 
-BACKEND_URL="http://127.0.0.1:5000/api/health"
 SERVICE_NAME="embr3-server"
 TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
+
+# Read the port from server/.env so this never drifts from the running service.
+# This VPS hosts a second app (HRPMS) on port 5000 — hardcoding the wrong port
+# would health-check the other app and restart this one for no reason.
+ENV_FILE="/opt/embr3-csm/server/.env"
+BACKEND_PORT="$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*\([0-9]\+\).*/\1/p' "$ENV_FILE" 2>/dev/null | head -1)"
+BACKEND_PORT="${BACKEND_PORT:-5001}"
+BACKEND_URL="http://127.0.0.1:${BACKEND_PORT}/api/health"
 
 # Check if backend responds within 10 seconds
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$BACKEND_URL" 2>/dev/null || echo "000")

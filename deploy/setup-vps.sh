@@ -19,6 +19,13 @@ APP_DIR="/opt/embr3-csm"
 REPO_URL=""  # Set this if cloning from git, otherwise we assume files are uploaded
 NODE_VERSION="20"
 DOMAIN=""  # Set your domain, e.g., csm.emb3.gov.ph (leave empty for IP-only access)
+# Backend port. Must match PORT in server/.env. The live VPS uses 5001 because
+# 5000 is already taken by the HRPMS app on the same host.
+BACKEND_PORT="5001"
+
+# NOTE: this script sets up a single app at the domain ROOT. The live VPS serves
+# OCSM under /ocsm/ alongside HRPMS — see deploy/nginx-embr3.conf before using
+# this on a host that already runs another app.
 
 echo "============================================="
 echo " EMB R3 OCSM – VPS Deployment Setup"
@@ -114,13 +121,13 @@ systemctl enable embr3-server
 echo "[7/9] Configuring Nginx..."
 NGINX_SERVER_NAME="${DOMAIN:-_}"
 
-if [ -f "$APP_DIR/deploy/nginx-embr3.conf" ]; then
-  cp "$APP_DIR/deploy/nginx-embr3.conf" /etc/nginx/sites-available/embr3-csm
-  # Patch domain and paths
-  sed -i "s|server_name _;|server_name ${NGINX_SERVER_NAME};|g" /etc/nginx/sites-available/embr3-csm
-  sed -i "s|/opt/embr3-csm|${APP_DIR}|g" /etc/nginx/sites-available/embr3-csm
-else
-  cat > /etc/nginx/sites-available/embr3-csm <<EOF
+# Deliberately NOT copying deploy/nginx-embr3.conf here. That file documents the
+# live subdirectory deployment (/ocsm/ on HTTPS, certbot certificate paths); on a
+# fresh host those certificates do not exist yet and `nginx -t` below would fail.
+# Generate a plain HTTP root-path config instead, then run certbot, which rewrites
+# this file to add TLS:
+#   sudo certbot --nginx -d yourdomain.com
+cat > /etc/nginx/sites-available/embr3-csm <<EOF
 limit_req_zone \$binary_remote_addr zone=api:10m rate=30r/s;
 
 server {
@@ -145,7 +152,7 @@ server {
     index index.html;
 
     location /api/ {
-        proxy_pass http://127.0.0.1:5000;
+        proxy_pass http://127.0.0.1:${BACKEND_PORT};
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -159,7 +166,7 @@ server {
     }
 
     location /socket.io/ {
-        proxy_pass http://127.0.0.1:5000;
+        proxy_pass http://127.0.0.1:${BACKEND_PORT};
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -187,7 +194,6 @@ server {
     }
 }
 EOF
-fi
 
 ln -sf /etc/nginx/sites-available/embr3-csm /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
@@ -239,7 +245,7 @@ echo "       sudo certbot --nginx -d ${DOMAIN}"
 echo ""
 fi
 echo "  6. Verify:"
-echo "       curl http://127.0.0.1:5000/api/health"
+echo "       curl http://127.0.0.1:${BACKEND_PORT}/api/health"
 echo ""
 echo "  7. View logs:"
 echo "       sudo journalctl -u embr3-server -f"

@@ -10,7 +10,7 @@
 
 [Unit]
 Description=EMB R3 OCSM Backend Server
-Documentation=https://github.com/your-org/embr3-client-satisfactory
+Documentation=https://github.com/fons-sabalbosajr/embr3-client-satisfactory
 After=network.target
 
 [Service]
