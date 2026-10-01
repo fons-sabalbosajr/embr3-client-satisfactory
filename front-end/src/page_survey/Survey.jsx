@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Card,
   Space,
@@ -68,6 +68,8 @@ function Survey({ toggleColorScheme }) {
   const [currentLang, setCurrentLang] = useState(language);
   const { t, i18n } = useTranslation();
   const [originalQuestionData, setOriginalQuestionData] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const watchedValues = Form.useWatch([], form);
 
@@ -394,9 +396,74 @@ function Survey({ toggleColorScheme }) {
     },
   ];
 
+  const describeSubmitError = (error) => {
+    // No response at all means the request never completed (offline, timeout,
+    // DNS/proxy failure). Say so plainly instead of showing a blank message.
+    if (!error?.response) {
+      return t("summary.submissionNetworkError", {
+        defaultValue:
+          "We could not reach the server. Check your internet connection and try again.",
+      });
+    }
+    if (error.response.status === 429) {
+      return t("summary.submissionRateLimited", {
+        defaultValue:
+          "The server is receiving too many requests right now. Please wait a moment and try again.",
+      });
+    }
+    return (
+      error.response.data?.message ||
+      error.message ||
+      t("summary.submissionError", {
+        defaultValue: "An error occurred while submitting feedback.",
+      })
+    );
+  };
+
   const handleSubmit = async (formValues) => {
+    // Guard with a ref as well as state: two taps in the same tick would both
+    // pass a state-only check and submit the survey twice.
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
+
     try {
-      await submitFeedback({ answers: formValues, deviceId, surveyType });
+      // Keep retrying in place so a failed attempt never costs the client
+      // their answers.
+      for (;;) {
+        Swal.fire({
+          title: t("summary.submitting", {
+            defaultValue: "Submitting your feedback…",
+          }),
+          text: t("summary.submittingHint", {
+            defaultValue: "Please wait, this only takes a moment.",
+          }),
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          showConfirmButton: false,
+          didOpen: () => Swal.showLoading(),
+        });
+
+        try {
+          await submitFeedback({ answers: formValues, deviceId, surveyType });
+          break;
+        } catch (error) {
+          console.error("Feedback submission failed:", error);
+          const retry = await Swal.fire({
+            icon: "error",
+            title:
+              t("summary.submissionFailed") || "Submission Failed",
+            text: describeSubmitError(error),
+            showCancelButton: true,
+            confirmButtonText: t("summary.retry", {
+              defaultValue: "Try Again",
+            }),
+            cancelButtonText: t("summary.cancel"),
+          });
+          // Cancelling returns to the survey with every answer still filled in.
+          if (!retry.isConfirmed) return;
+        }
+      }
 
       await Swal.fire({
         icon: "success",
@@ -446,16 +513,9 @@ function Survey({ toggleColorScheme }) {
       });
 
       navigate("/client");
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: t("summary.submissionFailed") || "Submission Failed",
-        text:
-          error?.response?.data?.message ||
-          error.message ||
-          t("summary.submissionError") ||
-          "An error occurred while submitting feedback.",
-      });
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -572,12 +632,16 @@ function Survey({ toggleColorScheme }) {
       return;
     }
 
-    // At final question and final group — show SweetAlert summary
-    const summaryHTML = buildGroupedSummaryHTML(
-      formValues,
-      originalQuestionData,
-      t
-    );
+    // At final question and final group — show SweetAlert summary.
+    // The summary is a convenience, not a gate: if building it fails the
+    // client must still be able to submit, so fall back to an empty summary
+    // rather than letting the throw abort the handler silently.
+    let summaryHTML = "";
+    try {
+      summaryHTML = buildGroupedSummaryHTML(formValues, originalQuestionData, t);
+    } catch (err) {
+      console.error("Failed to build submission summary:", err);
+    }
 
     const result = await Swal.fire({
       title: t("summary.confirmTitle"),
@@ -753,7 +817,8 @@ function Survey({ toggleColorScheme }) {
             <Button
               type="primary"
               onClick={handleNextQuestion}
-              disabled={!stepState.canProceed}
+              disabled={!stepState.canProceed || submitting}
+              loading={submitting}
               icon={<ArrowRightOutlined />}
               className="survey-btn survey-btn-primary"
             >

@@ -21,7 +21,9 @@ function inferBackendApiBase() {
 const viteBase = (import.meta?.env?.BASE_URL || "/").replace(/\/$/, "");
 const sameOriginApiBase = `${viteBase}/api` || "/api";
 const baseURL = import.meta?.env?.VITE_API_BASE || inferBackendApiBase() || sameOriginApiBase;
-const API = axios.create({ baseURL });
+// Always bound requests in time. Without a timeout a stalled request hangs
+// forever and the UI has no way to tell the user anything went wrong.
+const API = axios.create({ baseURL, timeout: 30000 });
 
 // Add request interceptor to include auth token
 API.interceptors.request.use((config) => {

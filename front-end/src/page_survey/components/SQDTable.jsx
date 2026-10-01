@@ -19,6 +19,9 @@ function SQDTable({
   startIndex = 1,
 }) {
   const { t } = useTranslation(); // ✅ FIX: hook inside component
+  // Both hooks must run before any early return, otherwise the hook order
+  // changes between renders and React tears the component down.
+  const formValues = Form.useWatch([], form);
 
   const ratingOptions = [
     {
@@ -42,8 +45,6 @@ function SQDTable({
   ];
 
   if (!Array.isArray(group) || group.length === 0) return null;
-
-  const formValues = Form.useWatch([], form);
 
   const handleRatingClick = (fieldName, value) => {
     form.setFieldValue(fieldName, value);
