@@ -22,6 +22,7 @@ This guide walks through deploying the EMBR3 OCSM application to a **Hostinger K
 12. [Monitoring & Logs](#12-monitoring--logs)  
 13. [Backup & Restore](#13-backup--restore)  
 14. [Troubleshooting](#14-troubleshooting)  
+15. [Security Checklist](#15-security-checklist)
 
 ---
 
@@ -81,7 +82,7 @@ This guide walks through deploying the EMBR3 OCSM application to a **Hostinger K
 - Gmail App Password generated (for email verification)
 
 ### Hostinger VPS
-- **Plan**: KVM 2 (2 vCPU / 8 GB RAM / 100 GB NVMe) 
+- **Plan**: KVM 2 (2 vCPU / 8 GB RAM / 100 GB NVMe)
 - **OS**: Ubuntu 22.04 LTS or 24.04 LTS
 - **Root/sudo access** via SSH
 - **Domain (optional)**: DNS A record pointing to VPS IP
@@ -89,9 +90,10 @@ This guide walks through deploying the EMBR3 OCSM application to a **Hostinger K
 ### MongoDB Atlas Setup
 1. Go to [cloud.mongodb.com](https://cloud.mongodb.com)
 2. Create a free cluster (M0)
-3. Create a database user with read/write privileges
-4. Under **Network Access**, add your VPS IP address (or `0.0.0.0/0` for testing)
-5. Copy the connection string — you'll need it for `MONGO_URI`
+3. Create a dedicated database user with only the privileges required by this application
+4. Under **Network Access**, allow only your VPS public IP address
+   - Avoid `0.0.0.0/0`; use it only during a short, supervised test window, then remove it immediately
+5. Copy the connection string and store it only in `server/.env` on the VPS — never commit it to Git, paste it into issues, or include it in screenshots
 
 ---
 
@@ -117,6 +119,17 @@ usermod -aG sudo deploy
 ssh-copy-id deploy@YOUR_VPS_IP
 ```
 
+After confirming that key-based login works, harden SSH:
+
+```bash
+sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+sudo sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
+sudo sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
+sudo systemctl reload ssh
+```
+
+Keep your current SSH session open and verify a new `deploy@YOUR_VPS_IP` login before closing it.
+
 ### 3.4 Update system packages
 
 ```bash
@@ -132,34 +145,35 @@ The fastest way to deploy. This script handles everything:
 ### 4.1 Upload project files to VPS
 
 ```bash
-# From your LOCAL machine — upload the full project
-scp -r ./embr3-client-satisfactory root@YOUR_VPS_IP:/tmp/embr3-upload
+# From your LOCAL machine — upload the full project over SSH as the non-root deploy user
+rsync -az --delete ./embr3-client-satisfactory/ deploy@YOUR_VPS_IP:/tmp/embr3-upload/
 ```
 
 ### 4.2 Run the setup script on the VPS
 
 ```bash
-ssh root@YOUR_VPS_IP
+ssh deploy@YOUR_VPS_IP
 
 # Move files to deployment directory
-mkdir -p /opt/embr3-csm
-cp -r /tmp/embr3-upload/* /opt/embr3-csm/
+sudo mkdir -p /opt/embr3-csm
+sudo rsync -a /tmp/embr3-upload/ /opt/embr3-csm/
+sudo chown -R embapp:embapp /opt/embr3-csm
 
 # Edit configuration in the script first
-nano /opt/embr3-csm/deploy/setup-vps.sh
+sudo nano /opt/embr3-csm/deploy/setup-vps.sh
 # Set DOMAIN="yourdomain.com" if you have a domain
 
 # Run
-chmod +x /opt/embr3-csm/deploy/setup-vps.sh
+sudo chmod +x /opt/embr3-csm/deploy/setup-vps.sh
 sudo /opt/embr3-csm/deploy/setup-vps.sh
 ```
 
 ### 4.3 Configure environment variables
 
 ```bash
-# Copy the template and edit
-cp /opt/embr3-csm/deploy/.env.production.example /opt/embr3-csm/server/.env
-nano /opt/embr3-csm/server/.env
+# Copy the template and edit with strict file permissions
+sudo install -o embapp -g embapp -m 600 /opt/embr3-csm/deploy/.env.production.example /opt/embr3-csm/server/.env
+sudo -u embapp nano /opt/embr3-csm/server/.env
 ```
 
 Fill in your actual values. See [Section 6](#6-environment-variables) for details.
@@ -167,10 +181,12 @@ Fill in your actual values. See [Section 6](#6-environment-variables) for detail
 ### 4.4 Create frontend production env
 
 ```bash
-cp /opt/embr3-csm/deploy/.env.frontend.production /opt/embr3-csm/front-end/.env.production
-nano /opt/embr3-csm/front-end/.env.production
-# Set VITE_APP_URL=https://yourdomain.com (or http://YOUR_VPS_IP)
+sudo install -o embapp -g embapp -m 600 /opt/embr3-csm/deploy/.env.frontend.production /opt/embr3-csm/front-end/.env.production
+sudo -u embapp nano /opt/embr3-csm/front-end/.env.production
+# Set VITE_APP_URL=https://yourdomain.com
 ```
+
+Avoid using `http://YOUR_VPS_IP` for production because browsers, cookies, and credentials are safer over HTTPS.
 
 ### 4.5 Rebuild frontend with production env
 
@@ -211,19 +227,21 @@ sudo systemctl enable nginx
 ### 5.3 Create application user
 
 ```bash
-sudo useradd -m -s /bin/bash embapp
+sudo useradd -r -m -s /usr/sbin/nologin embapp
 sudo mkdir -p /opt/embr3-csm
 sudo chown -R embapp:embapp /opt/embr3-csm
+sudo chmod 750 /opt/embr3-csm
 ```
 
 ### 5.4 Upload and install project
 
 ```bash
-# Upload files to /opt/embr3-csm (scp, rsync, or git clone)
+# Upload files to /opt/embr3-csm (rsync or git clone over SSH).
+# Do not upload .env files to GitHub or public locations.
 
 # Backend
 cd /opt/embr3-csm/server
-sudo -u embapp npm ci --production
+sudo -u embapp npm ci --omit=dev
 
 # Frontend
 cd /opt/embr3-csm/front-end
@@ -261,7 +279,7 @@ For a **dedicated host running only OCSM**, generate a complete config with
 
 ```bash
 sudo ./deploy/setup-vps.sh
-sudo certbot --nginx -d yourdomain.com
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
 ```
 
 ---
@@ -270,35 +288,47 @@ sudo certbot --nginx -d yourdomain.com
 
 ### Server (`server/.env`)
 
+Do not commit this file. It must be owned by the application user and readable only by that user:
+
+```bash
+sudo chown embapp:embapp /opt/embr3-csm/server/.env
+sudo chmod 600 /opt/embr3-csm/server/.env
+```
+
 | Variable | Required | Example | Description |
 |----------|----------|---------|-------------|
 | `NODE_ENV` | ✅ | `production` | Enables production mode |
 | `PORT` | ✅ | `5001` | Backend port. 5000 is HRPMS on the shared VPS |
 | `SERVER_HOST` | ✅ | `127.0.0.1` | Bind to localhost only (Nginx handles public) |
-| `MONGO_URI` | ✅ | `mongodb+srv://user:pass@cluster.mongodb.net/db` | MongoDB Atlas connection string |
-| `JWT_SECRET` | ✅ | *(64+ char random string)* | JWT signing secret |
-| `CLIENT_ORIGIN` | ✅ | `https://yourdomain.com` | CORS allowed origin |
+| `MONGO_URI` | ✅ | `<mongodb-atlas-uri-from-secret-store>` | MongoDB Atlas connection string; never paste real credentials into docs, tickets, screenshots, shell history, or Git |
+| `JWT_SECRET` | ✅ | `<64-plus-character-random-secret>` | JWT signing secret |
+| `CLIENT_ORIGIN` | ✅ | `https://yourdomain.com` | CORS allowed origin; use HTTPS in production |
 | `FRONTEND_URL` | ✅ | `https://yourdomain.com` | Used in password reset / verification emails |
 | `FORCE_SMTP` | ✅ | `true` | Force SMTP email transport |
 | `SMTP_HOST` | ✅ | `smtp.gmail.com` | SMTP server |
 | `SMTP_PORT` | ✅ | `465` | SMTP port |
 | `SMTP_SECURE` | ✅ | `true` | Use TLS |
-| `SMTP_USER` | ✅ | `your@gmail.com` | SMTP username |
-| `SMTP_PASS` | ✅ | `xxxx xxxx xxxx xxxx` | Gmail App Password |
-| `EMAIL_USER` | ✅ | `your@gmail.com` | Email sender address |
-| `EMAIL_PASS` | ✅ | `xxxx xxxx xxxx xxxx` | Same as SMTP_PASS |
+| `SMTP_USER` | ✅ | `<smtp-account-email>` | SMTP username |
+| `SMTP_PASS` | ✅ | `<smtp-app-password>` | SMTP app password; never reuse your account password |
+| `EMAIL_USER` | ✅ | `<sender-email>` | Email sender address |
+| `EMAIL_PASS` | ✅ | `<smtp-app-password>` | Same secret as `SMTP_PASS`, if required by the app |
 | `EMAIL_FROM` |  | `EMB Region III Online CSM Portal` | Display name in emails |
-| `MENU_SECRET_KEY` |  | *(any string)* | Menu obfuscation key |
-| `SECRET_KEY` |  | *(any string)* | Client-side encryption key |
-| `COLOR_SCHEME_SECRET` |  | *(any string)* | Theme persistence key |
+| `MENU_SECRET_KEY` |  | `<random-secret>` | Menu obfuscation key |
+| `SECRET_KEY` |  | `<random-secret>` | Client-side encryption key |
+| `COLOR_SCHEME_SECRET` |  | `<random-secret>` | Theme persistence key |
 
-### Generate a JWT secret
+### Generate strong secrets
 
 ```bash
+# JWT_SECRET, MENU_SECRET_KEY, SECRET_KEY, COLOR_SCHEME_SECRET
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
+If any real value was ever committed, shared in chat, pasted into an issue, or exposed in logs, rotate it immediately before continuing.
+
 ### Frontend (`front-end/.env.production`)
+
+Values prefixed with `VITE_` are bundled into the browser build and are public. Do not put secrets in frontend environment variables.
 
 | Variable | Required | Example | Description |
 |----------|----------|---------|-------------|
@@ -317,7 +347,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 sudo apt install -y certbot python3-certbot-nginx
 
 # Obtain certificate
-sudo certbot --nginx -d yourdomain.com
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
 
 # Auto-renewal is set up automatically. Test it:
 sudo certbot renew --dry-run
@@ -346,10 +376,10 @@ sudo systemctl status embr3-server
 ```
 
 ### Verify
-- **Frontend**: Open `http://YOUR_VPS_IP` (or `https://yourdomain.com`)
-- **Backend health**: `curl http://localhost:5001/api/health`
-- **Admin panel**: Navigate to `/admin`
-- **Survey**: Navigate to `/client`
+- **Frontend**: Open `https://yourdomain.com/ocsm/` on the shared EMB R3 VPS, or `https://yourdomain.com` on a dedicated OCSM host
+- **Backend health**: `curl http://127.0.0.1:5001/api/health`
+- **Admin panel**: Navigate to `/ocsm/admin` on the shared EMB R3 VPS, or `/admin` on a dedicated OCSM host
+- **Survey**: Navigate to `/ocsm/client` on the shared EMB R3 VPS, or `/client` on a dedicated OCSM host
 
 ---
 
@@ -363,7 +393,7 @@ sudo ufw --force enable
 sudo ufw status
 ```
 
-**Important**: Port 5000 is NOT opened to the public. Nginx proxies requests internally.
+**Important**: Backend ports must not be opened to the public. On the shared VPS, OCSM port `5001` and HRPMS port `5000` should only be reachable locally through Nginx.
 
 ---
 
@@ -382,17 +412,17 @@ curl -s http://127.0.0.1:5001/api/health
 # 3. Nginx is running
 sudo systemctl status nginx
 
-# 4. Frontend loads
-curl -s -o /dev/null -w "%{http_code}" http://YOUR_VPS_IP/
+# 4. Frontend loads over HTTPS
+curl -s -o /dev/null -w "%{http_code}" https://yourdomain.com/ocsm/
 # Expected: 200
 
-# 5. API through Nginx
-curl -s http://YOUR_VPS_IP/api/health
+# 5. API through Nginx on the shared VPS path prefix
+curl -s https://yourdomain.com/ocsm/api/health
 # Expected: {"status":"ok"}
 
-# 6. SSL (if domain configured)
-curl -s https://yourdomain.com/api/health
-# Expected: {"status":"ok"}
+# 6. SSL certificate and redirect
+curl -I http://yourdomain.com/ocsm/
+# Expected: 301/308 redirect to https://yourdomain.com/ocsm/
 
 # 7. WebSocket connectivity
 # Open browser → F12 → Network → WS tab → check socket.io connection
@@ -416,10 +446,10 @@ sudo -u embapp ./deploy/redeploy.sh
 cd /opt/embr3-csm
 
 # Pull latest code (if using git)
-sudo -u embapp git pull
+sudo -u embapp git pull --ff-only
 
 # Rebuild backend
-cd server && sudo -u embapp npm ci --production
+cd server && sudo -u embapp npm ci --omit=dev
 
 # Rebuild frontend
 cd ../front-end && sudo -u embapp npm ci && sudo -u embapp npm run build
@@ -451,6 +481,8 @@ sudo journalctl -u embr3-server --since today
 sudo journalctl -u embr3-server --since "1 hour ago"
 ```
 
+Do not paste full logs into public issues or chat. Redact tokens, emails, MongoDB URIs, SMTP credentials, reset links, and any request bodies containing personal data.
+
 ### Nginx logs
 
 ```bash
@@ -470,7 +502,7 @@ df -h
 free -h
 
 # Node.js process
-ps aux | grep node
+pgrep -a node
 ```
 
 ---
@@ -478,22 +510,36 @@ ps aux | grep node
 ## 13. Backup & Restore
 
 ### MongoDB Atlas
-MongoDB Atlas provides automatic daily backups (on M10+ clusters). For M0/free:
+MongoDB Atlas provides automatic daily backups on paid clusters. For free/shared clusters, use manual exports and store them encrypted with strict permissions.
 
 ```bash
-# Manual backup using mongodump
-mongodump --uri="mongodb+srv://user:pass@cluster.mongodb.net/db" --out=/backups/$(date +%Y%m%d)
+# Create a root-only backup directory
+sudo install -d -m 700 /backups
 
-# Restore
-mongorestore --uri="mongodb+srv://user:pass@cluster.mongodb.net/db" /backups/20260216/
+# Prompt for the URI so it is not saved in shell history.
+# Do not paste real credentials directly into this guide, Git, tickets, or screenshots.
+read -rsp "MongoDB URI: " MONGO_URI; echo
+mongodump --uri="$MONGO_URI" --archive="/backups/embr3-$(date +%Y%m%d).archive" --gzip
+unset MONGO_URI
+
+# Restore from an encrypted/private backup location
+read -rsp "MongoDB URI: " MONGO_URI; echo
+mongorestore --uri="$MONGO_URI" --archive="/backups/embr3-YYYYMMDD.archive" --gzip --drop
+unset MONGO_URI
 ```
+
+For higher-security environments, run backup and restore commands from a locked-down admin host and rotate database credentials after emergency restores.
 
 ### Application files
 
 ```bash
-# Backup env and uploads
-sudo tar -czf /backups/embr3-env-$(date +%Y%m%d).tar.gz /opt/embr3-csm/server/.env
+# Backup env and uploads into a root-readable-only archive
+sudo install -d -m 700 /backups
+sudo tar --warning=no-file-changed -czf /backups/embr3-env-$(date +%Y%m%d).tar.gz /opt/embr3-csm/server/.env
+sudo chmod 600 /backups/embr3-env-*.tar.gz
 ```
+
+Do not copy `.env` backups to public storage, Git repositories, shared drives, or unencrypted laptops.
 
 ---
 
@@ -507,7 +553,7 @@ sudo journalctl -u embr3-server -n 50 --no-pager
 
 # Common causes:
 # - Missing .env file or MONGO_URI/JWT_SECRET not set
-# - Port 5000 already in use: sudo lsof -i :5000
+# - Port 5001 already in use: sudo lsof -i :5001
 # - Node.js version too old: node -v (needs 20+)
 ```
 
@@ -517,8 +563,8 @@ sudo journalctl -u embr3-server -n 50 --no-pager
 # Backend is not running
 sudo systemctl status embr3-server
 
-# Wrong proxy port — ensure server/.env has PORT=5000
-grep PORT /opt/embr3-csm/server/.env
+# Wrong proxy port — ensure server/.env has PORT=5001 without printing secrets
+grep '^PORT=' /opt/embr3-csm/server/.env
 
 # Check Nginx error log
 sudo tail -20 /var/log/nginx/error.log
@@ -539,31 +585,32 @@ sudo -u embapp npm run build
 
 ```bash
 # Ensure Nginx websocket proxy is configured
-grep -A5 "socket.io" /etc/nginx/sites-available/embr3-csm
+grep -A5 "socket.io" /etc/nginx/sites-available/embr3-hr-pms
 
 # Check backend Socket.IO is listening
-curl http://127.0.0.1:5001/socket.io/?EIO=4&transport=polling
+curl 'http://127.0.0.1:5001/socket.io/?EIO=4&transport=polling'
 ```
 
 ### Emails not sending
 
 ```bash
-# Check backend logs for SMTP errors
+# Check backend logs for SMTP errors and redact sensitive output before sharing
 sudo journalctl -u embr3-server | grep -i "mail\|smtp\|email"
 
 # Verify Gmail:
 # 1. 2-Step Verification is ENABLED on the Gmail account
 # 2. App Password is generated (Security → App Passwords)
-# 3. App Password is exactly 16 characters in .env (no spaces)
+# 3. App Password is stored only in /opt/embr3-csm/server/.env with chmod 600
 ```
 
 ### MongoDB connection failed
 
 ```bash
-# Test from VPS
-node -e "
+# Test from VPS without hard-coding credentials
+cd /opt/embr3-csm/server
+sudo -u embapp node -r dotenv/config -e "
   const mongoose = require('mongoose');
-  mongoose.connect(process.env.MONGO_URI || 'YOUR_URI')
+  mongoose.connect(process.env.MONGO_URI)
     .then(() => { console.log('Connected!'); process.exit(0); })
     .catch(e => { console.error(e.message); process.exit(1); });
 "
@@ -572,6 +619,7 @@ node -e "
 # - VPS IP not whitelisted in MongoDB Atlas Network Access
 # - Wrong username/password in connection string
 # - Missing database name in URI
+# - Credentials were rotated but server/.env was not updated
 ```
 
 ### High memory usage
@@ -584,6 +632,24 @@ ps aux --sort=-%mem | head -5
 # Restart the backend
 sudo systemctl restart embr3-server
 ```
+
+---
+
+## 15. Security Checklist
+
+Before going live:
+
+- [ ] No real secrets are committed in Git history, docs, issues, screenshots, or chat messages
+- [ ] Any secret that may have been exposed has been rotated (`MONGO_URI`, `JWT_SECRET`, SMTP app passwords, API keys)
+- [ ] `server/.env` exists only on the VPS and is `chmod 600`
+- [ ] Frontend `VITE_*` variables contain only public values
+- [ ] MongoDB Atlas Network Access allows only the VPS public IP, not `0.0.0.0/0`
+- [ ] MongoDB Atlas database user has least-privilege permissions for the application database
+- [ ] SSH root login and password authentication are disabled after key-based access is confirmed
+- [ ] UFW allows only SSH, HTTP, and HTTPS; backend ports are private
+- [ ] Production URLs use HTTPS, and HTTP redirects to HTTPS
+- [ ] Logs and backups are redacted/encrypted before sharing or moving off-server
+- [ ] `.env`, backup archives, and uploads are excluded from Git and public storage
 
 ---
 
@@ -601,4 +667,4 @@ sudo systemctl restart embr3-server
 | Renew SSL | `sudo certbot renew` |
 | Check disk space | `df -h` |
 | Rebuild frontend | `cd /opt/embr3-csm/front-end && npm run build` |
-| Health check | `curl http://localhost:5001/api/health` |
+| Health check | `curl http://127.0.0.1:5001/api/health` |
