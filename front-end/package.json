@@ -1,7 +1,8 @@
 {
-  "name": "front-end",
+  "name": "embr3-ocsm-web",
   "private": true,
   "version": "1.0.0",
+  "description": "EMBR3 OCSM web app: public client survey (ARTA CSM) and staff admin panel for the Environmental Management Bureau Region III.",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",

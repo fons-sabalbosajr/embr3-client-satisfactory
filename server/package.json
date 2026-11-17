@@ -1,8 +1,9 @@
 {
-  "name": "server",
+  "name": "embr3-ocsm-server",
   "version": "1.0.0",
+  "description": "EMBR3 OCSM API server: Express + MongoDB backend for the Online Client Satisfaction Measurement system of EMB Region III.",
+  "main": "server.js",
   "type": "module",
-  "main": "index.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
@@ -11,7 +12,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.127.0",
     "@emailjs/nodejs": "^5.0.2",

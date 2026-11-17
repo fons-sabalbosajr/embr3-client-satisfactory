@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| VPS IP | `72.61.125.232` |
+| VPS IP | see Hostinger hPanel → VPS → Overview (not kept in this public repo) |
 | Domain | `embr3-onlinesystems.cloud` |
 | App user | `embapp` |
 | App path | `/opt/embr3-csm` |
