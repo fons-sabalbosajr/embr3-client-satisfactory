@@ -164,9 +164,35 @@ JWT_SECRET=...                          # Random secret for auth tokens
 SMTP_HOST=smtp.gmail.com               # Email config
 SMTP_USER=...
 SMTP_PASS=...                          # Gmail App Password (16 chars)
+GEMINI_MODEL=gemini-3.5-flash          # VERA default model
+GEMINI_FALLBACK_MODEL=gemini-3.5-flash-lite
 ```
 
 See `deploy/.env.production.example` for a full template with all variables.
+
+### Versions and releases
+
+Each release is a git tag such as `v1.0.0`, and [CHANGELOG.md](../CHANGELOG.md) lists what changed.
+
+To release:
+1. Bump `version` in `front-end/package.json` and `server/package.json`.
+2. Add a CHANGELOG entry.
+3. Commit, then tag and push:
+   ```bash
+   git tag -a v1.0.1 -m "v1.0.1"
+   git push origin main --follow-tags
+   ```
+4. On the VPS, run `./deploy/redeploy.sh`. It ends with the version it deployed.
+
+To check what the VPS is running: `cd /opt/embr3-csm && git describe --tags`. The admin sidebar footer shows the same version.
+
+To roll back to an earlier release (front end and server together):
+```bash
+cd /opt/embr3-csm && git checkout v1.0.0
+cd server && npm ci --omit=dev && cd ../front-end && npm ci && npm run build
+sudo systemctl restart embr3-server
+# Afterwards, return to the latest: git checkout main && ./deploy/redeploy.sh
+```
 
 ### Nginx Configuration
 

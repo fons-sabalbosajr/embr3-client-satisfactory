@@ -4,6 +4,7 @@ import Feedback from '../models/Feedback.js';
 import { updateFeedback } from '../controllers/feedback.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/permission.js';
+import { getSurveys, cacheAdd, cacheRemove } from '../utils/surveyCache.js';
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.post('/', async (req, res) => {
     }
     const newFeedback = new Feedback(req.body);
     const savedFeedback = await newFeedback.save();
+    cacheAdd(savedFeedback);
     res.status(201).json(savedFeedback);
   } catch (err) {
     if (err.name === 'ValidationError') {
@@ -30,7 +32,10 @@ router.post('/', async (req, res) => {
 // @route   GET /api/feedback/count
 router.get('/count', async (req, res) => {
   try {
-    const count = await Feedback.countDocuments();
+    // From the in-memory cache: the public pages call this on every visit and
+    // a round trip to the shared Atlas cluster is slow.
+    const count = (await getSurveys()).length;
+    res.set('Cache-Control', 'public, max-age=60');
     res.status(200).json({ count });
   } catch (err) {
     console.error('Error counting feedback:', err);
@@ -40,9 +45,14 @@ router.get('/count', async (req, res) => {
 
 // @desc    Get all feedback
 // @route   GET /api/feedback
+// Served from the in-memory survey cache (utils/surveyCache.js). Measurement
+// Data only reads answersLabeled, so the raw `answers` copy (keyed by question
+// id) and deviceId are left out of the reply. Edits still work: updateFeedback
+// only touches the fields sent.
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const feedbackList = await Feedback.find().sort({ createdAt: -1 });
+    const surveys = await getSurveys();
+    const feedbackList = surveys.map(({ answers, deviceId, __v, ...rest }) => rest);
     res.status(200).json(feedbackList);
   } catch (err) {
     console.error('Error fetching feedback:', err);
@@ -60,6 +70,7 @@ router.delete('/:id', authMiddleware, requirePermission('canDelete'), async (req
     }
     const deleted = await Feedback.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ message: 'Feedback not found' });
+    cacheRemove(req.params.id);
     res.json({ message: 'Feedback deleted' });
   } catch (err) {
     console.error('Error deleting feedback:', err);

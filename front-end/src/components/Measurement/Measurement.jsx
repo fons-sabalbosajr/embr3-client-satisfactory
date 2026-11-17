@@ -10,8 +10,10 @@ import {
   message,
   Typography,
   Statistic,
+  Alert,
 } from "antd";
 import {
+  ReloadOutlined,
   ExportOutlined,
   DatabaseOutlined,
   TeamOutlined,
@@ -38,27 +40,47 @@ function Measurement() {
   const [editRecord, setEditRecord] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
     fetchData();
 
-    // 👇 Listen for real-time survey submissions
-    socket.on("feedbackAdded", () => {
-      fetchData(); // reloads both `data` and `filtered`
-    });
+    // Real-time submissions: add the new response in place instead of
+    // re-downloading every record (the Atlas link is slow, so a full reload
+    // on each submission kept the page busy for seconds).
+    const onAdded = (entry) => {
+      if (!entry?._id) return;
+      const add = (list) =>
+        list.some((d) => d._id === entry._id) ? list : [{ ...entry, _new: true }, ...list];
+      setData(add);
+      setFiltered(add);
+    };
+    socket.on("feedbackAdded", onAdded);
 
     return () => {
-      socket.off("feedbackAdded");
+      socket.off("feedbackAdded", onAdded);
     };
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
+    setLoadError(null);
     try {
       const res = await getFeedbacks();
-      setData(res.data);
-      setFiltered(res.data);
+      const list = Array.isArray(res.data) ? res.data : [];
+      setData(list);
+      setFiltered(list);
     } catch (err) {
       console.error("Failed to fetch feedbacks:", err);
+      setLoadError(
+        err?.code === "ECONNABORTED"
+          ? "The server took too long to respond. The database connection may be slow right now."
+          : err?.response?.data?.message || err?.response?.data?.error ||
+            "Could not load measurement data. Check your connection and try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -150,6 +172,7 @@ function Measurement() {
         <Col xs={12} sm={12} md={6}>
           <Card size="small" className="ms-stat-card ms-blue">
             <Statistic
+              loading={loading}
               title="Total Responses"
               value={data.length}
               prefix={<DatabaseOutlined />}
@@ -159,6 +182,7 @@ function Measurement() {
         <Col xs={12} sm={12} md={6}>
           <Card size="small" className="ms-stat-card ms-cyan">
             <Statistic
+              loading={loading}
               title="Internal"
               value={data.filter((d) => inferSurveyType(d) === "internal").length}
               prefix={<TeamOutlined />}
@@ -169,6 +193,7 @@ function Measurement() {
         <Col xs={12} sm={12} md={6}>
           <Card size="small" className="ms-stat-card ms-green">
             <Statistic
+              loading={loading}
               title="External"
               value={data.filter((d) => inferSurveyType(d) === "external").length}
               prefix={<UserOutlined />}
@@ -179,6 +204,7 @@ function Measurement() {
         <Col xs={12} sm={12} md={6}>
           <Card size="small" className="ms-stat-card ms-orange">
             <Statistic
+              loading={loading}
               title="Today"
               value={
                 data.filter((d) =>
@@ -228,8 +254,24 @@ function Measurement() {
           </div>
         </div>
 
+        {loadError && (
+          <Alert
+            type="error"
+            showIcon
+            message="Measurement data did not load"
+            description={loadError}
+            action={
+              <Button size="small" icon={<ReloadOutlined />} onClick={fetchData} loading={loading}>
+                Retry
+              </Button>
+            }
+            style={{ marginBottom: 12 }}
+          />
+        )}
+
         <MeasurementTable
           data={filtered}
+          loading={loading}
           onEdit={openEditModal}
           onDataRefresh={fetchData}
         />

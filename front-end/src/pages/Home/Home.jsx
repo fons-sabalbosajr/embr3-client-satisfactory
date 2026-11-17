@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FloatButton, Row, Col, Typography, Button, Select, Dropdown, Modal } from "antd";
+import { ConfigProvider, FloatButton, Row, Col, Typography, Button, Select, Dropdown, Modal } from "antd";
 import { BulbOutlined, ArrowRightOutlined, InfoCircleOutlined, TeamOutlined, GlobalOutlined } from "@ant-design/icons";
 import {
   IconDeviceMobile,
@@ -12,11 +12,12 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 
 import { getFeedbackCount } from "../../services/api";
-import EMBLogo from "../../assets/emblogo.svg";
-import BPLogo from "../../assets/bplogo.svg";
+import AgencyHeader from "../../components/AgencyHeader/AgencyHeader";
 import Survey from "../../assets/surveyman.png";
 import { getOpaqueItem } from "../../utils/encryptedStorage";
+import { PUBLIC_CLIENT_URL } from "../../utils/basePath";
 import "./home.css";
+import "./home-arta.css";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
 
@@ -33,15 +34,11 @@ function Home({ toggleColorScheme }) {
     }
   }, []);
   const [feedbacks, setFeedbacks] = useState([]);
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState(i18n.language?.startsWith("fil") ? "fil" : "en");
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const clientUrl = (() => {
-    const base = import.meta.env.VITE_APP_URL || window.location.origin;
-    const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
-    return `${base.replace(/\/+$/, "")}${basePath}/client`;
-  })();
+  const clientUrl = PUBLIC_CLIENT_URL;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -125,7 +122,7 @@ function Home({ toggleColorScheme }) {
   ];
 
   return (
-    <>
+    <ConfigProvider theme={{ token: { colorPrimary: "#0038a8" } }}>
       <div className="client-home-container">
         {/* Background Circles */}
         <div className="client-home-background-circles">
@@ -137,33 +134,22 @@ function Home({ toggleColorScheme }) {
         </div>
 
         {/* ✅ Agency Header */}
-        <header className="agency-header-home">
-          <div className="agency-header-inner-home">
-            <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb" />
-
-            <div className="agency-header-text">
-              <span className="republic-text">{t("agencyTitle")}</span>
-              <span className="department-text">{t("department")}</span>
-              <span className="bureau-text">{t("bureau")}</span>
-              <span className="address-text">
-                {t("address1")}, {t("address2")}
-              </span>
-            </div>
-
-            <img src={BPLogo} alt="BP Logo" className="logo-svg-bp" />
-          </div>
-        </header>
+        <AgencyHeader />
 
         {/* Hero Section */}
         <Row
           align="middle"
           justify="center"
           className="hero-section"
-          style={{ minHeight: "calc(100vh - var(--client-header-space))" }}
         >
           <Col xs={24} md={24} className="hero-left">
             <div className="hero-left-inner">
               <div className="hero-card">
+                <div className="hero-kicker">
+                  <IconSparkles size={18} />
+                  <span>{t("heroKicker")}</span>
+                </div>
+
                 <div className="hero-slogan-row">
                   <div className="hero-big-slogan">{t("heroBigSlogan")}</div>
 
@@ -172,10 +158,10 @@ function Home({ toggleColorScheme }) {
                     <div className="hero-qr-wrapper">
                       <QRCodeSVG
                         value={clientUrl}
-                        size={200}
+                        size={148}
                         level="H"
                         bgColor="#ffffff"
-                        fgColor="#0b4f6c"
+                        fgColor="#0038a8"
                         className="hero-qr-code"
                       />
                     </div>
@@ -183,11 +169,6 @@ function Home({ toggleColorScheme }) {
                       {t("scanQr", "Scan to open on your device")}
                     </span>
                   </div>
-                </div>
-
-                <div className="hero-kicker">
-                  <IconSparkles size={18} />
-                  <span>{t("heroKicker")}</span>
                 </div>
 
                 <div className="hero-card-grid">
@@ -246,7 +227,7 @@ function Home({ toggleColorScheme }) {
                           }}
                           options={languageOptions}
                           className="hero-language-select"
-                          popupClassName="hero-language-dropdown"
+                          classNames={{ popup: { root: "hero-language-dropdown" } }}
                           optionLabelProp="label"
                           placeholder={t("selectLanguage")}
                         />
@@ -268,7 +249,7 @@ function Home({ toggleColorScheme }) {
                       src={Survey}
                       alt=""
                       className="hero-image hero-image-in-card"
-                      loading="lazy"
+                      loading="eager"
                       decoding="async"
                     />
                   </div>
@@ -294,7 +275,7 @@ function Home({ toggleColorScheme }) {
         tooltip={<div>{t("toggleColor")}</div>}
         style={{ right: 20, bottom: 20 }}
       />
-    </>
+    </ConfigProvider>
   );
 }
 

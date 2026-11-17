@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import ServiceCategory from '../models/ServiceCategory.js';
 import authMiddleware from '../middleware/auth.js';
-import { requirePermission } from '../middleware/permission.js';
+import { requireDeveloper } from '../middleware/permission.js';
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create category
-router.post('/', authMiddleware, requirePermission('canEdit'), async (req, res) => {
+router.post('/', authMiddleware, requireDeveloper, async (req, res) => {
   try {
     const { name, type } = req.body || {};
     if (!name || typeof name !== 'string' || !name.trim()) {
@@ -39,7 +39,7 @@ router.post('/', authMiddleware, requirePermission('canEdit'), async (req, res) 
 });
 
 // Update category
-router.put('/:id', authMiddleware, requirePermission('canEdit'), async (req, res) => {
+router.put('/:id', authMiddleware, requireDeveloper, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, type } = req.body || {};
@@ -67,7 +67,7 @@ router.put('/:id', authMiddleware, requirePermission('canEdit'), async (req, res
 });
 
 // Delete category
-router.delete('/:id', authMiddleware, requirePermission('canEdit'), async (req, res) => {
+router.delete('/:id', authMiddleware, requireDeveloper, async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {

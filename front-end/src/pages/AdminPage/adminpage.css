@@ -1,59 +1,416 @@
-/* adminpage.css — Corporate Theme */
+/* adminpage.css — admin shell in the ARTA palette (client survey + sign-in).
+ *
+ * Every colour is a --adm-* variable set inline on .admin-shell by
+ * adminTheme.js, from the light/dark mode and the user's Appearance
+ * preferences — so custom sidebar/header/primary colours still apply.
+ */
 
-/* Style for the logo container in the Sider */
-.admin-logo-container {
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+.admin-shell {
+  background: var(--adm-layout-bg);
+  color: var(--adm-text);
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
 }
 
-.admin-logo {
-  height: 36px;
-  width: 36px;
-  transition: all 0.3s;
+/* ═══ Sidebar ════════════════════════════════════════════════════════════ */
+
+.admin-sider.ant-layout-sider {
+  background: var(--adm-sider-bg) !important;
+  border-inline-end: 1px solid var(--adm-sider-border);
 }
 
-.admin-title-wrapper {
+.admin-sider-inner {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  height: 100%;
+  min-height: 0;
 }
 
-/* Ensure dropdown link has a pointer and good alignment */
-.user-dropdown-link {
-  cursor: pointer;
+.admin-brand {
   display: flex;
   align-items: center;
-  padding: 6px 10px;
-  border-radius: 6px;
-  transition: background-color 0.2s;
+  gap: 12px;
+  flex: none;
+  min-height: 76px;
+  padding: 14px 16px 12px;
 }
 
-.user-dropdown-link:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+.admin-brand--rail {
+  justify-content: center;
+  padding: 0;
 }
 
-/* Ensure the menu takes the full height available minus the logo and footer switch */
-.ant-menu {
-  border-right: 0 !important; /* Remove the default border */
-  background: transparent;
+.admin-brand-logos {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
 }
 
-/* Corporate layout helpers */
-.admin-header-bar {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+.admin-brand-logos img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
-/* Scrollbar styling for sider */
-.ant-layout-sider::-webkit-scrollbar {
+.admin-brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.admin-brand-name {
+  color: var(--adm-sider-strong);
+  font-family: "Sora", "Plus Jakarta Sans", system-ui, sans-serif;
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.admin-brand-sub {
+  margin-top: 3px;
+  color: var(--adm-sider-muted);
+  font-size: 10px;
+  white-space: nowrap;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* The ARTA tricolour, as on the agency header. */
+.admin-sider-ribbon,
+.admin-header-ribbon {
+  height: 3px;
+  background: linear-gradient(90deg, #0038a8 0 60%, #ce1126 60% 80%, #fcd116 80% 100%);
+}
+
+.admin-sider-ribbon {
+  flex: none;
+  margin: 0 18px;
+  border-radius: 3px;
+  opacity: 0.9;
+}
+
+.admin-sider-menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--adm-sider-border) transparent;
+}
+
+.admin-sider-menu::-webkit-scrollbar {
   width: 4px;
 }
-.ant-layout-sider::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+
+.admin-sider-menu::-webkit-scrollbar-thumb {
+  background: var(--adm-sider-border);
   border-radius: 2px;
+}
+
+.admin-sider-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  flex: none;
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--adm-sider-border);
+}
+
+.admin-sider-foot--rail {
+  align-items: center;
+  padding: 12px 4px 14px;
+}
+
+.admin-dev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--adm-sider-indicator) 50%, transparent);
+  background: color-mix(in srgb, var(--adm-sider-indicator) 12%, transparent);
+  color: var(--adm-sider-indicator);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.admin-version {
+  color: var(--adm-sider-muted);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: default;
+  outline: none;
+  border-radius: 4px;
+}
+
+.admin-version strong {
+  margin-left: 4px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--adm-sider-hover);
+  color: var(--adm-sider-strong);
+  font-weight: 700;
+}
+
+.admin-version:focus-visible {
+  outline: 2px solid var(--adm-sider-indicator);
+  outline-offset: 2px;
+}
+
+/* ═══ Header ═════════════════════════════════════════════════════════════ */
+
+.admin-header.ant-layout-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 64px;
+  line-height: normal;
+  background: var(--adm-header-bg);
+  color: var(--adm-header-text);
+  border-bottom: 1px solid var(--adm-header-border);
+  box-shadow: 0 1px 12px rgba(10, 26, 63, 0.06);
+}
+
+.admin-header-ribbon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  opacity: 0.85;
+}
+
+.admin-header-left,
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--adm-header-border);
+  border-radius: 11px;
+  background: transparent;
+  color: var(--adm-header-text);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.admin-icon-btn:hover {
+  background: var(--adm-header-hover);
+  border-color: color-mix(in srgb, var(--adm-primary) 35%, var(--adm-header-border));
+}
+
+.admin-icon-btn:focus-visible,
+.admin-user-chip:focus-visible {
+  outline: 2px solid var(--adm-primary);
+  outline-offset: 2px;
+}
+
+.admin-theme-btn {
+  color: var(--adm-header-text);
+}
+
+.admin-shell--dark .admin-theme-btn {
+  color: #fcd116;
+}
+
+.admin-page-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.admin-page-section {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--adm-header-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.admin-page-name {
+  margin: 2px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--adm-header-text);
+  font-family: "Sora", "Plus Jakarta Sans", system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.admin-header-sep {
+  width: 1px;
+  height: 26px;
+  background: var(--adm-header-border);
+}
+
+.admin-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--adm-header-text);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-user-chip:hover {
+  background: var(--adm-header-hover);
+  border-color: var(--adm-header-border);
+}
+
+.admin-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0038a8 0%, #1d5be0 60%, #4f7dff 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0 0 2px var(--adm-header-bg), 0 0 0 3.5px #fcd116;
+}
+
+.admin-user-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.admin-user-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.admin-user-role {
+  color: var(--adm-header-muted);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.admin-user-role.is-dev {
+  color: #ce1126;
+  font-weight: 700;
+}
+
+.admin-shell--dark .admin-user-role.is-dev {
+  color: #ff8493;
+}
+
+.admin-user-caret {
+  color: var(--adm-header-muted);
+  font-size: 10px;
+}
+
+.admin-user-menu-head {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 0;
+  line-height: 1.3;
+}
+
+.admin-user-menu-head strong {
+  color: var(--adm-text);
+  font-size: 13.5px;
+}
+
+.admin-user-menu-head span {
+  color: var(--adm-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ═══ Content ════════════════════════════════════════════════════════════ */
+
+.admin-content.ant-layout-content {
+  margin: 16px 20px 0;
+  min-width: 0;
+}
+
+.admin-page {
+  min-height: calc(100vh - 136px);
+  padding: 18px;
+  border: 1px solid var(--adm-border-soft);
+  border-radius: 18px;
+  background: var(--adm-surface);
+  box-shadow: 0 1px 2px rgba(10, 26, 63, 0.04), 0 8px 28px rgba(10, 26, 63, 0.05);
+}
+
+.admin-shell--dark .admin-page {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
+.admin-footer.ant-layout-footer {
+  padding: 14px 16px 20px;
+  background: transparent;
+  color: var(--adm-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 767px) {
+  .admin-header.ant-layout-header {
+    height: 58px;
+  }
+  .admin-page-name {
+    font-size: 16px;
+  }
+  .admin-content.ant-layout-content {
+    margin: 10px 8px 0;
+  }
+  .admin-page {
+    padding: 12px;
+    border-radius: 14px;
+  }
+  .admin-header-sep {
+    display: none;
+  }
+}
+
+/* Legacy class kept for pages that still reference it */
+.admin-header-bar {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 /* Backdrop behind the sidebar when it is opened as an overlay on phones */
@@ -62,4 +419,142 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
   z-index: 1190;
+}
+
+/* ── Responsive helpers for every admin page ─────────────────────────────
+ * Phones (<768px): the sidebar is an overlay, content is full width.
+ * Tablets (768–991px): icon-only sidebar by default.
+ * These rules keep wide content scrollable inside its own box instead of
+ * stretching the page, and let toolbars wrap.
+ */
+.admin-shell .ant-layout-content {
+  min-width: 0;
+}
+
+/* Any table without an explicit scroll width still scrolls sideways */
+.admin-shell .ant-table-content,
+.admin-shell .ant-table-body {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-shell img,
+.admin-shell canvas,
+.admin-shell svg.recharts-surface {
+  max-width: 100%;
+}
+
+.admin-shell .ant-input-affix-wrapper,
+.admin-shell .ant-input-search,
+.admin-shell .ant-picker,
+.admin-shell .ant-select {
+  max-width: 100%;
+}
+
+.admin-shell .ant-tabs-nav {
+  max-width: 100%;
+}
+
+@media (max-width: 991px) {
+  .admin-shell .ant-card-head {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .admin-shell .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .admin-shell .ant-card-extra {
+    margin-inline-start: 0;
+    max-width: 100%;
+  }
+
+  .admin-shell .ant-descriptions-item-label,
+  .admin-shell .ant-descriptions-item-content {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-shell .ant-card-body {
+    padding: 12px;
+  }
+
+  .admin-shell .ant-space {
+    flex-wrap: wrap;
+  }
+
+  .admin-shell .ant-pagination {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    justify-content: center;
+  }
+
+  .admin-shell .ant-pagination-options {
+    display: none;
+  }
+
+  .admin-shell .ant-table {
+    font-size: 13px;
+  }
+
+  .admin-shell .ant-picker-range {
+    width: 100%;
+  }
+
+  /* Dialogs use the full phone width */
+  .ant-modal {
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+  }
+
+  .ant-modal .ant-modal-content {
+    padding: 16px 14px;
+  }
+}
+
+/* Maintenance banner (developers working while the site is down) */
+.admin-maint-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 20px 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(250, 173, 20, 0.45);
+  border-radius: 12px;
+  background: rgba(250, 173, 20, 0.12);
+  color: var(--adm-text);
+  font-size: 13px;
+}
+
+.admin-maint-banner > .anticon {
+  color: #d48806;
+  font-size: 16px;
+}
+
+.admin-maint-banner span {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.admin-maint-banner button {
+  flex: none;
+  padding: 4px 12px;
+  border: 1px solid rgba(212, 136, 6, 0.6);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--adm-text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .admin-maint-banner {
+    margin: 8px 8px 0;
+  }
 }

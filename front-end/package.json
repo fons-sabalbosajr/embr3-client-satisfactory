@@ -1,7 +1,7 @@
 {
   "name": "front-end",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -13,6 +13,7 @@
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
     "@emotion/react": "^11.14.0",
+    "@fontsource/bricolage-grotesque": "^5.3.0",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/montserrat": "^5.2.8",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
@@ -25,6 +26,7 @@
     "@tabler/icons-react": "^3.34.0",
     "antd": "^5.26.7",
     "axios": "^1.10.0",
+    "border-beam": "1.4.1",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
     "exceljs": "^4.4.0",

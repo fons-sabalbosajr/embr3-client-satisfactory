@@ -20,6 +20,9 @@ export function requestLogger(req, res, next) {
       const path = (req.originalUrl || req.url || "").split("?")[0];
       if (!path.startsWith("/api")) return;
       if (SKIP_PATHS.some((re) => re.test(path))) return;
+      // Requests turned away by maintenance mode are expected, and logging
+      // each one would flood the logs collection while the site is down.
+      if (res.locals?.maintenanceBlocked) return;
 
       const status = res.statusCode;
       const isError = status >= 400;

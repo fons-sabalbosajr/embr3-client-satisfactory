@@ -9,9 +9,16 @@ import {
   sendPasswordChangedEmail,
 } from "../utils/email.js";
 import { authMiddleware } from "../middleware/auth.js";
-import { requirePermission } from "../middleware/permission.js";
+import { getMaintenance } from "../middleware/maintenance.js";
+import { requirePermission, requireDeveloper, isDeveloperUser } from "../middleware/permission.js";
 
 const router = express.Router();
+
+// Account roles and permissions recognised by the server.
+//   admin  — passes every staff permission check (requirePermission)
+//   editor / viewer — rely on the individual permissions below
+const PRIVILEGES = ["viewer", "editor", "admin", "developer"];
+const PERMISSION_KEYS = ["canCreate", "canEdit", "canDelete", "canManageUsers", "canManageAnnouncements"];
 
 function getFrontendUrl(req) {
   if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
@@ -20,11 +27,11 @@ function getFrontendUrl(req) {
 }
 
 // Get all users (for admin/accounts management — requires canManageUsers)
-router.get("/users", authMiddleware, requirePermission("canManageUsers"), async (req, res) => {
+router.get("/users", authMiddleware, requireDeveloper, async (req, res) => {
   try {
     const users = await User.find(
       {},
-      "_id fullname username email privilege permissions"
+      "_id fullname username email privilege permissions position isVerified"
     );
     res.json({ data: users });
   } catch (err) {
@@ -191,6 +198,16 @@ router.post("/login", async (req, res) => {
         .status(403)
         .json({ message: "Please verify your email first." });
 
+    // During maintenance only Developer accounts may sign in.
+    const maintenance = await getMaintenance();
+    if (maintenance.enabled && !isDeveloperUser(user)) {
+      return res.status(503).json({
+        code: "maintenance",
+        message: "The system is under maintenance. Only developer accounts can sign in right now.",
+        endsAt: maintenance.endsAt || null,
+      });
+    }
+
     // Optional: Add JWT
     const token = jwt.sign(
       { id: user._id, username: user.username },
@@ -205,10 +222,13 @@ router.post("/login", async (req, res) => {
       token,
       user: {
         id: user._id,
+        _id: user._id,
         fullname: user.fullname,
         username: user.username,
         email: user.email,
         position: user.position,
+        privilege: user.privilege,
+        permissions: user.permissions || {},
       },
     });
   } catch (err) {
@@ -308,9 +328,11 @@ router.put("/users/:id", authMiddleware, async (req, res) => {
     }
 
     const isSelf = requester._id.toString() === id;
-    const isAdmin = !!requester.permissions?.canManageUsers ||
-      requester.privilege === "admin" ||
-      (requester.position || "").toLowerCase() === "developer";
+    // Accounts Management is developer-only: only a Developer may edit other
+    // accounts or change anyone's privilege/permissions (including their own).
+    // Everyone else may update their own name, username and password. The
+    // position field is never writable here.
+    const isAdmin = isDeveloperUser(requester);
 
     if (!isSelf && !isAdmin) {
       return res
@@ -328,8 +350,16 @@ router.put("/users/:id", authMiddleware, async (req, res) => {
     if (fullname !== undefined) user.fullname = fullname;
     if (username !== undefined) user.username = username;
 
-    // Only admins may change privilege
-    if (privilege !== undefined && isAdmin) user.privilege = privilege;
+    // Only a developer may change privilege, and only to a known value.
+    // "developer" is accepted so existing accounts that carry it can be saved,
+    // but it grants nothing — developer access comes from the position.
+    if (privilege !== undefined && isAdmin) {
+      const p = String(privilege || "").toLowerCase();
+      if (!PRIVILEGES.includes(p)) {
+        return res.status(400).json({ message: `Unknown privilege "${privilege}".` });
+      }
+      user.privilege = p;
+    }
 
     // Handle password change (self or admin)
     let passwordChanged = false;
@@ -343,15 +373,16 @@ router.put("/users/:id", authMiddleware, async (req, res) => {
       passwordChanged = true;
     }
 
-    // Only admins may set permissions
-    if (req.body.permissions && isAdmin) {
-      user.permissions = {
-        canCreate: !!req.body.permissions.canCreate,
-        canEdit: !!req.body.permissions.canEdit,
-        canDelete: !!req.body.permissions.canDelete,
-        canManageUsers: !!req.body.permissions.canManageUsers,
-        canManageAnnouncements: !!req.body.permissions.canManageAnnouncements,
-      };
+    // Only a developer may set permissions. Keys that are sent are updated;
+    // keys that are not sent keep their stored value. (Previously every key
+    // was overwritten, so a form that omitted one silently revoked it.)
+    if (req.body.permissions && typeof req.body.permissions === "object" && isAdmin) {
+      const current = user.permissions?.toObject ? user.permissions.toObject() : { ...(user.permissions || {}) };
+      for (const key of PERMISSION_KEYS) {
+        if (req.body.permissions[key] !== undefined) current[key] = !!req.body.permissions[key];
+      }
+      user.permissions = current;
+      user.markModified("permissions");
     }
 
     await user.save();
@@ -378,8 +409,8 @@ router.put("/users/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// Delete user (admin / developer only)
-router.delete("/users/:id", authMiddleware, requirePermission("canManageUsers"), async (req, res) => {
+// Delete user (developer only)
+router.delete("/users/:id", authMiddleware, requireDeveloper, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -391,6 +422,15 @@ router.delete("/users/:id", authMiddleware, requirePermission("canManageUsers"),
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    // Never remove the last Developer account — nobody could reach the
+    // Developer section (or sign in during maintenance) afterwards.
+    if (isDeveloperUser(user)) {
+      const developers = (await User.find({}, "position").lean()).filter(isDeveloperUser).length;
+      if (developers <= 1) {
+        return res.status(400).json({ message: "This is the only Developer account and cannot be deleted." });
+      }
     }
 
     await User.findByIdAndDelete(id);

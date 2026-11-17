@@ -1,0 +1,539 @@
+/* survey-arta.css — ARTA theme, alignment pass, stepper and review dialog.
+ * Imported after survey.css and the component stylesheets so it wins.
+ * Palette: blue #0038a8 · red #ce1126 · yellow #fcd116
+ */
+
+/* ── Page ─────────────────────────────────────────────────────────────── */
+body[data-mantine-color-scheme="light"] .survey-page-container {
+  background: linear-gradient(-45deg, #dbe6ff, #fff7d1, #ffe4e8, #e8efff);
+  background-size: 400% 400%;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-container {
+  background: linear-gradient(-45deg, #061a4d, #0a2a78, #2b0a14, #0b1630);
+  background-size: 400% 400%;
+}
+
+.survey-page-container {
+  justify-content: flex-start;
+  gap: 20px;
+}
+
+.survey-page-container .survey-footer {
+  margin-top: auto;
+}
+
+.survey-page-content.ant-card {
+  border-top: 4px solid #0038a8;
+}
+
+/* ── Title row ────────────────────────────────────────────────────────── */
+.survey-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.survey-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.survey-title-icon {
+  color: #0038a8 !important;
+}
+
+.survey-page-content .survey-title.ant-typography {
+  margin: 0;
+}
+
+.survey-section-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* ── Stepper (replaces the AntD dot steps, which did not line up) ─────── */
+.survey-stepper {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.survey-stepper-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+  text-align: center;
+}
+
+/* connector to the previous step */
+.survey-stepper-item + .survey-stepper-item::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  right: calc(50% + 22px);
+  width: calc(100% - 44px);
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(10, 26, 63, 0.14);
+}
+
+.survey-stepper-item.is-done::before,
+.survey-stepper-item.is-current::before {
+  background: #0038a8 !important;
+}
+
+.survey-stepper-dot {
+  position: relative;
+  z-index: 1;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #4a5878;
+  background: #fff;
+  border: 2px solid rgba(10, 26, 63, 0.2);
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+
+.survey-stepper-item.is-done .survey-stepper-dot {
+  background: #0038a8;
+  border-color: #0038a8;
+  color: #fff;
+}
+
+.survey-stepper-item.is-current .survey-stepper-dot {
+  background: #fcd116;
+  border-color: #0038a8;
+  color: #0a1a3f;
+  box-shadow: 0 0 0 4px rgba(0, 56, 168, 0.16);
+}
+
+.survey-stepper-label {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: rgba(10, 26, 63, 0.6);
+}
+
+.survey-stepper-item.is-current .survey-stepper-label {
+  color: #0038a8;
+  font-weight: 700;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-stepper-item + .survey-stepper-item::before {
+  background: rgba(148, 163, 184, 0.28);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-stepper-dot {
+  background: #101d3d;
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #c5d0ea;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-stepper-item.is-done .survey-stepper-dot {
+  background: #4f7dff;
+  border-color: #4f7dff;
+  color: #fff;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-stepper-item.is-done::before,
+body[data-mantine-color-scheme="dark"] .survey-stepper-item.is-current::before {
+  background: #4f7dff !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-stepper-item.is-current .survey-stepper-dot {
+  background: #fcd116;
+  border-color: #a9c1ff;
+  color: #0a1a3f;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-stepper-label {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+body[data-mantine-color-scheme="dark"] .survey-stepper-item.is-current .survey-stepper-label {
+  color: #a9c1ff;
+}
+
+/* ── Client info: label and control alignment ─────────────────────────────
+ * Every label row is the same height whether or not it carries an "Optional"
+ * tag or a required asterisk, so textboxes that sit side by side start on the
+ * same line.
+ */
+.client-info-card .ant-form-item-label {
+  padding-bottom: 6px;
+  text-align: left;
+}
+
+.client-info-card .ant-form-item-label > label {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  min-height: 26px;
+  line-height: 1.3;
+}
+
+.client-info-optional {
+  line-height: 18px;
+}
+
+.client-info-card .ant-form-item-control-input {
+  min-height: var(--survey-control-h, 46px);
+}
+
+.client-info-card .ant-form-item-extra {
+  margin-top: 4px;
+  font-size: 12.5px;
+  min-height: 0;
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-card .ant-form-item-extra {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.survey-page-content .ant-row > .ant-col > .ant-form-item {
+  width: 100%;
+}
+
+/* Section titles get a red ARTA marker */
+.client-info-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.client-info-section-title::before {
+  content: "";
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background: #ce1126;
+}
+
+/* Follow-up box: a header line, then the two fields on one grid row */
+.client-info-followup {
+  display: block;
+  padding: 12px 14px 0;
+  border-left-color: #fcd116;
+}
+
+.client-info-followup-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #0038a8;
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-followup-head {
+  color: #a9c1ff;
+}
+
+.client-info-followup .ant-form-item {
+  margin-bottom: 14px;
+}
+
+/* Empty multi-selects and autocompletes are exactly one control tall, with the
+ * placeholder centred, so they line up with the plain textboxes around them. */
+.survey-page-content .ant-select-multiple .ant-select-selector {
+  min-height: var(--survey-control-h) !important;
+  /* survey.css lets the selector wrap, which drops AntD's hidden spacer onto a
+     second line and makes the empty box ~30px taller. Tags still wrap inside
+     .ant-select-selection-overflow. */
+  flex-wrap: nowrap !important;
+  align-items: center;
+}
+
+.survey-page-content .ant-select-multiple .ant-select-selection-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: center;
+}
+
+/* AntD keeps .ant-select at 32px while the selector is forced taller, so a
+   single select sat a few pixels lower than the textbox beside it. */
+.survey-page-content .ant-select-single {
+  height: var(--survey-control-h);
+}
+
+.survey-page-content .survey-btn-primary.ant-btn:disabled {
+  background: #e6eaf3 !important;
+  border-color: transparent !important;
+  color: #7c88a6 !important;
+  box-shadow: none !important;
+}
+
+.survey-page-content .ant-select-multiple .ant-select-selection-search,
+.survey-page-content .ant-select-multiple .ant-select-selection-search-input,
+.survey-page-content .ant-select-multiple .ant-select-selection-search-mirror {
+  height: 28px !important;
+  min-height: 0 !important;
+  line-height: 28px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.survey-page-content .ant-select-multiple .ant-select-selection-placeholder {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.survey-page-content .ant-select-auto-complete .ant-select-selector {
+  height: var(--survey-control-h) !important;
+}
+
+.survey-page-content .ant-select-auto-complete .ant-select-selection-search {
+  inset-inline-start: var(--survey-control-px) !important;
+  inset-inline-end: var(--survey-control-px) !important;
+}
+
+.survey-page-content .ant-select-auto-complete .ant-select-selection-search-input {
+  height: calc(var(--survey-control-h) - 2px) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.survey-page-content .ant-select-auto-complete .ant-select-selection-placeholder {
+  line-height: calc(var(--survey-control-h) - 2px) !important;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.survey-page-content .survey-btn-primary.ant-btn:not(:disabled) {
+  background: linear-gradient(135deg, #0038a8 0%, #1d5be0 100%) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
+
+.survey-actions-inner {
+  justify-content: center;
+}
+
+/* ── Review dialog (SweetAlert2) ──────────────────────────────────────── */
+.swal2-popup.survey-review {
+  width: min(680px, calc(100vw - 20px)) !important;
+  max-width: none !important;
+  padding: 0 !important;
+  border-radius: 20px !important;
+  overflow: hidden;
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.survey-review .swal2-title {
+  margin: 0 !important;
+  padding: 20px 24px 6px !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  text-align: left !important;
+  color: #0a1a3f !important;
+  border-top: 5px solid #0038a8;
+}
+
+.survey-review .swal2-html-container {
+  margin: 0 !important;
+  padding: 0 24px 4px !important;
+  text-align: left !important;
+  max-height: min(62vh, 620px);
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+
+.survey-review .swal2-actions {
+  width: 100%;
+  margin: 0 !important;
+  padding: 14px 24px 18px !important;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap-reverse;
+  border-top: 1px solid rgba(10, 26, 63, 0.1);
+  background: #f6f8fd;
+}
+
+.survey-review .swal2-actions .swal2-styled {
+  margin: 0 !important;
+  min-height: 46px;
+  padding: 0 22px !important;
+  border-radius: 12px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+.survey-review .swal2-confirm {
+  background: linear-gradient(135deg, #0038a8 0%, #1d5be0 100%) !important;
+  color: #fff !important;
+}
+
+.survey-review .swal2-cancel {
+  background: #fff !important;
+  color: #0038a8 !important;
+  border: 1.5px solid rgba(0, 56, 168, 0.4) !important;
+}
+
+.survey-review .swal2-styled:focus-visible {
+  outline: 3px solid #fcd116;
+  outline-offset: 2px;
+}
+
+.review-lead {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4a5878;
+}
+
+.review-section {
+  margin: 0 0 14px;
+  border: 1px solid rgba(10, 26, 63, 0.1);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.review-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #0038a8;
+  background: #eef3ff;
+}
+
+.review-section-num {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #0a1a3f;
+  background: #fcd116;
+}
+
+.review-list {
+  margin: 0;
+  padding: 0;
+}
+
+.review-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 4px 16px;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(10, 26, 63, 0.07);
+}
+
+.review-row dt {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #4a5878;
+  overflow-wrap: anywhere;
+}
+
+.review-row dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #0a1a3f;
+  overflow-wrap: anywhere;
+}
+
+/* Long question / answer pairs: question on the left, rating chip on the right */
+.review-section--rating .review-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.review-section--stack .review-row {
+  grid-template-columns: 1fr;
+}
+
+.review-chip {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #eef3ff;
+  color: #0038a8;
+}
+
+.review-chip--good { background: #e3f6e8; color: #17703a; }
+.review-chip--mid { background: #fff6cf; color: #7a5b00; }
+.review-chip--bad { background: #fde5e8; color: #a50d1e; }
+.review-chip--na { background: #eef0f5; color: #4a5878; }
+
+.review-remarks {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #0a1a3f;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border-top: 1px solid rgba(10, 26, 63, 0.07);
+}
+
+body[data-mantine-color-scheme="dark"] .swal2-popup.survey-review { background: #0b1630 !important; }
+body[data-mantine-color-scheme="dark"] .survey-review .swal2-title { color: #eef3ff !important; border-top-color: #4f7dff; }
+body[data-mantine-color-scheme="dark"] .survey-review .swal2-actions { background: #101d3d; border-top-color: rgba(148, 163, 184, 0.2); }
+body[data-mantine-color-scheme="dark"] .survey-review .swal2-cancel { background: transparent !important; color: #a9c1ff !important; border-color: rgba(169, 193, 255, 0.5) !important; }
+body[data-mantine-color-scheme="dark"] .review-lead { color: #c5d0ea; }
+body[data-mantine-color-scheme="dark"] .review-section { background: #101d3d; border-color: rgba(148, 163, 184, 0.2); }
+body[data-mantine-color-scheme="dark"] .review-section-head { background: rgba(79, 125, 255, 0.16); color: #a9c1ff; }
+body[data-mantine-color-scheme="dark"] .review-row { border-top-color: rgba(148, 163, 184, 0.16); }
+body[data-mantine-color-scheme="dark"] .review-row dt { color: #a9b6d4; }
+body[data-mantine-color-scheme="dark"] .review-row dd,
+body[data-mantine-color-scheme="dark"] .review-remarks { color: #eef3ff; }
+body[data-mantine-color-scheme="dark"] .review-remarks { border-top-color: rgba(148, 163, 184, 0.16); }
+
+/* ── Phone ────────────────────────────────────────────────────────────── */
+@media screen and (max-width: 600px) {
+  .survey-page-container { gap: 12px; }
+
+  .survey-stepper-dot { width: 30px; height: 30px; font-size: 13px; }
+  .survey-stepper-item + .survey-stepper-item::before { top: 14px; right: calc(50% + 19px); width: calc(100% - 38px); }
+  .survey-stepper-label { font-size: 11.5px; }
+
+  .client-info-followup { padding: 10px 10px 0; }
+
+  .survey-review .swal2-title { padding: 16px 16px 4px !important; font-size: 18px !important; }
+  .survey-review .swal2-html-container { padding: 0 16px 4px !important; max-height: 64vh; }
+  .survey-review .swal2-actions { padding: 12px 16px 14px !important; }
+  .survey-review .swal2-actions .swal2-styled { flex: 1 1 100%; }
+  .review-row,
+  .review-section--rating .review-row { grid-template-columns: 1fr; }
+}

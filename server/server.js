@@ -17,10 +17,13 @@ import questionRoutes from "./routes/question.js";
 import clientSatisfactoryRoutes from "./routes/clientSatisfactory.js";
 import configRoute from "./routes/config.js";
 import adminRoute from "./routes/admin.js";
+import { warmSurveyCache } from "./utils/surveyCache.js";
 import announcementsRoute from "./routes/announcements.js";
 import serviceCategoriesRoute from "./routes/serviceCategories.js";
 import veraRoute from "./routes/vera.js";
 import requestLogger from "./middleware/requestLogger.js";
+import maintenanceGate from "./middleware/maintenance.js";
+import systemRoute from "./routes/system.js";
 
 dotenv.config();
 
@@ -129,8 +132,8 @@ app.use("/api/auth/signup", authLimiter);
 app.use("/api/auth/forgot-password", authLimiter);
 app.use("/api/auth/resend-verification", authLimiter);
 
-// VERA chat burst limiter (the public landing-page chat has a tighter per-IP
-// ceiling of its own inside routes/vera.js).
+// VERA chat burst limiter. VERA is admin-only: every /api/vera route requires
+// authentication.
 const veraLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 40,
@@ -145,6 +148,10 @@ app.use(express.json({ limit: "500kb" }));
 
 // Application request/audit logging (records mutations and errors)
 app.use(requestLogger);
+
+// Maintenance mode: while on, only Developer accounts get past this point
+// (plus health/status/login). Developer Settings → Maintenance toggles it.
+app.use(maintenanceGate);
 
 // Register socket.io instance on app for controllers
 app.set("io", io);
@@ -209,6 +216,7 @@ app.use("/api/admin", adminRoute);
 app.use("/api/announcements", announcementsRoute);
 app.use("/api/service-categories", serviceCategoriesRoute);
 app.use("/api/vera", veraRoute);
+app.use("/api/system", systemRoute(io));
 
 // Lightweight health endpoint for Render/uptime checks
 app.get("/api/health", (req, res) => {
@@ -236,9 +244,14 @@ if (IS_PROD) {
 }
 
 // DB Connection and start server
+// zlib wire compression (built into the driver, Atlas supports it): the link
+// to the shared free-tier cluster is slow, and compressing replies cut the
+// Measurement Data load by roughly a third in testing.
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, { compressors: ["zlib"] })
   .then(() => {
+    // Pre-load survey responses so the first Measurement/Report visit is fast.
+    warmSurveyCache();
     // attempt to listen on the requested host first
     server.listen(PORT, attemptingHost, () => {
       const addr = server.address();

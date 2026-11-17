@@ -1,7 +1,12 @@
+/* VERA settings. Colours come from antd tokens set inline as --vs-* on
+   .vera-settings, so light/dark and the admin's primary colour need no
+   separate overrides. The hero keeps VERA's dark AI identity in both modes. */
+
 .vera-settings {
-  max-width: 1100px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 4px 4px 24px;
+  padding: 4px 4px 0;
+  color: var(--vs-text);
 }
 
 .vera-settings-loading {
@@ -10,86 +15,687 @@
   padding: 80px 0;
 }
 
-.vera-settings-header {
+/* ═══ Hero ══════════════════════════════════════════════════════════════ */
+
+.vs-hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 18px;
+  padding: 22px 24px 16px;
+  border-radius: 20px;
+  color: #eaf2fb;
+  background:
+    radial-gradient(700px 300px at 8% -30%, rgba(19, 194, 194, 0.26), transparent 60%),
+    radial-gradient(600px 320px at 105% 130%, rgba(82, 196, 26, 0.2), transparent 55%),
+    linear-gradient(135deg, #0b1f38 0%, #0f2745 55%, #123b52 100%);
+  box-shadow: 0 16px 44px rgba(11, 31, 56, 0.24);
+}
+
+.vs-hero__top {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
+  gap: 18px;
 }
 
-.vera-settings-flame {
-  flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+.vs-hero__flame {
+  flex: none;
   display: inline-flex;
+  border-radius: 16px;
+  box-shadow: 0 0 0 1px rgba(45, 214, 214, 0.35), 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.vs-hero__intro {
+  flex: 1;
+  min-width: 0;
+}
+
+.vs-hero__title {
+  margin: 0 0 4px;
+  color: #fff;
+  font-family: "Bricolage Grotesque", inherit;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.vs-hero__lead {
+  margin: 0;
+  max-width: 620px;
+  color: #c4d6ea;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.vs-hero__switch {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  background: #fff;
-  box-shadow: inset 0 0 0 2px rgba(19, 194, 194, 0.25), 0 6px 18px rgba(19, 194, 194, 0.15);
-}
-body[data-theme="dark"] .vera-settings-flame { background: #0f1a2b; }
-
-.vera-settings-title {
-  margin: 0 0 2px 0 !important;
+  gap: 10px;
+  flex: none;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.vera-settings-status {
-  margin-bottom: 16px;
-  border-radius: 10px;
+.vs-hero__switch-label {
+  min-width: 22px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #eaf2fb;
 }
 
-.vera-settings-card {
-  border-radius: 10px;
-  height: 100%;
+.vs-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.vera-settings-card .ant-form-item {
-  margin-bottom: 14px;
-}
-
-.vera-provider-option {
-  width: 100%;
-  text-align: left;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1.5px solid #e4ebf2;
-  background: #fafcff;
-  cursor: pointer;
+.vs-stat {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  min-height: 84px;
-  color: inherit;
-  font-family: inherit;
+  gap: 3px;
+  min-width: 0;
+  padding: 12px 14px;
+  background: rgba(8, 22, 41, 0.55);
 }
-.vera-provider-option:hover { border-color: #91caff; }
-.vera-provider-option.selected {
-  border-color: #1677ff;
-  background: #e6f4ff;
-  box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.12);
+
+.vs-stat__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8fb0cf;
 }
-.vera-provider-option:focus-visible { outline: 2px solid #69b1ff; outline-offset: 2px; }
-body[data-theme="dark"] .vera-provider-option { background: #16233a; border-color: #24365a; }
-body[data-theme="dark"] .vera-provider-option.selected { background: #14294a; border-color: #1677ff; }
 
-.vera-provider-label { font-weight: 600; font-size: 14px; }
-.vera-provider-tagline { font-size: 12px; opacity: 0.75; line-height: 1.4; }
+.vs-stat__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 600;
+}
 
-.vera-settings-actions {
-  position: sticky;
-  bottom: 0;
+.vs-stat__sub {
+  font-size: 11.5px;
+  color: #a9c1da;
+}
+
+.vs-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.vs-state__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #8fb0cf;
+}
+
+.vs-state--on .vs-state__dot { background: #3ddc97; box-shadow: 0 0 0 4px rgba(61, 220, 151, 0.2); }
+.vs-state--lite .vs-state__dot { background: #5cc8ff; box-shadow: 0 0 0 4px rgba(92, 200, 255, 0.18); }
+.vs-state--warn .vs-state__dot { background: #ffc53d; box-shadow: 0 0 0 4px rgba(255, 197, 61, 0.2); }
+.vs-state--off .vs-state__dot { background: #ff7875; box-shadow: 0 0 0 4px rgba(255, 120, 117, 0.18); }
+
+.vs-hero__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: 12.5px;
+}
+
+.vs-hero__hint { color: #a9c1da; }
+.vs-hero__ok { color: #7ff0bf; }
+.vs-hero__error { color: #ffb4b4; }
+
+.vs-hero__ok,
+.vs-hero__error,
+.vs-hero__hint {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.vs-hero .vs-hero__test.ant-btn {
+  flex: none;
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.vs-hero .vs-hero__test.ant-btn:not(:disabled):hover {
+  border-color: #2dd6d6;
+  background: rgba(45, 214, 214, 0.14);
+  color: #fff;
+}
+
+.vs-hero .vs-hero__test.ant-btn:disabled {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ═══ Tabs + sections ═══════════════════════════════════════════════════ */
+
+.vs-tabs > .ant-tabs-nav {
+  margin-bottom: 18px;
+}
+
+.vs-tabs .ant-tabs-tab .anticon {
+  margin-right: 6px;
+}
+
+.vs-section {
+  margin-bottom: 16px;
+  padding: 20px 22px;
+  border: 1px solid var(--vs-border);
+  border-radius: 16px;
+  background: var(--vs-surface);
+}
+
+.vs-section__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.vs-section__title {
+  margin: 0;
+  color: var(--vs-text);
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.vs-section__desc {
+  margin: 4px 0 0;
+  max-width: 720px;
+  color: var(--vs-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.vs-section .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.vs-section .ant-form-item:last-child {
+  margin-bottom: 0;
+}
+
+.vs-alert {
+  margin-top: 14px;
+}
+
+.vs-note {
+  display: block;
+  font-size: 12.5px;
+}
+
+.vs-note code,
+.vs-model__id {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--vs-fill-strong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--vs-text);
+}
+
+.vs-mt {
   margin-top: 16px;
-  padding: 12px 0;
-  background: inherit;
+}
+
+.vs-grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 0 16px;
+}
+
+/* ── Setting rows ───────────────────────────────────────────────────────── */
+
+.vs-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 0;
+  border-top: 1px solid var(--vs-border);
+}
+
+.vs-row--center { align-items: center; }
+.vs-row--start { align-items: flex-start; }
+
+.vs-section__body > .vs-row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.vs-section__body > .vs-row:last-child {
+  padding-bottom: 0;
+}
+
+.vs-row__text {
+  min-width: 0;
+  flex: 1;
+}
+
+.vs-row__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vs-text);
+}
+
+.vs-row__desc {
+  margin-top: 3px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--vs-muted);
+}
+
+.vs-row__control {
+  flex: none;
   display: flex;
   justify-content: flex-end;
 }
 
-@media (max-width: 575px) {
-  .vera-settings { padding: 0 0 24px; }
-  .vera-settings-header { align-items: flex-start; }
-  .vera-settings-actions { justify-content: stretch; }
-  .vera-settings-actions .ant-space { width: 100%; }
+.vs-num {
+  width: 180px;
+}
+
+.vs-select {
+  width: 260px;
+}
+
+.vs-slider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 280px;
+}
+
+.vs-slider .ant-slider {
+  flex: 1;
+  margin: 0;
+}
+
+.vs-slider__num {
+  width: 72px;
+}
+
+/* ── Provider + model cards ─────────────────────────────────────────────── */
+
+.vs-providers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.vs-provider,
+.vs-model,
+.vs-tone {
+  position: relative;
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--vs-border-strong);
+  border-radius: 14px;
+  background: var(--vs-surface);
+  color: var(--vs-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.vs-provider:hover,
+.vs-model:hover,
+.vs-tone:hover {
+  border-color: var(--vs-primary);
+}
+
+.vs-provider:focus-visible,
+.vs-model:focus-visible,
+.vs-tone:focus-visible {
+  outline: 2px solid var(--vs-primary);
+  outline-offset: 2px;
+}
+
+.vs-provider.is-selected,
+.vs-model.is-selected,
+.vs-tone.is-selected {
+  border-color: var(--vs-primary);
+  background: color-mix(in srgb, var(--vs-primary) 7%, var(--vs-surface));
+  box-shadow: 0 0 0 1px var(--vs-primary);
+}
+
+.vs-provider {
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.vs-provider__icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--vs-fill-strong);
+  color: var(--vs-primary);
+  font-size: 18px;
+}
+
+.vs-provider.is-selected .vs-provider__icon {
+  background: var(--vs-primary);
+  color: #fff;
+}
+
+.vs-provider__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding-right: 18px;
+}
+
+.vs-provider__label {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.vs-provider__tagline {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--vs-muted);
+}
+
+.vs-provider__check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: var(--vs-primary);
+  font-size: 16px;
+}
+
+.vs-models {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.vs-model {
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 14px;
+}
+
+.vs-model__radio {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border: 1.5px solid var(--vs-border-strong);
+  border-radius: 50%;
+  transition: border 0.15s ease;
+}
+
+.vs-model.is-selected .vs-model__radio {
+  border: 5px solid var(--vs-primary);
+}
+
+.vs-model__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.vs-model__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.vs-model__badge.ant-tag {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 17px;
+  padding: 0 6px;
+}
+
+.vs-model__desc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--vs-muted);
+}
+
+.vs-custom-model {
+  max-width: 420px;
+}
+
+.vs-key-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vs-key-label .ant-tag {
+  margin-left: 4px;
+}
+
+.vs-key-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: -6px;
+}
+
+/* ── Tone cards ─────────────────────────────────────────────────────────── */
+
+.vs-tones {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.vs-tone {
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+}
+
+.vs-tone__label {
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.vs-tone__hint {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--vs-muted);
+}
+
+/* ── Chat experience: form + live preview ───────────────────────────────── */
+
+.vs-chat-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 16px;
+  align-items: start;
+}
+
+.vs-preview {
+  position: sticky;
+  top: 16px;
+}
+
+.vs-preview__label {
+  margin: 0 0 8px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vs-faint);
+}
+
+/* The real chat styles (VeraChat.css), pinned in place instead of floating. */
+.vera-root.vs-preview__root {
+  position: relative;
+  z-index: auto;
+}
+
+.vera-window.vs-preview__window {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  animation: none;
+  pointer-events: none;
+}
+
+.vs-preview__window .vera-messages {
+  padding-block: 22px 18px;
+}
+
+.vs-preview__window .vera-welcome {
+  margin: 0;
+  animation: none;
+}
+
+/* ── Save bar ───────────────────────────────────────────────────────────── */
+
+.vs-savebar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px -4px 0;
+  padding: 12px 16px;
+  border: 1px solid var(--vs-border);
+  border-radius: 14px 14px 0 0;
+  background: color-mix(in srgb, var(--vs-elevated) 92%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.vs-savebar.is-dirty {
+  border-color: color-mix(in srgb, var(--vs-primary) 45%, var(--vs-border));
+}
+
+.vs-savebar__text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--vs-muted);
+}
+
+.vs-savebar.is-dirty .vs-savebar__text {
+  color: var(--vs-text);
+  font-weight: 600;
+}
+
+.vs-savebar__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #faad14;
+  box-shadow: 0 0 0 4px rgba(250, 173, 20, 0.18);
+}
+
+.vs-savebar__actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ═══ Responsive ════════════════════════════════════════════════════════ */
+
+@media (max-width: 1100px) {
+  .vs-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .vs-chat-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vs-preview {
+    position: static;
+    max-width: 420px;
+  }
+}
+
+@media (max-width: 768px) {
+  .vs-hero {
+    padding: 18px 16px 14px;
+  }
+  .vs-hero__top {
+    flex-wrap: wrap;
+  }
+  .vs-hero__intro {
+    flex-basis: calc(100% - 80px);
+  }
+  .vs-hero__switch {
+    margin-left: auto;
+  }
+  .vs-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vs-hero__foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .vs-providers,
+  .vs-models,
+  .vs-tones,
+  .vs-grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vs-section {
+    padding: 16px;
+  }
+  .vs-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .vs-row__control {
+    justify-content: flex-start;
+  }
+  .vs-num,
+  .vs-select,
+  .vs-slider {
+    width: 100%;
+  }
+  .vs-savebar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .vs-savebar__actions > .ant-btn {
+    flex: 1;
+  }
 }

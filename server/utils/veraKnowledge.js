@@ -11,7 +11,7 @@
 // Shape: { id, category, question, keywords[], answer }. Answers are plain text.
 
 export const DEFAULT_NAME = "VERA";
-export const DEFAULT_FULL_NAME = "Virtual Evaluation & Response Assistant";
+export const DEFAULT_FULL_NAME = "Virtual Environmental Response Assistant";
 export const SUPPORT_EMAIL = "embr3.ocsm@gmail.com";
 
 export const ADMIN_PAGE_LABELS = {
@@ -21,11 +21,11 @@ export const ADMIN_PAGE_LABELS = {
   "extract-data": "Reports → Extract Data",
   announcements: "Announcements",
   "app-logs": "App Logs",
-  "data-configuration": "Settings → Data Configuration",
-  "account-settings": "Settings → Account Settings",
-  "developer-settings": "Settings → Developer Settings",
-  "backup-data": "Settings → Backup Data",
-  "vera-settings": "Settings → VERA Assistant",
+  "data-configuration": "Developer → Data Configuration",
+  "account-settings": "My Account",
+  "developer-settings": "Developer → Developer Settings",
+  "backup-data": "Developer → Backup Data",
+  "vera-settings": "Developer → VERA Assistant",
 };
 
 export const ADMIN_STARTERS = [
@@ -46,7 +46,7 @@ export const PUBLIC_STARTERS = [
 ];
 
 export const ADMIN_GREETING =
-  "Hi, I'm VERA — your Virtual Evaluation & Response Assistant. Ask me about satisfaction scores, Citizen's Charter awareness, services availed, trends, client remarks, or how to use any OCSM page. I answer from the live survey data.";
+  "Hi, I'm VERA — your Virtual Environmental Response Assistant. Ask me about satisfaction scores, Citizen's Charter awareness, services availed, trends, client remarks, or how to use any OCSM page. I answer from the live survey data.";
 
 export const PUBLIC_GREETING =
   "Hello! I'm VERA, the assistant for the EMB Region III Client Satisfaction Survey. I can explain what the survey is for, how long it takes, how your answers are protected, and which survey type applies to you.";
@@ -139,7 +139,7 @@ export const ADMIN_KB = [
     question: "How do I change survey questions or the services list?",
     keywords: ["data configuration", "questions", "options", "services list", "add service", "edit question", "configure", "service categories"],
     answer:
-      "Settings → Data Configuration (needs the edit permission). Questions: edit the text, type, and options of Q1–Q19; changes apply to new submissions only. Services: maintain the Service Availed options and tag each as internal or external. Changing a question's text does not rewrite past answers, so keep the wording stable within a reporting period.",
+      "Developer → Data Configuration (developer accounts only). Questions: edit the text, type, and options of Q1–Q19; changes apply to new submissions only. Services: maintain the Service Availed options and tag each as internal or external. Changing a question's text does not rewrite past answers, so keep the wording stable within a reporting period.",
   },
   {
     id: "accounts-permissions",
@@ -147,7 +147,7 @@ export const ADMIN_KB = [
     question: "How do accounts and permissions work?",
     keywords: ["account", "accounts", "permission", "permissions", "user", "users", "role", "privilege", "admin", "viewer", "manage users", "can edit", "can delete"],
     answer:
-      "Accounts are managed by users with the Manage Users permission (Developer Settings → Accounts). Each account has permissions: can create, can edit, can delete, can manage users, can manage announcements. Admin privilege and the Developer position pass every check. Account Settings lets any user change their own name, email and password; new sign-ups must verify their email before logging in.",
+      "Accounts are managed by developer accounts only (Developer → Developer Settings → Accounts). Each account has permissions: can create, can edit, can delete, can manage users, can manage announcements. The Developer position is required for the Developer section (Data Configuration, VERA Assistant, Backup Data, App Logs, Developer Settings); permissions cover the staff pages. Account Settings lets any user change their own name, email and password; new sign-ups must verify their email before logging in.",
   },
   {
     id: "announcements",
@@ -163,7 +163,7 @@ export const ADMIN_KB = [
     question: "How do I back up the data?",
     keywords: ["backup", "back up", "restore", "json", "collection", "dump", "database"],
     answer:
-      "Settings → Backup Data (Manage Users permission). Pick a collection — client-satisfactory-data holds the responses, questions-data the questions — and export it as JSON (full fidelity) or CSV. Keep a JSON copy before large edits or deletions; there is no in-app restore, so a backup is re-imported by the developer.",
+      "Developer → Backup Data (developer accounts only). Pick a collection — client-satisfactory-data holds the responses, questions-data the questions — and export it as JSON (full fidelity) or CSV. Keep a JSON copy before large edits or deletions; there is no in-app restore, so a backup is re-imported by the developer.",
   },
   {
     id: "app-logs",
@@ -171,7 +171,7 @@ export const ADMIN_KB = [
     question: "What are App Logs?",
     keywords: ["logs", "app logs", "audit", "error", "activity", "who changed"],
     answer:
-      "App Logs (Manage Users permission) records every mutation and error: method, path, status, duration, user and IP. Filter by level (info, warn, error, audit) or search text to see who edited or deleted a response and when. Entries expire after 30 days.",
+      "Developer → App Logs (developer accounts only) records every mutation and error: method, path, status, duration, user and IP. Filter by level (info, warn, error, audit) or search text to see who edited or deleted a response and when. Entries expire after 30 days.",
   },
   {
     id: "share-survey",
@@ -195,7 +195,7 @@ export const ADMIN_KB = [
     question: "How do I configure VERA?",
     keywords: ["vera", "assistant", "configure", "provider", "api key", "model", "anthropic", "gemini", "settings", "tone", "starter", "disable"],
     answer:
-      "Settings → VERA Assistant (Manage Users permission or Developer). Choose the provider (Anthropic, Gemini, or none for rule-based answers), the model, and paste the API key — it is stored encrypted and never shown again. Set the tone, response length, greetings and starter questions, whether live survey data is included, the daily per-user limit, and logging level. Use Test Connection after saving. Without a provider VERA still answers from live figures and this help library.",
+      "Developer → VERA Assistant (developer accounts only). Choose the provider (Anthropic, Gemini, or none for rule-based answers), the model, and paste the API key — it is stored encrypted and never shown again. Set the tone, response length, greetings and starter questions, whether live survey data is included, the daily per-user limit, and logging level. Use Test Connection after saving. Without a provider VERA still answers from live figures and this help library.",
   },
   {
     id: "dark-mode",
@@ -203,7 +203,7 @@ export const ADMIN_KB = [
     question: "How do I switch dark mode or the theme colours?",
     keywords: ["dark", "theme", "colour", "color", "light", "appearance"],
     answer:
-      "The bulb switch in the header toggles dark mode. Developers can set the sidebar, header and primary colours under Settings → Developer Settings → Theme, with presets available.",
+      "The bulb switch in the header toggles dark mode. Every user can set the sidebar, header and primary colours under My Account → Appearance, with presets available.",
   },
   {
     id: "weak-scores",

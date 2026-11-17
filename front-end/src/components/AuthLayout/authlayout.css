@@ -1,0 +1,439 @@
+/* Staff sign-in pages — same look as the client survey.
+   ARTA palette: blue #0038a8 · red #ce1126 · yellow #fcd116 */
+
+.auth-page {
+  --auth-blue: #0038a8;
+  --auth-ink: #0a1a3f;
+  --auth-muted: #4a5878;
+  --auth-surface: rgba(255, 255, 255, 0.94);
+  --auth-line: rgba(10, 26, 63, 0.12);
+  --auth-tint: #eef3ff;
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  color: var(--auth-ink);
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  background: linear-gradient(-45deg, #dbe6ff, #fff7d1, #ffe4e8, #e8efff);
+  background-size: 400% 400%;
+  animation: auth-bg 22s ease infinite;
+}
+
+.auth-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url("../../assets/bgemb.webp") no-repeat center / cover;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body[data-mantine-color-scheme="dark"] .auth-page {
+  --auth-blue: #a9c1ff;
+  --auth-ink: #eef3ff;
+  --auth-muted: #a9b6d4;
+  --auth-surface: rgba(16, 29, 61, 0.92);
+  --auth-line: rgba(148, 163, 184, 0.22);
+  --auth-tint: rgba(79, 125, 255, 0.14);
+  background: linear-gradient(-45deg, #061a4d, #0a2a78, #2b0a14, #0b1630);
+  background-size: 400% 400%;
+}
+
+.auth-page > :is(header, main, footer) { position: relative; z-index: 1; }
+
+.auth-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: clamp(20px, 5vh, 56px) 16px;
+}
+
+/* ── Card ──────────────────────────────────────────────────────────────── */
+.auth-card {
+  width: 100%;
+  border-radius: 22px;
+  border: 1px solid var(--auth-line);
+  border-top: 4px solid #0038a8;
+  background: var(--auth-surface);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 24px 70px rgba(0, 32, 96, 0.18);
+  overflow: hidden;
+  animation: auth-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+body[data-mantine-color-scheme="dark"] .auth-card {
+  border-top-color: #4f7dff;
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.5);
+}
+
+.auth-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 24px 28px 6px;
+}
+
+.auth-card-icon {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #0a1a3f;
+  background: #fcd116;
+  box-shadow: 0 8px 18px rgba(252, 209, 22, 0.35);
+}
+
+.auth-card-heading { min-width: 0; }
+
+.auth-eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ce1126;
+}
+
+body[data-mantine-color-scheme="dark"] .auth-eyebrow { color: #ff8493; }
+
+.auth-title {
+  margin: 0;
+  font-family: "Sora", "Plus Jakarta Sans", system-ui, sans-serif;
+  font-size: clamp(1.35rem, 1.1rem + 0.9vw, 1.65rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--auth-ink);
+}
+
+.auth-subtitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--auth-muted);
+}
+
+.auth-card-body { padding: 14px 28px 24px; }
+
+.auth-card-foot {
+  padding: 14px 28px 18px;
+  border-top: 1px solid var(--auth-line);
+  background: var(--auth-tint);
+  font-size: 13px;
+  color: var(--auth-muted);
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* ── Segmented switch (Sign in / Create account) ───────────────────────── */
+.auth-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 18px;
+  border-radius: 12px;
+  background: var(--auth-tint);
+}
+
+.auth-switch button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--auth-muted);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-switch button[aria-selected="true"] {
+  background: #fff;
+  color: #0038a8;
+  box-shadow: 0 2px 8px rgba(0, 32, 96, 0.12);
+}
+
+/* Dark: the selected tab must stand out from the tinted track — the old
+   #182a55 was within a shade of it. */
+body[data-mantine-color-scheme="dark"] .auth-switch {
+  background: rgba(2, 6, 23, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.18);
+}
+
+body[data-mantine-color-scheme="dark"] .auth-switch button[aria-selected="true"] {
+  background: #2a4384;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(169, 193, 255, 0.35), 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+body[data-mantine-color-scheme="dark"] .auth-switch button:not([aria-selected="true"]):hover {
+  color: #dbe5ff;
+}
+
+.auth-switch button:not([aria-selected="true"]):hover {
+  color: var(--auth-ink);
+}
+
+.auth-switch button:focus-visible { outline: 3px solid #fcd116; outline-offset: 2px; }
+
+/* ── Form controls ─────────────────────────────────────────────────────── */
+/* Field spacing comes from antd's Form.itemMarginBottom token (AuthLayout).
+   Overriding margin-bottom here broke antd's space reservation for validation
+   messages (it offsets by the token value), so messages touched the next
+   label or overlapped the button. */
+.auth-card .ant-form-item-explain { font-size: 12.5px; line-height: 1.5; padding: 4px 0 10px; }
+
+.auth-card .ant-form-item-label > label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--auth-ink);
+}
+
+.auth-card .ant-input-affix-wrapper,
+.auth-card .ant-input {
+  min-height: 46px;
+  border-radius: 12px;
+  font-size: 16px; /* no iOS zoom on focus */
+}
+
+.auth-card .ant-input-affix-wrapper .ant-input { min-height: 0; }
+
+.auth-card .ant-input-prefix { margin-inline-end: 10px; color: var(--auth-muted); }
+
+/* Dark fields. The fill goes on the OUTER box only: it used to be applied to
+   the inner <input> as well, which drew a second, darker rectangle inside the
+   field that stopped short of the password eye. */
+body[data-mantine-color-scheme="dark"] .auth-card .ant-input-affix-wrapper,
+body[data-mantine-color-scheme="dark"] .auth-card .ant-input:not(.ant-input-affix-wrapper .ant-input) {
+  background: rgba(2, 6, 23, 0.42);
+  border-color: rgba(148, 163, 184, 0.32);
+  color: #eef3ff;
+}
+
+body[data-mantine-color-scheme="dark"] .auth-card .ant-input-affix-wrapper .ant-input {
+  background: transparent;
+  color: #eef3ff;
+}
+
+body[data-mantine-color-scheme="dark"] .auth-card .ant-input-affix-wrapper:hover {
+  border-color: rgba(169, 193, 255, 0.55);
+}
+
+body[data-mantine-color-scheme="dark"] .auth-card .ant-input-affix-wrapper-focused,
+body[data-mantine-color-scheme="dark"] .auth-card .ant-input-affix-wrapper:focus-within {
+  border-color: #4f7dff;
+  box-shadow: 0 0 0 3px rgba(79, 125, 255, 0.28);
+}
+
+body[data-mantine-color-scheme="dark"] .auth-card .ant-input-affix-wrapper-status-error {
+  border-color: #ff7875;
+}
+
+body[data-mantine-color-scheme="dark"] .auth-card .ant-input::placeholder { color: rgba(226, 232, 255, 0.5); }
+body[data-mantine-color-scheme="dark"] .auth-card .ant-input-prefix { color: #a9b6d4; }
+body[data-mantine-color-scheme="dark"] .auth-card .ant-input-password-icon { color: #a9b6d4; }
+body[data-mantine-color-scheme="dark"] .auth-card .ant-input-password-icon:hover { color: #eef3ff; }
+body[data-mantine-color-scheme="dark"] .auth-card .ant-form-item-label > label { color: #eef3ff; }
+body[data-mantine-color-scheme="dark"] .auth-card .ant-form-item-explain-error { color: #ff9c9c; }
+
+/* Browser autofill paints its own (light) background; keep it on-theme. */
+.auth-card input:-webkit-autofill,
+.auth-card input:-webkit-autofill:hover,
+.auth-card input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--auth-ink);
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  caret-color: var(--auth-ink);
+  transition: background-color 9999s ease-out 0s;
+}
+
+body[data-mantine-color-scheme="dark"] .auth-card input:-webkit-autofill,
+body[data-mantine-color-scheme="dark"] .auth-card input:-webkit-autofill:hover,
+body[data-mantine-color-scheme="dark"] .auth-card input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #eef3ff;
+  -webkit-box-shadow: 0 0 0 1000px #0b1530 inset;
+  caret-color: #eef3ff;
+}
+
+.auth-submit.ant-btn {
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #0038a8 0%, #1d5be0 100%) !important;
+  box-shadow: 0 10px 24px rgba(0, 56, 168, 0.28);
+}
+
+.auth-submit.ant-btn:not(:disabled):hover { filter: brightness(1.07); }
+
+.auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: -4px 0 16px;
+}
+
+.auth-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0038a8;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+body[data-mantine-color-scheme="dark"] .auth-link { color: #a9c1ff; }
+
+.auth-link:hover { text-decoration: underline; }
+.auth-link:focus-visible { outline: 3px solid #fcd116; outline-offset: 2px; border-radius: 4px; }
+
+.auth-hint {
+  margin: -6px 0 16px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--auth-muted);
+}
+
+/* Inline result / error messages */
+.auth-card .ant-alert {
+  margin-bottom: 16px;
+  border-radius: 12px;
+}
+
+.auth-card .ant-alert-message {
+  font-weight: 600;
+}
+
+/* Dark alerts: antd's dark algorithm gives a tinted surface; lift the text so
+   it reads clearly on the translucent card. */
+body[data-mantine-color-scheme="dark"] .auth-card .ant-alert-message { color: #ffffff; }
+body[data-mantine-color-scheme="dark"] .auth-card .ant-alert-description { color: #d6def0; }
+body[data-mantine-color-scheme="dark"] .auth-card .ant-alert-error { background: rgba(255, 77, 79, 0.12); border-color: rgba(255, 120, 117, 0.45); }
+body[data-mantine-color-scheme="dark"] .auth-card .ant-alert-success { background: rgba(82, 196, 26, 0.12); border-color: rgba(115, 209, 61, 0.45); }
+body[data-mantine-color-scheme="dark"] .auth-card .ant-alert-warning { background: rgba(250, 173, 20, 0.12); border-color: rgba(255, 197, 61, 0.45); }
+body[data-mantine-color-scheme="dark"] .auth-card .ant-alert-info { background: rgba(79, 125, 255, 0.14); border-color: rgba(133, 165, 255, 0.45); }
+
+/* Password strength meter */
+.auth-strength {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: -8px 0 4px;
+}
+
+.auth-strength span {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--auth-line);
+  transition: background 0.2s ease;
+}
+
+.auth-strength[data-score="1"] span:nth-child(-n + 1) { background: #ce1126; }
+.auth-strength[data-score="2"] span:nth-child(-n + 2) { background: #e0a800; }
+.auth-strength[data-score="3"] span:nth-child(-n + 3) { background: #1d5be0; }
+.auth-strength[data-score="4"] span:nth-child(-n + 4) { background: #17803d; }
+
+.auth-strength-label {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--auth-muted);
+}
+
+/* Status view (verify / reset result) */
+.auth-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+
+.auth-status-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+}
+
+.auth-status-icon.is-ok { color: #17803d; background: #e3f6e8; }
+.auth-status-icon.is-bad { color: #a50d1e; background: #fde5e8; }
+.auth-status-icon.is-busy { color: #0038a8; background: #eef3ff; }
+
+body[data-mantine-color-scheme="dark"] .auth-status-icon.is-ok { color: #73d13d; background: rgba(82, 196, 26, 0.16); }
+body[data-mantine-color-scheme="dark"] .auth-status-icon.is-bad { color: #ff7875; background: rgba(255, 77, 79, 0.16); }
+body[data-mantine-color-scheme="dark"] .auth-status-icon.is-busy { color: #a9c1ff; background: rgba(79, 125, 255, 0.18); }
+
+.auth-status p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--auth-muted); }
+
+/* ── Around the card ───────────────────────────────────────────────────── */
+.auth-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--auth-muted);
+  text-decoration: none;
+}
+
+.auth-back:hover { color: var(--auth-blue); }
+
+.auth-footer {
+  padding: 12px 16px 18px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--auth-muted);
+}
+
+@keyframes auth-rise { from { opacity: 0; transform: translateY(14px); } }
+@keyframes auth-bg { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+/* Theme button: on-theme surface in both modes. */
+.auth-theme-btn.ant-float-btn .ant-float-btn-body {
+  box-shadow: 0 6px 18px rgba(0, 32, 96, 0.18);
+}
+
+body[data-mantine-color-scheme="dark"] .auth-theme-btn.ant-float-btn .ant-float-btn-body {
+  background: #16254a;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(148, 163, 184, 0.25);
+}
+
+body[data-mantine-color-scheme="dark"] .auth-theme-btn.ant-float-btn .ant-float-btn-icon {
+  color: #fcd116;
+}
+
+@media (max-width: 480px) {
+  /* The theme button sits bottom-right; keep the copyright line clear of it. */
+  .auth-footer { padding: 12px 76px 28px 16px; }
+  .auth-card { border-radius: 18px; }
+  .auth-card-head { padding: 20px 18px 4px; gap: 12px; }
+  .auth-card-icon { width: 42px; height: 42px; font-size: 19px; border-radius: 12px; }
+  .auth-card-body { padding: 12px 18px 20px; }
+  .auth-card-foot { padding: 12px 18px 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-page, .auth-card { animation: none; }
+}

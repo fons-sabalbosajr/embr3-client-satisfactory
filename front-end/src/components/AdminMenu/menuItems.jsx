@@ -1,81 +1,73 @@
-// components/AdminMenu/menuItems.js
+// components/AdminMenu/menuItems.jsx
+// Admin navigation, in three groups:
+//   Workspace — day-to-day survey work, every signed-in staff member
+//   Account   — the signed-in user's own profile and appearance
+//   Developer — system setup and maintenance, Developer accounts only
+//               (the server enforces the same rule: requireDeveloper)
 import {
   DashboardOutlined,
-  BarChartOutlined, // Keeping for Measurement, though PieChartOutlined might fit better
+  BarChartOutlined,
   FileTextOutlined,
   NotificationOutlined,
-  SettingOutlined,
+  UserOutlined,
+  DatabaseOutlined,
+  RobotOutlined,
+  CloudDownloadOutlined,
   FileSearchOutlined,
-  // You might want to import more specific icons for sub-items like:
-  // PieChartOutlined, // For Measurement
-  // DownloadOutlined, // For Extract Data
-  // UsergroupAddOutlined, // For Account Settings
-  // DatabaseOutlined, // For Data Configuration
+  CodeOutlined,
 } from "@ant-design/icons";
 
-const menuItems = [
+export const MENU_GROUPS = [
   {
-    key: "dashboard",
-    icon: <DashboardOutlined />,
-    label: "Dashboard",
-  },
-  {
-    key: "measurement-data", // <-- CORRECTED KEY
-    icon: <BarChartOutlined />,
-    label: "Measurement Data",
-  },
-  {
-    key: "reports",
-    icon: <FileTextOutlined />,
-    label: "Reports",
-    children: [
+    key: "grp-workspace",
+    label: "Workspace",
+    items: [
+      { key: "dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
+      { key: "measurement-data", icon: <BarChartOutlined />, label: "Measurement Data" },
       {
-        key: "generate-report", // <-- CORRECTED KEY
-        label: "Generate Report",
+        key: "reports",
+        icon: <FileTextOutlined />,
+        label: "Reports",
+        children: [
+          { key: "generate-report", label: "Generate Report" },
+          { key: "extract-data", label: "Extract Data" },
+        ],
       },
-      {
-        key: "extract-data", // <-- CORRECTED KEY
-        label: "Extract Data",
-      },
+      { key: "announcements", icon: <NotificationOutlined />, label: "Announcements" },
     ],
   },
   {
-    key: "announcements",
-    icon: <NotificationOutlined />,
-    label: "Announcements",
+    key: "grp-account",
+    label: "Account",
+    items: [{ key: "account-settings", icon: <UserOutlined />, label: "My Account" }],
   },
   {
-    key: "app-logs",
-    icon: <FileSearchOutlined />,
-    label: "App Logs",
-  },
-  {
-    key: "settings",
-    icon: <SettingOutlined />,
-    label: "Settings",
-    children: [
-      {
-        key: "data-configuration",
-        label: "Data Configuration",
-      },
-      {
-        key: "account-settings",
-        label: "Account Settings",
-      },
-      {
-        key: "developer-settings",
-        label: "Developer Settings",
-      },
-      {
-        key: "backup-data",
-        label: "Backup Data",
-      },
-      {
-        key: "vera-settings",
-        label: "VERA Assistant",
-      },
+    key: "grp-developer",
+    label: "Developer",
+    developerOnly: true,
+    items: [
+      { key: "data-configuration", icon: <DatabaseOutlined />, label: "Data Configuration" },
+      { key: "vera-settings", icon: <RobotOutlined />, label: "VERA Assistant" },
+      { key: "backup-data", icon: <CloudDownloadOutlined />, label: "Backup Data" },
+      { key: "app-logs", icon: <FileSearchOutlined />, label: "App Logs" },
+      { key: "developer-settings", icon: <CodeOutlined />, label: "Developer Settings" },
     ],
   },
 ];
 
-export default menuItems;
+// Page titles for the header, keyed like the menu.
+export const PAGE_META = {
+  dashboard: { title: "Dashboard", section: "Workspace" },
+  "measurement-data": { title: "Measurement Data", section: "Workspace" },
+  "generate-report": { title: "Generate Report", section: "Reports" },
+  "extract-data": { title: "Extract Data", section: "Reports" },
+  announcements: { title: "Announcements", section: "Workspace" },
+  "account-settings": { title: "My Account", section: "Account" },
+  "data-configuration": { title: "Data Configuration", section: "Developer" },
+  "vera-settings": { title: "VERA Assistant", section: "Developer" },
+  "backup-data": { title: "Backup Data", section: "Developer" },
+  "app-logs": { title: "App Logs", section: "Developer" },
+  "developer-settings": { title: "Developer Settings", section: "Developer" },
+};
+
+export default MENU_GROUPS;

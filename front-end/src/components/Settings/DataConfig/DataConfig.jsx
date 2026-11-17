@@ -35,10 +35,26 @@ import * as api from "../../../services/api";
 import { categorizeServices } from "../../../utils/serviceCategories";
 import { getCurrentUserFullname } from "../../../services/authService";
 import { getDecryptedItem } from "../../../utils/encryptedStorage";
+import { BASE_PATH } from "../../../utils/basePath";
 import "./dataconfig.css";
 
 const { Option } = Select;
 const SOCKET_SERVER_URL = "/";
+// Must include the app prefix (/ocsm/socket.io). The default "/socket.io"
+// reaches the HRPMS app's socket behind the shared nginx in production.
+const SOCKET_PATH = `${BASE_PATH}/socket.io`;
+
+// Question options are edited one per line. Several service names contain
+// commas ("Facilitation, Evaluation, Updating and Approval of …"), and the old
+// comma-separated field split them into fake services on every save. A
+// single-line entry with no line breaks ("Yes, No, Maybe") is still read as a
+// comma list so quick edits keep working.
+const parseOptions = (text) => {
+  const raw = String(text || "");
+  const parts = /\r?\n/.test(raw) ? raw.split(/\r?\n/) : raw.split(",");
+  return [...new Set(parts.map((s) => s.trim()).filter(Boolean))];
+};
+const formatOptions = (options) => (Array.isArray(options) ? options.join("\n") : "");
 
 function DataConfig() {
   const [questions, setQuestions] = useState([]);
@@ -118,7 +134,7 @@ function DataConfig() {
       console.warn("Failed to parse user permissions:", e);
     }
 
-    socket.current = io(SOCKET_SERVER_URL);
+    socket.current = io(SOCKET_SERVER_URL, { path: SOCKET_PATH });
 
     socket.current.on("connect", () => {
       // connected
@@ -275,7 +291,7 @@ function DataConfig() {
       };
 
       if (values.questionType === "dropdown" || values.questionType === "radio") {
-        newQuestion.options = values.options ? values.options.split(",").map((option) => option.trim()).filter((option) => option !== "") : [];
+        newQuestion.options = parseOptions(values.options);
       } else {
         newQuestion.options = [];
       }
@@ -313,7 +329,7 @@ function DataConfig() {
       questionCode: record.questionCode,
       questionText: record.questionText,
       questionType: record.questionType || "text",
-      options: record.options ? record.options.join(", ") : "",
+      options: formatOptions(record.options),
       user: record.user,
     });
     setIsEditModalVisible(true);
@@ -338,7 +354,7 @@ function DataConfig() {
       };
 
       if (values.questionType === "dropdown" || values.questionType === "radio") {
-        updatedQuestion.options = values.options ? values.options.split(",").map((option) => option.trim()).filter((option) => option !== "") : [];
+        updatedQuestion.options = parseOptions(values.options);
       } else {
         updatedQuestion.options = [];
       }
@@ -692,9 +708,9 @@ function DataConfig() {
               <Option value="radio">Radio Button</Option>
             </Select>
           </Form.Item>
-          {(addQuestionType === "dropdown" || addQuestionType === "radio") && ( 
-            <Form.Item name="options" label="Options (comma-separated)" rules={[{ required: true, message: "Please enter options for this question type!" }]} tooltip="Enter options separated by commas (e.g., Option 1, Option 2, Option 3)"> 
-              <Input.TextArea rows={2} placeholder="e.g., Yes, No, Maybe" />
+          {(addQuestionType === "dropdown" || addQuestionType === "radio") && (
+            <Form.Item name="options" label="Options (one per line)" rules={[{ required: true, message: "Please enter options for this question type!" }]} tooltip="Put each option on its own line. Commas inside an option are kept.">
+              <Input.TextArea autoSize={{ minRows: 3, maxRows: 12 }} placeholder={"Yes\nNo\nMaybe"} />
             </Form.Item>
           )}
           <Form.Item name="user" label="Created By User" rules={[{ required: true, message: "Please input the user who created this question!" }]}> 
@@ -719,9 +735,9 @@ function DataConfig() {
               <Option value="radio">Radio Button</Option>
             </Select>
           </Form.Item>
-          {(editQuestionType === "dropdown" || editQuestionType === "radio") && ( 
-            <Form.Item name="options" label="Options (comma-separated)" rules={[{ required: true, message: "Please enter options for this question type!" }]} tooltip="Enter options separated by commas (e.g., Option 1, Option 2, Option 3)"> 
-              <Input.TextArea rows={2} placeholder="e.g., Yes, No, Maybe" />
+          {(editQuestionType === "dropdown" || editQuestionType === "radio") && (
+            <Form.Item name="options" label="Options (one per line)" rules={[{ required: true, message: "Please enter options for this question type!" }]} tooltip="Put each option on its own line. Commas inside an option are kept.">
+              <Input.TextArea autoSize={{ minRows: 3, maxRows: 12 }} placeholder={"Yes\nNo\nMaybe"} />
             </Form.Item>
           )}
           {(editQuestionType === "dropdown" || editQuestionType === "radio") && (
@@ -743,11 +759,10 @@ function DataConfig() {
                     setQuickExternalName('');
                     await fetchCategories();
                     // Append to options field if not present yet
-                    const cur = editForm.getFieldValue('options') || '';
-                    const parts = cur.split(',').map((s) => s.trim()).filter(Boolean);
+                    const parts = parseOptions(editForm.getFieldValue('options'));
                     if (!parts.some((p) => p.toLowerCase() === name.toLowerCase())) {
                       parts.push(name);
-                      editForm.setFieldsValue({ options: parts.join(', ') });
+                      editForm.setFieldsValue({ options: formatOptions(parts) });
                     }
                   } catch (e) {
                     console.error('Quick add external service failed', e);

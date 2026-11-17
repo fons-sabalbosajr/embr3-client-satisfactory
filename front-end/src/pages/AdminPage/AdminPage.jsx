@@ -1,29 +1,22 @@
 // AdminPage.jsx
 import React, { useEffect, useState, useMemo, Suspense } from "react";
 import { Modal } from "antd";
-import {
-  Layout,
-  Avatar,
-  Dropdown,
-  Typography,
-  theme,
-  Menu,
-  ConfigProvider,
-  Switch,
-  Space,
-  Button,
-  Grid,
-  Spin,
-} from "antd";
+import { Layout, Dropdown, theme, ConfigProvider, Grid, Tooltip } from "antd";
 import {
   UserOutlined,
   LogoutOutlined,
   BulbOutlined,
-  BulbFilled,
-  CaretRightFilled,
-  CaretLeftFilled,
   MailOutlined,
   MenuOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  SunOutlined,
+  MoonOutlined,
+  DownOutlined,
+  CodeOutlined,
+  LockOutlined,
+  BgColorsOutlined,
+  ToolOutlined,
 } from "@ant-design/icons";
 
 import { getCachedConfig } from "../../utils/config";
@@ -35,18 +28,26 @@ import {
 } from "../../utils/encryptedStorage";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import EMBLogo from "../../assets/emblogo.svg";
+import BPLogo from "../../assets/bplogo.svg";
 import AdminMenu from "../../components/AdminMenu/AdminMenu";
 import VeraChat from "../../components/Vera/VeraChat";
+import { SectionLoader } from "../../components/StatusUI/StatusUI";
+import ErrorBoundary from "../../components/StatusUI/ErrorBoundary";
+import { appUrl } from "../../utils/basePath";
 import * as api from "../../services/api";
+import { isDeveloperSession, isDeveloperUser, getSessionUser } from "../../utils/session";
+import { versionLabel, buildDetails } from "../../utils/appVersion";
+import { PAGE_META } from "../../components/AdminMenu/menuItems";
+import { buildAdminTheme, normalizePrefs } from "./adminTheme";
+import { formatEndsAt } from "../../utils/maintenance";
 import "./adminpage.css";
 
 const { Header, Sider, Content, Footer } = Layout;
-const { Title, Text } = Typography;
 const { defaultAlgorithm, darkAlgorithm } = theme;
 
-function AdminPage() {
+function AdminPage({ maintenance = {} }) {
   const timerRef = React.useRef();
-  // Auto-logout after 5 minutes of inactivity
+  // Auto-logout after 5 minutes of inactivity (not for Developer accounts)
 
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
@@ -60,52 +61,20 @@ function AdminPage() {
       return false;
     }
   });
-  const [themePrefs, setThemePrefs] = useState({
-    siderBg: "#0C2340",
-    headerBg: "#0C2340",
-    colorPrimary: "#1677ff",
-  });
-
-  // --- Color utils: normalize and compute contrasting text ---
-  const isValidHex = (v) => typeof v === "string" && /^#([0-9A-Fa-f]{3}){1,2}$/.test(v.trim());
-  const normalizeHex = (v, fallback) => (isValidHex(v) ? v : fallback);
-  const hexToRgb = (hex) => {
-    const h = hex.replace('#', '');
-    const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
-    const bigint = parseInt(full, 16);
-    return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
-  };
-  const luminance = (hex) => {
-    const { r, g, b } = hexToRgb(hex);
-    const srgb = [r, g, b].map((v) => {
-      const c = v / 255;
-      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-    });
-    return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
-  };
-  const contrastText = (bgHex) => (luminance(bgHex) > 0.5 ? "#1A1A1A" : "#EAEAEA");
-  const shadeHex = (hex, amount = 0.1) => {
-    // amount: -1 to 1 (negative = darken, positive = lighten)
-    try {
-      const { r, g, b } = hexToRgb(hex);
-      const tint = (v) => {
-        const nv = Math.round(amount >= 0 ? v + (255 - v) * amount : v * (1 + amount));
-        return Math.max(0, Math.min(255, nv));
-      };
-      const nr = tint(r), ng = tint(g), nb = tint(b);
-      const toHex = (v) => v.toString(16).padStart(2, '0');
-      return `#${toHex(nr)}${toHex(ng)}${toHex(nb)}`;
-    } catch {
-      return hex;
-    }
-  };
+  // Per-user colours from My Account → Appearance; null = ARTA default.
+  const [themePrefs, setThemePrefs] = useState(() => normalizePrefs({}));
 
   useEffect(() => {
     let warningTimeout;
     const resetTimer = () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       if (warningTimeout) clearTimeout(warningTimeout);
+      // Developer accounts are exempt from the inactivity auto-logout.
+      if (isDeveloperSession()) return;
       timerRef.current = setTimeout(() => {
+        // Re-check when it fires: on first load the profile may not have been
+        // cached yet when the timer was armed.
+        if (isDeveloperSession()) return;
         Modal.warning({
           title: "Auto Logout Warning",
           content:
@@ -114,8 +83,7 @@ function AdminPage() {
           onOk: () => {
             clearAllStorage();
             try {
-              const { origin } = window.location;
-              window.location.href = `${origin}/admin`;
+              window.location.href = appUrl("/admin");
             } catch {
               window.location.reload();
             }
@@ -125,8 +93,7 @@ function AdminPage() {
         warningTimeout = setTimeout(() => {
           clearAllStorage();
           try {
-            const { origin } = window.location;
-            window.location.href = `${origin}/admin`;
+            window.location.href = appUrl("/admin");
           } catch {
             window.location.reload();
           }
@@ -146,6 +113,20 @@ function AdminPage() {
       window.removeEventListener("mousedown", resetTimer);
       window.removeEventListener("touchstart", resetTimer);
     };
+  }, []);
+
+  // Developer keep-alive. The login token lasts 1 h and the server only renews
+  // it on a request made in its last 15 minutes (X-Refreshed-Token), so an
+  // idle developer tab would still be signed out on its next click after an
+  // hour. A light /auth/me call every 10 minutes keeps it renewed while the
+  // tab is open. Other accounts keep the normal inactivity logout.
+  useEffect(() => {
+    const ping = () => {
+      if (!isDeveloperSession()) return;
+      api.getMe().catch(() => { /* a 401 is handled by the API interceptor */ });
+    };
+    const id = setInterval(ping, 10 * 60 * 1000);
+    return () => clearInterval(id);
   }, []);
   // Effect for handling user authentication check (tolerant to brief storage race)
   useEffect(() => {
@@ -190,10 +171,16 @@ function AdminPage() {
               return;
             }
           }
-          // Also try to fetch full profile in background for permissions
+          // Also fetch the full profile in the background so permission or
+          // position changes made by a developer apply without signing out.
           try {
             const me = await api.getMe();
-            setCurrentUser(me?.data?.user || null);
+            const fresh = me?.data?.user || null;
+            setCurrentUser(fresh);
+            if (fresh) {
+              setUserName(fresh.fullname || "Admin");
+              setEncryptedItem("user", JSON.stringify({ ...JSON.parse(decryptedDataString || "{}"), ...fresh, _id: fresh.id || fresh._id }));
+            }
           } catch {
             setCurrentUser(null);
           }
@@ -209,12 +196,9 @@ function AdminPage() {
             const dec = getDecryptedItem("themePrefsCache");
             cached = dec ? JSON.parse(dec) : {};
           } catch {}
-          const merged = { ...cached, ...prefs };
-          setThemePrefs((prev) => ({
-            siderBg: isValidHex(merged.siderBg) ? merged.siderBg : prev.siderBg,
-            headerBg: isValidHex(merged.headerBg) ? merged.headerBg : prev.headerBg,
-            colorPrimary: isValidHex(merged.colorPrimary) ? merged.colorPrimary : prev.colorPrimary,
-          }));
+          // The server copy wins; the local cache only fills keys the server
+          // has never stored.
+          setThemePrefs(normalizePrefs({ ...cached, ...prefs }));
         } catch {
           // ignore missing prefs
         }
@@ -231,24 +215,23 @@ function AdminPage() {
     ensureAuthenticated();
   }, [navigate]);
 
-  // Listen for live theme updates from DeveloperSettings
+  // Live theme updates from My Account → Appearance. The event carries the
+  // full set, so a cleared colour (null) returns to the default.
   useEffect(() => {
-    const onThemeUpdated = (e) => {
-      const d = e?.detail || {};
-      setThemePrefs((prev) => ({
-        siderBg: isValidHex(d.siderBg) ? d.siderBg : prev.siderBg,
-        headerBg: isValidHex(d.headerBg) ? d.headerBg : prev.headerBg,
-        colorPrimary: isValidHex(d.colorPrimary) ? d.colorPrimary : prev.colorPrimary,
-      }));
-    };
+    const onThemeUpdated = (e) => setThemePrefs(normalizePrefs(e?.detail || {}));
+    const onMode = (e) => setIsDarkMode(e?.detail === "dark");
     window.addEventListener("theme:updated", onThemeUpdated);
+    window.addEventListener("theme:mode", onMode);
     // Also check cached prefs on mount
     try {
       const dec = getDecryptedItem("themePrefsCache");
       const cached = dec ? JSON.parse(dec) : null;
       if (cached) onThemeUpdated({ detail: cached });
     } catch {}
-    return () => window.removeEventListener("theme:updated", onThemeUpdated);
+    return () => {
+      window.removeEventListener("theme:updated", onThemeUpdated);
+      window.removeEventListener("theme:mode", onMode);
+    };
   }, []);
 
   // Effect for saving dark mode preference
@@ -256,6 +239,8 @@ function AdminPage() {
     setEncryptedItem("darkMode", JSON.stringify(isDarkMode));
     // Expose theme to plain CSS (modals/portals render at document.body level)
     document.body.setAttribute("data-theme", isDarkMode ? "dark" : "light");
+    // Let My Account → Appearance show the current mode.
+    window.dispatchEvent(new CustomEvent("theme:mode-changed", { detail: isDarkMode ? "dark" : "light" }));
   }, [isDarkMode]);
 
   const handleLogout = () => {
@@ -315,68 +300,69 @@ function AdminPage() {
     if (isMobile) setCollapsed(true);
   };
 
+  // The cached profile is enough to decide the menu; the server enforces it.
+  const sessionUser = currentUser || getSessionUser();
+  const isDeveloper = isDeveloperUser(sessionUser);
+  const roleLabel = isDeveloper
+    ? "Developer"
+    : sessionUser?.permissions?.canManageUsers || sessionUser?.privilege === "admin"
+      ? "Administrator"
+      : "Staff";
+  const initials = String(userName || "A")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
+
   const userMenuItems = [
     {
-      key: "feature",
-      icon: <BulbOutlined />,
-      label: "Suggest a Feature",
-      onClick: handleSuggestFeature,
+      key: "who",
+      type: "group",
+      label: (
+        <div className="admin-user-menu-head">
+          <strong>{userName}</strong>
+          <span>{roleLabel}</span>
+        </div>
+      ),
+    },
+    { type: "divider" },
+    {
+      key: "account",
+      icon: <UserOutlined />,
+      label: "My Account",
+      onClick: () => navigate("/admin/settings/account"),
     },
     {
-      key: "contact",
-      icon: <MailOutlined />,
-      label: "Contact Us",
-      onClick: handleContactUs,
+      key: "appearance",
+      icon: <BgColorsOutlined />,
+      label: "Appearance",
+      onClick: () => navigate("/admin/settings/account#appearance"),
     },
-    {
-      type: "divider",
-    },
-    {
-      key: "logout",
-      icon: <LogoutOutlined />,
-      label: "Logout",
-      onClick: handleLogout,
-    },
+    { type: "divider" },
+    { key: "feature", icon: <BulbOutlined />, label: "Suggest a Feature", onClick: handleSuggestFeature },
+    { key: "contact", icon: <MailOutlined />, label: "Contact Us", onClick: handleContactUs },
+    { type: "divider" },
+    { key: "logout", icon: <LogoutOutlined />, label: "Log out", danger: true, onClick: handleLogout },
   ];
 
-  const currentTheme = useMemo(
-    () => ({
-      algorithm: isDarkMode ? darkAlgorithm : defaultAlgorithm,
-      token: {
-        colorPrimary: normalizeHex(themePrefs.colorPrimary, "#1677ff"),
-        borderRadius: 6,
-        colorBgBase: isDarkMode ? "#141414" : "#F5F5F5",
-        // Keep content/base text tied to darkMode only to avoid white text on white content in light mode
-        colorTextBase: isDarkMode ? "#EAEAEA" : "#1A1A1A",
-        colorBgContainer: isDarkMode ? "#1d1d1d" : "#ffffff", // Keep this
-        fontFamily: "'Inter', 'Plus Jakarta Sans', 'Poppins', sans-serif",
-      },
-      components: {
-        Layout: {
-          siderBg: normalizeHex(themePrefs.siderBg, isDarkMode ? "#0C2340" : "#ffffff"),
-          headerBg: normalizeHex(themePrefs.headerBg, isDarkMode ? "#0C2340" : "#ffffff"),
-        },
-        Menu: (() => {
-          const sb = normalizeHex(themePrefs.siderBg, isDarkMode ? "#001529" : "#ffffff");
-          const text = contrastText(sb);
-          const selectedBg = luminance(sb) > 0.5 ? shadeHex(sb, -0.06) : shadeHex(sb, 0.12);
-          return {
-            itemColor: text,
-            itemHoverColor: text,
-            itemSelectedColor: text,
-            itemActiveBg: selectedBg,
-            itemSelectedBg: selectedBg,
-            popupBg: sb,
-          };
-        })(),
-      },
-    }),
+  const built = useMemo(
+    () => buildAdminTheme({ dark: isDarkMode, prefs: themePrefs }),
     [isDarkMode, themePrefs]
   );
+  const currentTheme = useMemo(
+    () => ({ ...built.antd, algorithm: isDarkMode ? darkAlgorithm : defaultAlgorithm }),
+    [built, isDarkMode]
+  );
 
-  const {
-    token: { colorBgContainer, borderRadius },
-  } = theme.useToken();
+  // Dialogs, drawers and dropdowns render outside .admin-shell (portals), so
+  // the theme variables are also published on <html> for them.
+  useEffect(() => {
+    const root = document.documentElement;
+    Object.entries(built.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+    return () => Object.keys(built.vars).forEach((k) => root.style.removeProperty(k));
+  }, [built]);
+
   const screens = Grid.useBreakpoint();
   // Phones/small tablets: the sidebar becomes an overlay drawer (collapsed to
   // zero width) so the content keeps the full viewport width.
@@ -384,173 +370,171 @@ function AdminPage() {
   useEffect(() => {
     if (isMobile) setCollapsed(true);
   }, [isMobile]);
+  // Tablets (md but not lg): start with the icon-only sidebar so tables and
+  // charts get the width. The user can still expand it from the header.
+  const isTablet = screens.md === true && screens.lg === false;
+  useEffect(() => {
+    if (isTablet) setCollapsed(true);
+  }, [isTablet]);
 
-  // console.log("Is Dark Mode:", isDarkMode);
-  // console.log("Actual colorBgContainer value:", colorBgContainer);
+  const SIDER_WIDTH = 248;
+  const SIDER_COLLAPSED = 76;
+  const page = PAGE_META[selectedKey] || PAGE_META.dashboard;
+  const railOnly = collapsed && !isMobile;
 
   return (
     <ConfigProvider theme={currentTheme}>
-      <Layout style={{ minHeight: "100vh" }}>
+      <Layout
+        className={`admin-shell${isDarkMode ? " admin-shell--dark" : ""}`}
+        style={{ minHeight: "100vh", ...built.vars }}
+      >
         <Sider
-          theme={(luminance(normalizeHex(themePrefs.siderBg, isDarkMode ? "#0C2340" : "#ffffff")) > 0.5) ? "light" : "dark"}
+          className="admin-sider"
           collapsible
           collapsed={collapsed}
           onCollapse={(value) => setCollapsed(value)}
-          trigger={null} // We'll use a custom trigger in the Header
-          width={220}
-          collapsedWidth={isMobile ? 0 : 80}
+          trigger={null}
+          width={SIDER_WIDTH}
+          collapsedWidth={isMobile ? 0 : SIDER_COLLAPSED}
           style={{
-            overflow: "auto",
             height: "100vh",
             position: "fixed",
             left: 0,
             top: 0,
             bottom: 0,
             zIndex: isMobile ? 1200 : 10,
-            boxShadow: isMobile && !collapsed ? "0 0 32px rgba(0,0,0,0.35)" : "none",
-            background: currentTheme.components.Layout.siderBg,
-            color: contrastText(currentTheme.components.Layout.siderBg),
+            boxShadow: isMobile && !collapsed ? "0 0 32px rgba(0,0,0,0.35)" : undefined,
           }}
         >
-          <div className="admin-logo-container">
-            <img src={EMBLogo} alt="EMB Logo" className="admin-logo" />
-            {!collapsed && (
-              <div className="admin-title-wrapper">
-                <Title
-                  level={5}
-                  style={{
-                    margin: 0,
-                    color: contrastText(currentTheme.components.Layout.siderBg),
-                    lineHeight: "1",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  EMBR3 OCSM
-                </Title>
-                <Text
-                  style={{
-                    color: contrastText(currentTheme.components.Layout.siderBg),
-                    fontSize: "10px",
-                    lineHeight: "1.3",
-                    whiteSpace: "nowrap",
-                    display: "block",
-                    marginTop: 2,
-                  }}
-                >
-                  Online Client Satisfaction <br /> Measurement
-                </Text>
-              </div>
-            )}
+          <div className="admin-sider-inner">
+            <div className={`admin-brand${railOnly ? " admin-brand--rail" : ""}`}>
+              <span className="admin-brand-logos">
+                <img src={EMBLogo} alt="Environmental Management Bureau Region III" />
+                {!railOnly && <img src={BPLogo} alt="Bagong Pilipinas" />}
+              </span>
+              {!railOnly && (
+                <span className="admin-brand-text">
+                  <span className="admin-brand-name">EMBR3 OCSM</span>
+                  <span className="admin-brand-sub">Online Client Satisfaction<br />Measurement</span>
+                </span>
+              )}
+            </div>
+            <div className="admin-sider-ribbon" aria-hidden="true" />
+
+            <nav className="admin-sider-menu" aria-label="Admin navigation">
+              <AdminMenu
+                selectedKey={selectedKey}
+                onMenuClick={handleMenuClick}
+                collapsed={railOnly}
+                isDeveloper={isDeveloper}
+              />
+            </nav>
+
+            <div className={`admin-sider-foot${railOnly ? " admin-sider-foot--rail" : ""}`}>
+              {isDeveloper && !railOnly && (
+                <span className="admin-dev-badge">
+                  <CodeOutlined /> Developer access
+                </span>
+              )}
+              <Tooltip title={buildDetails()} placement={railOnly ? "right" : "top"}>
+                <span className="admin-version" tabIndex={0} aria-label={buildDetails()}>
+                  {railOnly ? versionLabel() : <>EMBR3 OCSM <strong>{versionLabel()}</strong></>}
+                </span>
+              </Tooltip>
+            </div>
           </div>
-          {/* Pass selectedKey as a prop */}
-          <AdminMenu
-            selectedKey={selectedKey}
-            onMenuClick={handleMenuClick}
-            menuTheme={
-              luminance(normalizeHex(themePrefs.siderBg, isDarkMode ? "#0C2340" : "#ffffff")) > 0.5
-                ? "light"
-                : "dark"
-            }
-          />
         </Sider>
         {isMobile && !collapsed && (
-          <div
-            className="admin-sider-backdrop"
-            onClick={() => setCollapsed(true)}
-            aria-hidden="true"
-          />
+          <div className="admin-sider-backdrop" onClick={() => setCollapsed(true)} aria-hidden="true" />
         )}
         <Layout
+          className="admin-main"
           style={{
-            marginLeft: isMobile ? 0 : collapsed ? 80 : 220,
+            marginLeft: isMobile ? 0 : collapsed ? SIDER_COLLAPSED : SIDER_WIDTH,
             transition: "margin-left 0.2s",
             minWidth: 0,
           }}
         >
-          <Header
-            className="admin-header-bar"
-            style={{
-              position: "sticky", // ✅ this keeps it visible while scrolling
-              top: 0,
-              zIndex: 1000, // ensures it stays above content
-              padding: isMobile ? "0 12px" : "0 24px",
-              background: currentTheme.components.Layout.headerBg,
-              color: contrastText(currentTheme.components.Layout.headerBg),
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              height: 56,
-              lineHeight: "56px",
-            }}
-          >
-            <Button
-              type="primary"
-              aria-label={collapsed ? "Open navigation" : "Close navigation"}
-              icon={isMobile ? <MenuOutlined /> : collapsed ? <CaretRightFilled /> : <CaretLeftFilled />}
-              onClick={() => setCollapsed(!collapsed)}
-              style={
-                isMobile
-                  ? { width: 36, height: 36, borderRadius: 8 }
-                  : { fontSize: "14px", width: 25, height: 25, borderRadius: "50%", right: 35 }
-              }
-            />
-            <Space align="center" size="middle">
-              <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
-                <Avatar
-                  style={{ backgroundColor: "#4B8D73", cursor: "pointer" }}
-                  icon={<UserOutlined />}
-                />
-              </Dropdown>
+          <Header className="admin-header" style={{ padding: isMobile ? "0 12px" : "0 24px" }}>
+            <div className="admin-header-left">
+              <button
+                type="button"
+                className="admin-icon-btn"
+                aria-label={collapsed ? "Open navigation" : "Close navigation"}
+                aria-expanded={!collapsed}
+                onClick={() => setCollapsed(!collapsed)}
+              >
+                {isMobile ? <MenuOutlined /> : collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              </button>
+              <div className="admin-page-title">
+                <span className="admin-page-section">
+                  {page.section === "Developer" && <LockOutlined />} {page.section}
+                </span>
+                <h1 className="admin-page-name">{page.title}</h1>
+              </div>
+            </div>
 
-              {!isMobile && (
-                <Text style={{ color: contrastText(currentTheme.components.Layout.headerBg) }}>
-                  {userName}
-                </Text>
-              )}
-              <Switch
-                checked={isDarkMode}
-                onChange={setIsDarkMode}
-                checkedChildren={<BulbFilled />}
-                unCheckedChildren={<BulbOutlined />}
-              />
-            </Space>
+            <div className="admin-header-right">
+              <Tooltip title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
+                <button
+                  type="button"
+                  className="admin-icon-btn admin-theme-btn"
+                  aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+                  aria-pressed={isDarkMode}
+                  onClick={() => setIsDarkMode((d) => !d)}
+                >
+                  {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+                </button>
+              </Tooltip>
+              <span className="admin-header-sep" aria-hidden="true" />
+              <Dropdown menu={{ items: userMenuItems }} trigger={["click"]} placement="bottomRight">
+                <button type="button" className="admin-user-chip" aria-label={`Account menu for ${userName}`}>
+                  <span className="admin-avatar" aria-hidden="true">{initials || <UserOutlined />}</span>
+                  {!isMobile && (
+                    <span className="admin-user-text">
+                      <span className="admin-user-name">{userName}</span>
+                      <span className={`admin-user-role${isDeveloper ? " is-dev" : ""}`}>{roleLabel}</span>
+                    </span>
+                  )}
+                  <DownOutlined className="admin-user-caret" />
+                </button>
+              </Dropdown>
+            </div>
+            <div className="admin-header-ribbon" aria-hidden="true" />
           </Header>
-          <Content
-            style={{
-              margin: isMobile ? "8px" : "12px 16px",
-              background: isDarkMode ? "#1d1d1d" : "#ffffff",
-              borderRadius: borderRadius,
-              overflow: "auto",
-            }}
-          >
-            <div
-              style={{
-                padding: 12,
-                borderRadius: borderRadius,
-                minHeight: "calc(100vh - 136px)",
-                transition: "box-shadow 0.3s ease-in-out",
-              }}
-            >
-              <Suspense fallback={<div style={{ display: "flex", justifyContent: "center", padding: 60 }}><Spin size="large" /></div>}>
-                <Outlet />
-              </Suspense>
+
+          {maintenance.enabled && (
+            <div className="admin-maint-banner" role="status">
+              <ToolOutlined />
+              <span>
+                <strong>Maintenance mode is on.</strong> Only developer accounts can use the system
+                {maintenance.endsAt ? ` — expected back by ${formatEndsAt(maintenance.endsAt)}` : ""}.
+              </span>
+              {isDeveloper && selectedKey !== "developer-settings" && (
+                <button type="button" onClick={() => navigate("/admin/settings/developer?tab=maintenance")}>
+                  Manage
+                </button>
+              )}
+            </div>
+          )}
+          <Content className="admin-content">
+            <div className="admin-page">
+              {/* A crash in one page shows a recoverable panel instead of a blank
+                  admin; moving to another page clears it. */}
+              <ErrorBoundary resetKey={location.pathname} homeHref={appUrl("/admin/dashboard")}>
+                <Suspense fallback={<SectionLoader message="Loading page…" minHeight={360} />}>
+                  <Outlet />
+                </Suspense>
+              </ErrorBoundary>
             </div>
           </Content>
-          <Footer
-            style={{
-              textAlign: "center",
-              background: "transparent",
-              padding: "8px 0 16px 0",
-              fontSize: "12px",
-              color: isDarkMode ? "#666" : "#999",
-            }}
-          >
-            EMB Region III — Online Client Satisfaction Measurement ©{" "}
+          <Footer className="admin-footer">
+            Environmental Management Bureau Region III · Online Client Satisfaction Measurement · ©{" "}
             {new Date().getFullYear()}
           </Footer>
         </Layout>
         {/* VERA — single admin-realm chat instance, page-aware via selectedKey */}
-        <VeraChat realm="admin" activeMenu={selectedKey} isMobile={isMobile} />
+        <VeraChat activeMenu={selectedKey} isMobile={isMobile} theme={isDarkMode ? "dark" : "light"} />
       </Layout>
     </ConfigProvider>
   );

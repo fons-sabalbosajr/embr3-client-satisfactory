@@ -151,9 +151,24 @@ body[data-mantine-color-scheme="dark"] .survey-page-content.ant-card {
   margin-bottom: 2px;
 }
 
+/* ── Control sizing ──────────────────────────────────────────────────────
+ * One set of variables drives every textbox and dropdown on the survey, so
+ * inputs, single selects, multi selects and the CC dropdowns are always the
+ * same height. Breakpoints below only change the variables.
+ * Font size never drops under 16px on phones: iOS Safari zooms the page when
+ * a focused field is smaller than that.
+ */
+.survey-page-content {
+  --survey-control-h: 46px;
+  --survey-control-fs: 16px;
+  --survey-control-px: 12px;
+  --survey-control-radius: 12px;
+  --survey-label-fs: 16px;
+}
+
 /* Corporate typography + readable controls */
 .survey-page-content .ant-form-item-label > label {
-  font-size: 16px;
+  font-size: var(--survey-label-fs);
   font-weight: 500;
   color: inherit;
 }
@@ -162,47 +177,93 @@ body[data-mantine-color-scheme="dark"] .survey-page-content.ant-card {
 .survey-page-content .ant-input-affix-wrapper,
 .survey-page-content .ant-select-selector,
 .survey-page-content textarea {
-  font-size: 16px;
-  border-radius: 12px !important;
+  font-size: var(--survey-control-fs);
+  border-radius: var(--survey-control-radius) !important;
   transition: border-color 160ms ease, box-shadow 160ms ease,
     background-color 160ms ease;
 }
 
-.survey-page-content .ant-input,
-.survey-page-content .ant-input-affix-wrapper,
-.survey-page-content textarea {
-  padding: 10px 12px;
+/* Single-line textboxes: fixed height, vertically centred text */
+.survey-page-content input.ant-input,
+.survey-page-content .ant-input-affix-wrapper {
+  height: var(--survey-control-h);
+  padding: 0 var(--survey-control-px);
+}
+
+.survey-page-content .ant-input-affix-wrapper > input.ant-input {
+  height: auto;
+  padding: 0;
+}
+
+/* Multi-line textboxes */
+.survey-page-content textarea,
+.survey-page-content textarea.ant-input {
+  min-height: calc(var(--survey-control-h) * 2.4);
+  padding: 10px var(--survey-control-px);
+  line-height: 1.5;
+}
+
+.survey-page-content .ant-select {
+  width: 100%;
+  font-size: var(--survey-control-fs);
 }
 
 .survey-page-content .ant-select-selector {
-  min-height: 46px !important;
-  height: auto !important;
+  min-height: var(--survey-control-h) !important;
   align-items: center;
-  padding: 0 12px !important;
+  padding: 0 var(--survey-control-px) !important;
 }
 
-/* Single selects keep exact 46px */
+/* Single selects: exact control height */
 .survey-page-content .ant-select-single .ant-select-selector {
-  height: 46px !important;
+  height: var(--survey-control-h) !important;
 }
 
-/* Multi-select: let tags wrap and container grow */
+.survey-page-content .ant-select-single .ant-select-selection-item,
+.survey-page-content .ant-select-single .ant-select-selection-placeholder {
+  line-height: calc(var(--survey-control-h) - 2px) !important;
+}
+
+.survey-page-content .ant-select-single .ant-select-selection-search-input {
+  height: calc(var(--survey-control-h) - 2px) !important;
+}
+
+/* Multi-select: same minimum height, tags wrap and the box grows */
 .survey-page-content .ant-select-multiple .ant-select-selector {
-  padding: 4px 12px !important;
+  height: auto !important;
+  padding: 5px 40px 5px 8px !important;
   flex-wrap: wrap;
   gap: 4px;
 }
 
-.survey-page-content .ant-select-selection-item,
-.survey-page-content .ant-select-selection-placeholder {
-  line-height: 44px !important;
+.survey-page-content .ant-select-multiple .ant-select-selection-placeholder {
+  inset-inline-start: var(--survey-control-px);
+  line-height: normal;
 }
 
-/* Multi-select tags don't need tall line-height */
+.survey-page-content .ant-select-multiple .ant-select-selection-overflow {
+  gap: 4px;
+}
+
+/* Multi-select tags: long service names wrap instead of being cut off */
 .survey-page-content .ant-select-multiple .ant-select-selection-item {
-  line-height: 24px !important;
   height: auto !important;
+  min-height: 28px;
   margin: 0 !important;
+  padding: 3px 4px 3px 10px;
+  line-height: 1.35 !important;
+  max-width: 100%;
+  align-items: center;
+}
+
+.survey-page-content .ant-select-multiple .ant-select-selection-item-content {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.survey-page-content .ant-select-multiple .ant-select-selection-search {
+  margin-inline-start: 4px;
 }
 
 .survey-page-content .ant-radio-wrapper {
@@ -218,8 +279,8 @@ body[data-mantine-color-scheme="dark"] .survey-page-content.ant-card {
 .survey-page-content .ant-input-focused,
 .survey-page-content .ant-select-focused .ant-select-selector,
 .survey-page-content textarea:focus {
-  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.18) !important;
-  border-color: rgba(14, 165, 233, 0.65) !important;
+  box-shadow: 0 0 0 4px rgba(0, 56, 168, 0.18) !important;
+  border-color: rgba(0, 56, 168, 0.65) !important;
 }
 
 body[data-mantine-color-scheme="dark"] .survey-page-content .ant-input,
@@ -283,8 +344,8 @@ body[data-mantine-color-scheme="dark"] .survey-page-content input::placeholder {
 }
 
 body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-multiple .ant-select-selection-item {
-  background: rgba(56, 189, 248, 0.14) !important;
-  border-color: rgba(56, 189, 248, 0.28) !important;
+  background: rgba(125, 162, 255, 0.14) !important;
+  border-color: rgba(125, 162, 255, 0.28) !important;
   color: rgba(255, 255, 255, 0.92) !important;
 }
 
@@ -312,7 +373,7 @@ body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-multiple
 
 .survey-lang-dropdown .ant-dropdown-menu-item:hover,
 .survey-lang-dropdown .ant-dropdown-menu-item-active {
-  background: rgba(14, 165, 233, 0.10);
+  background: rgba(0, 56, 168, 0.10);
 }
 
 body[data-mantine-color-scheme="dark"] .survey-lang-dropdown .ant-dropdown-menu {
@@ -327,13 +388,40 @@ body[data-mantine-color-scheme="dark"] .survey-lang-dropdown .ant-dropdown-menu-
 
 body[data-mantine-color-scheme="dark"] .survey-lang-dropdown .ant-dropdown-menu-item:hover,
 body[data-mantine-color-scheme="dark"] .survey-lang-dropdown .ant-dropdown-menu-item-active {
-  background: rgba(56, 189, 248, 0.18);
+  background: rgba(125, 162, 255, 0.18);
 }
 
 /* Scoped Select dropdown popup styling for Survey selects */
 .survey-select-dropdown.ant-select-dropdown {
   border-radius: 14px;
-  padding: 8px;
+  padding: 6px;
+}
+
+/* Comfortable, tappable options; long option text wraps instead of being
+   truncated with an ellipsis (CC answers and service names are long). */
+.survey-select-dropdown .ant-select-item {
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 15px;
+  align-items: center;
+}
+
+.survey-select-dropdown .ant-select-item-option-content {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+.survey-select-dropdown .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  font-weight: 600;
+}
+
+@media screen and (max-width: 440px) {
+  .survey-select-dropdown .ant-select-item {
+    font-size: 14px;
+    padding: 10px;
+  }
 }
 
 body[data-mantine-color-scheme="dark"] .survey-select-dropdown.ant-select-dropdown {
@@ -348,7 +436,7 @@ body[data-mantine-color-scheme="dark"] .survey-select-dropdown .ant-select-item 
 
 body[data-mantine-color-scheme="dark"] .survey-select-dropdown .ant-select-item-option-active,
 body[data-mantine-color-scheme="dark"] .survey-select-dropdown .ant-select-item-option-selected {
-  background: rgba(56, 189, 248, 0.18);
+  background: rgba(125, 162, 255, 0.18);
 }
 
 /* Option group headers (Internal / External / Other) */
@@ -376,7 +464,7 @@ body[data-mantine-color-scheme="dark"] .survey-select-dropdown .ant-empty-descri
 
 /* Multiple-select overflow count (+N) */
 body[data-mantine-color-scheme="dark"] .survey-page-content .ant-select-selection-overflow-item-rest .ant-select-selection-item {
-  background: rgba(56, 189, 248, 0.18) !important;
+  background: rgba(125, 162, 255, 0.18) !important;
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
@@ -409,11 +497,11 @@ body[data-mantine-color-scheme="dark"] .survey-page-content .ant-steps-item-desc
 }
 
 .survey-step-icon {
-  color: rgba(14, 165, 233, 0.85);
+  color: rgba(0, 56, 168, 0.85);
 }
 
 body[data-mantine-color-scheme="dark"] .survey-step-icon {
-  color: rgba(56, 189, 248, 0.92);
+  color: rgba(125, 162, 255, 0.92);
 }
 
 .survey-intro {
@@ -433,11 +521,11 @@ body[data-mantine-color-scheme="dark"] .survey-step-icon {
 
 .survey-title-icon {
   font-size: 22px;
-  color: rgba(14, 165, 233, 0.90);
+  color: rgba(0, 56, 168, 0.90);
 }
 
 body[data-mantine-color-scheme="dark"] .survey-title-icon {
-  color: rgba(56, 189, 248, 0.95);
+  color: rgba(125, 162, 255, 0.95);
 }
 
 .survey-title {
@@ -515,14 +603,14 @@ body[data-mantine-color-scheme="dark"] .survey-step-panel {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(14, 165, 233, 0.12);
-  color: rgba(14, 165, 233, 0.95);
+  background: rgba(0, 56, 168, 0.12);
+  color: rgba(0, 56, 168, 0.95);
   flex: 0 0 auto;
 }
 
 body[data-mantine-color-scheme="dark"] .survey-section-header-icon {
-  background: rgba(56, 189, 248, 0.16);
-  color: rgba(56, 189, 248, 0.98);
+  background: rgba(125, 162, 255, 0.16);
+  color: rgba(125, 162, 255, 0.98);
 }
 
 .survey-section-title {
@@ -571,19 +659,26 @@ body[data-mantine-color-scheme="dark"] .survey-actions {
   justify-content: center;
 }
 
+.survey-actions-hint-slot {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .survey-actions-hint {
   margin-top: 10px;
-  max-width: 860px;
+  max-width: 560px;
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(14, 165, 233, 0.20);
-  background: rgba(14, 165, 233, 0.08);
+  padding: 8px 12px;
+  text-align: center;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 56, 168, 0.20);
+  background: rgba(0, 56, 168, 0.08);
 }
 
 body[data-mantine-color-scheme="dark"] .survey-actions-hint {
-  border-color: rgba(56, 189, 248, 0.22);
-  background: rgba(56, 189, 248, 0.10);
+  border-color: rgba(125, 162, 255, 0.22);
+  background: rgba(125, 162, 255, 0.10);
 }
 
 .survey-actions-hint-text {
@@ -644,14 +739,14 @@ body[data-mantine-color-scheme="dark"] .survey-btn.ant-btn-primary.ant-btn-dange
 
 /* Primary button disabled in dark theme */
 body[data-mantine-color-scheme="dark"] .survey-btn-primary.ant-btn-primary:disabled {
-  background: rgba(14, 165, 233, 0.25) !important;
+  background: rgba(0, 56, 168, 0.25) !important;
   color: rgba(255, 255, 255, 0.40) !important;
   border: none;
 }
 
 .survey-btn-primary.ant-btn-primary {
   border: none;
-  background: linear-gradient(90deg, rgba(14, 165, 233, 0.96), rgba(34, 197, 94, 0.92));
+  background: linear-gradient(90deg, rgba(0, 56, 168, 0.96), rgba(29, 91, 224, 0.92));
 }
 
 @keyframes surveyPanelIn {
@@ -862,30 +957,15 @@ body[data-mantine-color-scheme="dark"] .swal-agency-popup a[href^="tel"] {
     padding: 10px 0 8px;
   }
 
-  /* Form inputs */
-  .survey-page-content .ant-form-item-label > label {
-    font-size: 14px;
-  }
-
-  .survey-page-content .ant-input,
-  .survey-page-content .ant-input-affix-wrapper,
-  .survey-page-content textarea {
-    font-size: 14px;
-    padding: 8px 10px;
-  }
-
-  .survey-page-content .ant-select-single .ant-select-selector {
-    height: 40px !important;
-  }
-
-  .survey-page-content .ant-select-selection-item,
-  .survey-page-content .ant-select-selection-placeholder {
-    line-height: 38px !important;
-    font-size: 14px;
+  /* Form controls: keep 44px touch targets and 16px text (no iOS zoom) */
+  .survey-page-content {
+    --survey-control-h: 44px;
+    --survey-label-fs: 15px;
+    --survey-control-radius: 10px;
   }
 
   .survey-page-content .ant-radio-wrapper {
-    font-size: 14px;
+    font-size: 15px;
   }
 }
 
@@ -1009,20 +1089,9 @@ body[data-mantine-color-scheme="dark"] .swal-agency-popup a[href^="tel"] {
     padding: 0 20px;
   }
 
-  /* Ensure form controls are touch-friendly (min 44px) */
-  .survey-page-content .ant-select-single .ant-select-selector {
-    height: 44px !important;
-  }
-
-  .survey-page-content .ant-select-selection-item,
-  .survey-page-content .ant-select-selection-placeholder {
-    line-height: 42px !important;
-  }
-
-  .survey-page-content .ant-input,
-  .survey-page-content .ant-input-affix-wrapper,
-  .survey-page-content textarea {
-    min-height: 44px;
+  /* Touch-friendly form controls (min 44px) */
+  .survey-page-content {
+    --survey-control-h: 44px;
   }
 }
 
@@ -1205,29 +1274,16 @@ body[data-mantine-color-scheme="dark"] .swal-agency-popup a[href^="tel"] {
     padding: 4px 8px;
   }
 
-  .survey-page-content .ant-form-item-label > label {
-    font-size: 13px;
-  }
-
-  .survey-page-content .ant-input,
-  .survey-page-content .ant-input-affix-wrapper,
-  .survey-page-content textarea {
-    font-size: 13px;
-    padding: 6px 8px;
-  }
-
-  .survey-page-content .ant-select-single .ant-select-selector {
-    height: 36px !important;
-  }
-
-  .survey-page-content .ant-select-selection-item,
-  .survey-page-content .ant-select-selection-placeholder {
-    line-height: 34px !important;
-    font-size: 13px;
+  /* Small phones still get 44px / 16px controls — shrinking them made the
+     fields hard to tap and triggered iOS zoom-on-focus. */
+  .survey-page-content {
+    --survey-control-h: 44px;
+    --survey-control-px: 10px;
+    --survey-label-fs: 14px;
   }
 
   .survey-page-content .ant-radio-wrapper {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .survey-btn.ant-btn {
@@ -1289,25 +1345,11 @@ body[data-mantine-color-scheme="dark"] .swal-agency-popup a[href^="tel"] {
     font-size: 16px;
   }
 
-  .survey-page-content .ant-form-item-label > label {
-    font-size: 17px;
-  }
-
-  .survey-page-content .ant-input,
-  .survey-page-content .ant-input-affix-wrapper,
-  .survey-page-content textarea {
-    font-size: 17px;
-    padding: 12px 14px;
-  }
-
-  .survey-page-content .ant-select-single .ant-select-selector {
-    height: 50px !important;
-  }
-
-  .survey-page-content .ant-select-selection-item,
-  .survey-page-content .ant-select-selection-placeholder {
-    line-height: 48px !important;
-    font-size: 17px;
+  .survey-page-content {
+    --survey-control-h: 50px;
+    --survey-control-fs: 17px;
+    --survey-control-px: 14px;
+    --survey-label-fs: 17px;
   }
 
   .survey-page-content .ant-radio-wrapper {
@@ -1363,14 +1405,10 @@ body[data-mantine-color-scheme="dark"] .swal-agency-popup a[href^="tel"] {
     font-size: 28px !important;
   }
 
-  .survey-page-content .ant-form-item-label > label {
-    font-size: 18px;
-  }
-
-  .survey-page-content .ant-input,
-  .survey-page-content .ant-input-affix-wrapper,
-  .survey-page-content textarea {
-    font-size: 18px;
+  .survey-page-content {
+    --survey-control-h: 52px;
+    --survey-control-fs: 18px;
+    --survey-label-fs: 18px;
   }
 
   .survey-btn.ant-btn {

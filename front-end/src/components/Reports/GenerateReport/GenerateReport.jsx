@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Card,
   Table,
@@ -14,7 +14,8 @@ import {
 } from "antd";
 import * as api from "../../../services/api";
 import { exportWorkbook } from "../../../utils/excelExport";
-import { buildResponseRows } from "../../../utils/responseExport";
+import { buildResponseRows, canonicalAnswers } from "../../../utils/responseExport";
+import { normalizeSqdAnswer as normalizeSharedSqd } from "../../../utils/responseClassifier";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import dayjs from "dayjs";
@@ -90,27 +91,43 @@ function normalizeCcAnswer(val) {
   return null;
 }
 
+// SQD answers go through the shared classifier so "Not Applicable", the legacy
+// "Satisfactory" label and Filipino answers are all counted. The local
+// normaliser it replaces only recognised "N/A", so the N/A column was always 0
+// and Filipino ratings were silently dropped from the totals.
 function normalizeSqdAnswer(val) {
-  if (!val || typeof val !== "string") return null;
-  const s = val.trim();
-  if (/^satisfactory$/i.test(s)) return "Neutral";
-  if (/^neither\s+agree\s+nor\s+disagree$/i.test(s)) return "Neutral";
-  if (/^n\/?a$/i.test(s)) return "N/A";
-  return s;
+  const label = normalizeSharedSqd(val);
+  if (!label) return null;
+  if (label === "Neither Agree nor Disagree") return "Neutral";
+  return label; // Strongly Agree | Agree | Disagree | Strongly Disagree | N/A
 }
 
 // Export helpers
 // Every report workbook carries the aggregated table on the first sheet and the
 // individual responses behind it (filtered the same way), so the reader can see
 // which services each respondent availed without a second export.
-function exportToExcel(filename, rows, responses = []) {
-  exportWorkbook(filename, [
-    { name: "Report", rows },
-    { name: "Responses", rows: buildResponseRows(responses) },
-  ]);
+async function exportToExcel(filename, rows, responses = []) {
+  if (!rows?.length && !responses?.length) {
+    message.warning("No data to export for the current filters.");
+    return;
+  }
+  try {
+    await exportWorkbook(filename, [
+      { name: "Report", rows },
+      { name: "Responses", rows: buildResponseRows(responses) },
+    ]);
+    message.success(`Exported report with ${responses.length} response(s).`);
+  } catch (err) {
+    console.error("Excel export failed:", err);
+    message.error("Export failed. Please try again.");
+  }
 }
 
 function exportToPdf(title, headers, bodyRows, filename) {
+  if (!bodyRows?.length) {
+    message.warning("No data to export for the current filters.");
+    return;
+  }
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
@@ -173,6 +190,29 @@ export default function GenerateReport() {
     fetchAll();
   }, []);
 
+  // Service → internal/external mapping managed on the server.
+  const [svcCats, setSvcCats] = useState({ internal: new Set(), external: new Set() });
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .getServiceCategories()
+      .then((res) => {
+        if (cancelled) return;
+        const list = res?.data?.data || [];
+        const toKey = (s) => String(s || "").trim().toLowerCase();
+        setSvcCats({
+          internal: new Set(list.filter((x) => x.type === "internal").map((x) => toKey(x.name))),
+          external: new Set(list.filter((x) => x.type === "external").map((x) => toKey(x.name))),
+        });
+      })
+      .catch(() => {
+        /* non-fatal: fall back to env lists / heuristic */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Derive unique option lists for filters
   const { regionOptions, customerTypeOptions, agencyOptions, serviceOptions } =
     useMemo(() => {
@@ -186,6 +226,7 @@ export default function GenerateReport() {
         const ct = labeled["Customer Type"]; if (ct) customerTypes.add(ct);
         const agency =
           labeled["Company Name"] ||
+          labeled["Agency Name"] ||
           labeled["Unknown Question (merged_customer_age_gender_question_agencyName)"] ||
           labeled["Agency"] ||
           null;
@@ -206,6 +247,7 @@ export default function GenerateReport() {
     const labeled = entry.answersLabeled || {};
     return (
       labeled["Company Name"] ||
+      labeled["Agency Name"] ||
       labeled["Unknown Question (merged_customer_age_gender_question_agencyName)"] ||
       labeled["Agency"] ||
       "—"
@@ -282,16 +324,16 @@ export default function GenerateReport() {
       const optsLen = Array.isArray(optionsCurrent) ? optionsCurrent.length : 0;
       if (n >= 1 && n <= optsLen) return n - 1;
     }
-    // Fallback: try exact match across languages
+    // Counts are bucketed by the ENGLISH option order. The Filipino CC1 list
+    // is ordered differently (its 3rd/4th options are swapped), so a Filipino
+    // index must never be used directly — keyword matching runs first and
+    // covers the Filipino wording.
     const idxEN = Array.isArray(optionsEN) ? optionsEN.indexOf(s) : -1;
     if (idxEN !== -1) return idxEN;
-    const idxFIL = Array.isArray(optionsFIL) ? optionsFIL.indexOf(s) : -1;
-    if (idxFIL !== -1) return idxFIL;
-    const idxCur = Array.isArray(optionsCurrent) ? optionsCurrent.indexOf(s) : -1;
-    if (idxCur !== -1) return idxCur;
 
     // Heuristic keywords per CC
     const low = s.toLowerCase();
+    const viaKeywords = (() => {
     if (qCode === "Q7") {
       if (low.includes("do not know") || low.includes("hindi ko alam")) return 3; // option 4
       if (low.includes("only when") || low.includes("nalaman ko lang")) return 2; // option 3
@@ -299,19 +341,30 @@ export default function GenerateReport() {
       if (low.includes("saw it") || low.includes("nakita ko ito") || low.includes("aware")) return 0; // option 1
     }
     if (qCode === "Q8") {
-      if (low.includes("not applicable")) return 4; // N/A
-      if (low.includes("not visible")) return 3;
-      if (low.includes("difficult")) return 2;
-      if (low.includes("somewhat")) return 1;
-      if (low.includes("easy")) return 0;
+      if (low.includes("not applicable") || low.includes("naaangkop")) return 4; // N/A
+      if (low.includes("not visible") || low.includes("hindi nakikita")) return 3;
+      if (low.includes("difficult") || low.includes("mahirap")) return 2;
+      if (low.includes("somewhat") || low.includes("medyo")) return 1;
+      if (low.includes("easy") || low.includes("madaling")) return 0;
     }
     if (qCode === "Q9") {
-      if (low.includes("not applicable")) return 3; // N/A
-      if (low.includes("did not help")) return 2;
-      if (low.includes("somewhat")) return 1;
+      if (low.includes("not applicable") || low.includes("naaangkop")) return 3; // N/A
+      if (low.includes("did not help") || low.includes("hindi nakatulong")) return 2;
+      if (low.includes("somewhat") || low.includes("medyo")) return 1;
       if (low.includes("help very much") || low.includes("lubos")) return 0;
     }
     return -1;
+    })();
+    if (viaKeywords !== -1) return viaKeywords;
+
+    // Last resort: Filipino/current-language exact match (same order as
+    // English for CC2/CC3).
+    if (qCode !== "Q7") {
+      const idxFIL = Array.isArray(optionsFIL) ? optionsFIL.indexOf(s) : -1;
+      if (idxFIL !== -1) return idxFIL;
+    }
+    const idxCur = Array.isArray(optionsCurrent) ? optionsCurrent.indexOf(s) : -1;
+    return idxCur;
   };
 
   const sqdKeys = useMemo(
@@ -338,15 +391,21 @@ export default function GenerateReport() {
       if (!meta) return;
       const qCode = meta.code;
       const key = meta.id;
-      const questionText = t(`questions.${qCode}.text`);
+      const questionText = t(`questions.${qCode}.text`, { lng: "en" });
       const optsCurrent = t(`questions.${qCode}.options`, { returnObjects: true });
       const optsEN = t(`questions.${qCode}.options`, { lng: "en", returnObjects: true });
       const optsFIL = t(`questions.${qCode}.options`, { lng: "fil", returnObjects: true });
-      const options = Array.isArray(optsCurrent) ? optsCurrent : [];
+      // Rows follow the English option order because that is the order the
+      // counts are bucketed in (the Filipino CC1 list is ordered differently).
+      const options = Array.isArray(optsEN)
+        ? optsEN
+        : Array.isArray(optsCurrent)
+        ? optsCurrent
+        : [];
       const counts = new Array(options.length).fill(0);
 
       filteredSurveys.forEach((s) => {
-        const ans = s.answers?.[key];
+        const ans = s.answers?.[key] ?? canonicalAnswers(s)[sec];
         const idx = mapCcAnswerToIndex(qCode, ans, optsEN, optsFIL, optsCurrent);
         if (idx >= 0 && idx < counts.length) counts[idx] += 1;
       });
@@ -392,7 +451,10 @@ export default function GenerateReport() {
         "N/A": 0,
       };
       filteredSurveys.forEach((s) => {
-        const a = normalizeSqdAnswer(s.answers?.[key]);
+        // Fall back to the labeled answer when the record was stored under a
+        // different question id (e.g. a re-seeded question).
+        const raw = s.answers?.[key] ?? canonicalAnswers(s)[code];
+        const a = normalizeSqdAnswer(raw);
         if (!a) return;
         if (Object.prototype.hasOwnProperty.call(counts, a)) counts[a] += 1;
       });
@@ -446,7 +508,23 @@ export default function GenerateReport() {
   }, [filteredSurveys]);
 
   // 4) Respondents Profile: Gender/Sex and Customer Type
-  const classifyWithFallback = (services) => {
+  const classifyWithFallback = useCallback((services) => {
+    // 1) Server-managed categories (Settings → Data Config) — the same source
+    //    the survey uses to decide which services to show.
+    if (svcCats.internal.size || svcCats.external.size) {
+      const toKey = (s) => String(s || "").trim().toLowerCase();
+      const external = [];
+      const internal = [];
+      const other = [];
+      (services || []).forEach((s) => {
+        const k = toKey(s);
+        if (svcCats.internal.has(k)) internal.push(s);
+        else if (svcCats.external.has(k)) external.push(s);
+        else other.push(s);
+      });
+      if (external.length || internal.length) return { external, internal, other };
+    }
+    // 2) Build-time env lists, then 3) a name heuristic.
     const base = categorizeServices(services);
     const noEnvConfigured =
       (EXTERNAL_SERVICES?.length ?? 0) === 0 &&
@@ -468,7 +546,7 @@ export default function GenerateReport() {
       return { external, internal, other: [] };
     }
     return base;
-  };
+  }, [svcCats]);
   const profileGenderRows = useMemo(() => {
     const map = new Map();
     filteredSurveys.forEach((s) => {
@@ -489,13 +567,15 @@ export default function GenerateReport() {
         gender: sex,
         external: 0,
         internal: 0,
+        total: 0,
       };
       if (hasExternal) rec.external += 1;
       if (hasInternal) rec.internal += 1;
+      rec.total += 1;
       map.set(sex, rec);
     });
     return Array.from(map.values());
-  }, [filteredSurveys]);
+  }, [filteredSurveys, classifyWithFallback]);
 
   const profileCustomerRows = useMemo(() => {
     const map = new Map();
@@ -513,13 +593,15 @@ export default function GenerateReport() {
         customerType,
         external: 0,
         internal: 0,
+        total: 0,
       };
       if (hasExternal) rec.external += 1;
       if (hasInternal) rec.internal += 1;
+      rec.total += 1;
       map.set(customerType, rec);
     });
     return Array.from(map.values());
-  }, [filteredSurveys]);
+  }, [filteredSurveys, classifyWithFallback]);
 
   // Columns
   const ccGroupColumns = [
@@ -620,6 +702,7 @@ export default function GenerateReport() {
       dataIndex: "internal",
       key: "internal",
     },
+    { title: "Total Respondents", dataIndex: "total", key: "total" },
   ];
 
   const profileCustomerColumns = [
@@ -634,6 +717,7 @@ export default function GenerateReport() {
       dataIndex: "internal",
       key: "internal",
     },
+    { title: "Total Respondents", dataIndex: "total", key: "total" },
   ];
 
   // Export handlers per section
@@ -680,6 +764,7 @@ export default function GenerateReport() {
         "Respondent Sex/Gender": r.gender,
         "External Service Availed Response Count": r.external,
         "Internal Service Availed Response Count": r.internal,
+        "Total Respondents": r.total,
       })),
       filteredSurveys
     );
@@ -690,6 +775,7 @@ export default function GenerateReport() {
         "Customer Type": r.customerType,
         "External Service Availed Response Count": r.external,
         "Internal Service Availed Response Count": r.internal,
+        "Total Respondents": r.total,
       })),
       filteredSurveys
     );
@@ -744,8 +830,8 @@ export default function GenerateReport() {
   const onExportGenderPdf = () => {
     exportToPdf(
       "Respondents Profile (Gender/Sex)",
-      ["Respondent Sex/Gender", "External Count", "Internal Count"],
-      profileGenderRows.map((r) => [r.gender, r.external, r.internal]),
+      ["Respondent Sex/Gender", "External Count", "Internal Count", "Total Respondents"],
+      profileGenderRows.map((r) => [r.gender, r.external, r.internal, r.total]),
       `respondents-gender-${new Date().toISOString().slice(0, 10)}.pdf`
     );
   };
@@ -753,8 +839,8 @@ export default function GenerateReport() {
   const onExportCustomerPdf = () => {
     exportToPdf(
       "Respondents Profile (Customer Type)",
-      ["Customer Type", "External Count", "Internal Count"],
-      profileCustomerRows.map((r) => [r.customerType, r.external, r.internal]),
+      ["Customer Type", "External Count", "Internal Count", "Total Respondents"],
+      profileCustomerRows.map((r) => [r.customerType, r.external, r.internal, r.total]),
       `respondents-customer-${new Date().toISOString().slice(0, 10)}.pdf`
     );
   };
@@ -1043,9 +1129,10 @@ export default function GenerateReport() {
               (acc, r) => {
                 acc.external += r.external || 0;
                 acc.internal += r.internal || 0;
+                acc.total += r.total || 0;
                 return acc;
               },
-              { external: 0, internal: 0 }
+              { external: 0, internal: 0, total: 0 }
             );
             return (
               <Table.Summary>
@@ -1058,6 +1145,9 @@ export default function GenerateReport() {
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2}>
                     <Text strong>{totals.internal}</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={3}>
+                    <Text strong>{totals.total}</Text>
                   </Table.Summary.Cell>
                 </Table.Summary.Row>
               </Table.Summary>
@@ -1109,9 +1199,10 @@ export default function GenerateReport() {
               (acc, r) => {
                 acc.external += r.external || 0;
                 acc.internal += r.internal || 0;
+                acc.total += r.total || 0;
                 return acc;
               },
-              { external: 0, internal: 0 }
+              { external: 0, internal: 0, total: 0 }
             );
             return (
               <Table.Summary>
@@ -1124,6 +1215,9 @@ export default function GenerateReport() {
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2}>
                     <Text strong>{totals.internal}</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={3}>
+                    <Text strong>{totals.total}</Text>
                   </Table.Summary.Cell>
                 </Table.Summary.Row>
               </Table.Summary>

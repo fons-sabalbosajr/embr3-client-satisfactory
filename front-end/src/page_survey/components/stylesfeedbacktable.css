@@ -1,13 +1,23 @@
+/* Citizen's Charter step.
+ * Dropdown sizing comes from the --survey-control-* variables in survey.css.
+ * Rules are scoped to .feedback-table-wrapper / .survey-select-dropdown — the
+ * old unscoped ".ant-select-dropdown" mobile rules leaked into every dropdown
+ * in the app.
+ */
+
 .feedback-table-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   width: 100%;
-  gap: 20px;
 }
 
 .feedback-form-item {
   opacity: 1;
   pointer-events: auto;
-  padding: 16px 0;
+  padding: 14px 0 6px;
   border-bottom: 1px solid rgba(2, 6, 23, 0.06);
+  transition: opacity 160ms ease;
 }
 
 .feedback-form-item:last-child {
@@ -23,95 +33,84 @@ body[data-mantine-color-scheme="dark"] .feedback-form-item {
   pointer-events: none;
 }
 
-.feedback-label {
-  font-size: 16px;
+/* Room for the question label and the validation message */
+.feedback-table-wrapper .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.feedback-table-wrapper .ant-form-item-label {
+  padding-bottom: 8px;
+}
+
+.feedback-table-wrapper .ant-form-item-label > label {
+  height: auto;
+  white-space: normal;
+}
+
+.feedback-label.ant-typography {
+  font-size: 17px;
   font-weight: 500;
+  line-height: 1.45;
   color: rgba(2, 6, 23, 0.92);
 }
 
-body[data-mantine-color-scheme="dark"] .feedback-label {
+body[data-mantine-color-scheme="dark"] .feedback-label.ant-typography {
   color: rgba(255, 255, 255, 0.92);
 }
 
-.feedback-label.disabled {
+.feedback-label.disabled.ant-typography {
   color: rgba(2, 6, 23, 0.45);
 }
 
-body[data-mantine-color-scheme="dark"] .feedback-label.disabled {
+body[data-mantine-color-scheme="dark"] .feedback-label.disabled.ant-typography {
   color: rgba(255, 255, 255, 0.50);
 }
 
-.feedback-select {
-  font-size: 16px;
+/* The chosen answer is a full sentence — let it wrap inside the box
+   instead of being cut off, while keeping the standard minimum height. */
+.survey-page-content .feedback-select.ant-select-single .ant-select-selector {
+  height: auto !important;
+  min-height: var(--survey-control-h, 46px) !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
 }
 
-.feedback-select .ant-select-selector {
-  height: 46px !important;
-  border-radius: 12px !important;
-  transition: border-color 160ms ease, box-shadow 160ms ease,
-    background-color 160ms ease;
+.survey-page-content .feedback-select.ant-select-single .ant-select-selection-item,
+.survey-page-content .feedback-select.ant-select-single .ant-select-selection-placeholder {
+  white-space: normal;
+  line-height: 1.4 !important;
+  padding-inline-end: 22px;
 }
 
 @media screen and (min-width: 768px) and (max-width: 1080px) {
-  .feedback-label {
-    font-size: 15px;
-  }
-
-  .feedback-select .ant-select-selector {
-    height: 40px !important;
+  .feedback-label.ant-typography {
+    font-size: 16px;
   }
 }
 
-/* Responsive fix for mobile dropdown word-wrap */
 @media screen and (max-width: 768px) {
-  .feedback-label {
-    font-size: 14px;
+  .feedback-label.ant-typography {
+    font-size: 15px;
   }
 
-  .feedback-select .ant-select-selector {
-    height: 38px !important;
-  }
-
-  .ant-select-dropdown .ant-select-item-option-content {
-    white-space: normal !important;
-    word-break: break-word !important;
-    overflow-wrap: break-word;
-    font-size: 13px;
-    line-height: 1.4;
-  }
-
-  .ant-select-item {
-    padding: 6px 10px !important;
-  }
-
-  .ant-select-selector {
-    white-space: normal !important;
-    line-height: 1.4 !important;
+  .feedback-form-item {
+    padding: 10px 0 4px;
   }
 }
 
 @media screen and (max-width: 440px) {
-  .feedback-label {
-    font-size: 13px;
-  }
-
-  .feedback-select .ant-select-selector {
-    height: 36px !important;
-    border-radius: 8px !important;
+  .feedback-label.ant-typography {
+    font-size: 14px;
   }
 }
 
 /* Large desktops (1440px+) */
 @media screen and (min-width: 1440px) {
-  .feedback-label {
-    font-size: 17px;
-  }
-
-  .feedback-select .ant-select-selector {
-    height: 48px !important;
+  .feedback-label.ant-typography {
+    font-size: 18px;
   }
 
   .feedback-form-item {
-    padding: 18px 0;
+    padding: 18px 0 8px;
   }
 }

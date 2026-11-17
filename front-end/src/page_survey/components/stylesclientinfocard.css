@@ -1,85 +1,308 @@
-.text-filled {
-  margin-top: 20px;
-}
+/* stylesclientinfocard.css
+ * Primary-info step. Control heights/fonts come from the shared
+ * --survey-control-* variables defined in survey.css so every textbox and
+ * dropdown on the survey lines up at every breakpoint.
+ */
 
-/* stylesclientinfocard.css */
-
-.client-info-card-space {
+.client-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   width: 100%;
 }
 
-.client-info-card-radio-space {
-  display: flex;
-  flex-direction: column;
+/* Give fields breathing room and space for validation messages
+   (survey.css collapses .ant-form-item margins for the table steps). */
+.client-info-card .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.client-info-card .ant-form-item-label {
+  padding-bottom: 6px;
+}
+
+.client-info-card .ant-form-item-label > label {
+  height: auto;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+/* ── Sections ── */
+.client-info-section {
+  padding: 16px 16px 2px;
+  border-radius: 14px;
+  border: 1px solid rgba(2, 6, 23, 0.08);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.client-info-section--muted {
+  background: rgba(2, 6, 23, 0.025);
+  padding-bottom: 12px;
+}
+
+.client-info-section--muted .ant-form-item {
+  margin-bottom: 10px;
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-section {
+  border-color: rgba(148, 163, 184, 0.16);
+  background: rgba(2, 6, 23, 0.22);
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-section--muted {
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.client-info-section-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(0, 56, 168, 0.95);
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-section-title {
+  color: rgba(169, 193, 255, 0.95);
+}
+
+/* ── Read-only (auto-filled) inputs ── */
+.survey-page-content .client-info-readonly.ant-input {
+  background: rgba(2, 6, 23, 0.04);
+  color: rgba(2, 6, 23, 0.72);
+  cursor: default;
+  border-style: dashed;
+}
+
+.survey-page-content .client-info-readonly.ant-input:focus {
+  box-shadow: none !important;
+  border-color: rgba(2, 6, 23, 0.15) !important;
+}
+
+body[data-mantine-color-scheme="dark"] .survey-page-content .client-info-readonly.ant-input {
+  background: rgba(148, 163, 184, 0.08) !important;
+  color: rgba(255, 255, 255, 0.70) !important;
+}
+
+.client-info-note {
+  display: block;
+  font-size: 13px;
+  color: rgba(2, 6, 23, 0.60) !important;
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-note {
+  color: rgba(255, 255, 255, 0.62) !important;
+}
+
+/* "Optional" marker next to a label */
+.client-info-optional {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: rgba(2, 6, 23, 0.55);
+  background: rgba(2, 6, 23, 0.06);
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-optional {
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(148, 163, 184, 0.16);
+}
+
+/* ── Client type: large tappable choice cards ── */
+.client-type-group.ant-radio-group {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+  width: 100%;
 }
 
-.client-info-card-dynamic-input {
-  margin-top: 8px;
-  width: min(420px, 100%);
-  margin-left: 0;
+.client-type-group .client-type-option.ant-radio-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  min-height: var(--survey-control-h, 46px);
+  padding: 8px 14px;
+  border-radius: var(--survey-control-radius, 12px);
+  border: 1px solid rgba(2, 6, 23, 0.14);
+  background: rgba(255, 255, 255, 0.8);
+  transition: border-color 160ms ease, background-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
-.client-info-card-note {
-  padding-top: 25px;
+.client-type-group .client-type-option.ant-radio-wrapper::after {
+  display: none;
 }
 
-.client-info-card-note-text {
-  font-size: 14px;
-  color: rgba(2, 6, 23, 0.66);
+.client-type-group .client-type-option.ant-radio-wrapper:hover {
+  border-color: rgba(0, 56, 168, 0.55);
 }
 
-body[data-mantine-color-scheme="dark"] .client-info-card-note-text {
-  color: rgba(255, 255, 255, 0.66);
+.client-type-group .client-type-option.ant-radio-wrapper-checked {
+  border-color: rgba(0, 56, 168, 0.85);
+  background: rgba(0, 56, 168, 0.10);
+  box-shadow: 0 0 0 3px rgba(0, 56, 168, 0.14);
 }
 
-@media screen and (min-width: 768px) and (max-width: 1080px) {
-  .client-info-card-note-text {
-    font-size: 13px;
+.client-type-group .client-type-option.ant-radio-wrapper-disabled {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.client-type-group .client-type-option > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.client-type-option-icon {
+  display: inline-flex;
+  color: rgba(0, 56, 168, 0.9);
+  font-size: 16px;
+}
+
+.client-type-option-label {
+  line-height: 1.3;
+  white-space: normal;
+}
+
+body[data-mantine-color-scheme="dark"] .client-type-group .client-type-option.ant-radio-wrapper {
+  border-color: rgba(148, 163, 184, 0.28);
+  background: rgba(2, 6, 23, 0.36);
+}
+
+body[data-mantine-color-scheme="dark"] .client-type-group .client-type-option.ant-radio-wrapper-checked {
+  border-color: rgba(125, 162, 255, 0.8);
+  background: rgba(125, 162, 255, 0.16);
+}
+
+body[data-mantine-color-scheme="dark"] .client-type-option-icon {
+  color: rgba(169, 193, 255, 0.95);
+}
+
+/* ── Conditional follow-up (Type of Result of Analyses) ── */
+.client-info-followup {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: -4px 0 16px;
+  padding: 14px 14px 0;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 56, 168, 0.30);
+  border-left: 4px solid rgba(0, 56, 168, 0.85);
+  background: rgba(0, 56, 168, 0.06);
+  animation: clientInfoFollowupIn 220ms ease-out both;
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-followup {
+  border-color: rgba(125, 162, 255, 0.30);
+  border-left-color: rgba(125, 162, 255, 0.85);
+  background: rgba(125, 162, 255, 0.08);
+}
+
+.client-info-followup-icon {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  margin-top: 2px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: rgba(0, 56, 168, 0.95);
+  background: rgba(0, 56, 168, 0.14);
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-followup-icon {
+  color: rgba(169, 193, 255, 0.95);
+}
+
+.client-info-followup-item.ant-form-item {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 14px;
+}
+
+.client-info-followup .ant-form-item-extra {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-followup .ant-form-item-extra {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+@keyframes clientInfoFollowupIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@media screen and (min-width: 440px) and (max-width: 768px) {
-  .client-info-card-note-text {
-    font-size: 12px;
-    display: flex;
-    margin-top: -8px;
+@media (prefers-reduced-motion: reduce) {
+  .client-info-followup {
+    animation: none;
+  }
+}
+
+/* ── Internal survey badge ── */
+.client-info-card-internal-badge {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 56, 168, 0.25);
+  background: rgba(0, 56, 168, 0.08);
+  color: #0038a8;
+}
+
+body[data-mantine-color-scheme="dark"] .client-info-card-internal-badge {
+  color: #a9c1ff;
+}
+
+/* ── Responsive ── */
+@media screen and (max-width: 768px) {
+  .client-type-group.ant-radio-group {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
-  .client-info-card-dynamic-input {
-    width: 100%;
+  .client-info-section {
+    padding: 12px 12px 0;
+    border-radius: 12px;
+  }
+
+  .client-info-section--muted {
+    padding-bottom: 10px;
+  }
+
+  .client-info-card .ant-form-item {
+    margin-bottom: 14px;
   }
 }
 
 @media screen and (max-width: 440px) {
-  .client-info-card-note {
-    padding-top: 8px;
+  .client-info-card {
+    gap: 10px;
   }
 
-  .client-info-card-note-text {
-    font-size: 11px;
+  .client-info-followup {
+    padding: 12px 10px 0;
+    gap: 8px;
   }
 
-  .client-info-card-dynamic-input {
-    width: 100%;
+  .client-info-followup-icon {
+    display: none;
   }
 
-  .client-info-card-radio-space {
-    gap: 6px;
-  }
-}
-
-/* Large desktops (1440px+) */
-@media screen and (min-width: 1440px) {
-  .client-info-card-note-text {
-    font-size: 15px;
-  }
-
-  .client-info-card-dynamic-input {
-    width: min(520px, 100%);
-  }
-
-  .client-info-card-radio-space {
-    gap: 14px;
+  .client-info-note {
+    font-size: 12px;
   }
 }

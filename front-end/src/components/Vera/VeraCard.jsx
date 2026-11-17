@@ -5,6 +5,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Typography, Button, Tooltip, Tag } from "antd";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import VeraFlameIcon from "./VeraFlameIcon";
+import useBodyTheme from "./useBodyTheme";
 import "./VeraCard.css";
 
 const { Text } = Typography;
@@ -34,6 +35,7 @@ const prefersReducedMotion = () =>
     : false;
 
 function VeraCard() {
+  const theme = useBodyTheme();
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   const pausedRef = useRef(false);
@@ -74,7 +76,7 @@ function VeraCard() {
       onFocus={pause}
       onBlur={resume}
     >
-      <span className="vera-card-icon"><VeraFlameIcon size={24} /></span>
+      <span className="vera-card-icon"><VeraFlameIcon size={42} tile theme={theme} /></span>
 
       <div className="vera-card-body">
         <div className="vera-card-head">

@@ -1,7 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import { authMiddleware } from "../middleware/auth.js";
-import { requirePermission } from "../middleware/permission.js";
+import { requireDeveloper } from "../middleware/permission.js";
 import { getEmailHealth, sendTestEmail } from "../utils/email.js";
 import Log from "../models/Log.js";
 
@@ -27,7 +27,7 @@ function connectionStateName(state) {
 router.get(
   "/db/status",
   authMiddleware,
-  requirePermission("canManageUsers"),
+  requireDeveloper,
   (req, res) => {
     try {
       const conn = mongoose.connection;
@@ -52,7 +52,7 @@ router.get(
 router.post(
   "/db/connect",
   authMiddleware,
-  requirePermission("canManageUsers"),
+  requireDeveloper,
   async (req, res) => {
     try {
       const state = mongoose.connection.readyState;
@@ -64,11 +64,7 @@ router.post(
       const uri = process.env.MONGO_URI;
       if (!uri) return res.status(500).json({ message: "MONGO_URI not configured on server" });
 
-      await mongoose.connect(uri, {
-        // Mongoose v6+ ignores these, but harmless to include for older environments
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
+      await mongoose.connect(uri, { compressors: ["zlib"] });
 
       const conn = mongoose.connection;
       const connected = conn.readyState === 1;
@@ -85,7 +81,7 @@ router.post(
 router.get(
   "/db/collections",
   authMiddleware,
-  requirePermission("canManageUsers"),
+  requireDeveloper,
   async (req, res) => {
     try {
       const db = mongoose.connection.db;
@@ -104,7 +100,7 @@ router.get(
 router.get(
   "/db/stats",
   authMiddleware,
-  requirePermission("canManageUsers"),
+  requireDeveloper,
   async (req, res) => {
     try {
       const conn = mongoose.connection;
@@ -177,7 +173,7 @@ router.get(
 router.get(
   "/db/export",
   authMiddleware,
-  requirePermission("canManageUsers"),
+  requireDeveloper,
   async (req, res) => {
     try {
       const { collection, format = "json" } = req.query;
@@ -189,30 +185,63 @@ router.get(
       const docs = await db.collection(collection).find({}).toArray();
 
       if ((format || "").toLowerCase() === "csv") {
-        // Build union of keys
-        const keys = Array.from(new Set(docs.flatMap((d) => Object.keys(d))));
-        // CSV header
-        const header = keys.join(",") + "\n";
-        const rows = docs
-          .map((doc) =>
-            keys
-              .map((k) => {
-                let v = doc[k];
-                if (v === undefined || v === null) return "";
-                if (typeof v === "object") v = JSON.stringify(v);
-                // Prevent CSV formula injection
-                let s = String(v);
-                if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
-                s = s.replace(/"/g, '""');
-                // wrap fields containing comma/newline/quote in quotes
-                return /[",\n]/.test(s) ? `"${s}"` : s;
-              })
-              .join(",")
-          )
-          .join("\n");
+        // Flatten nested objects into dotted columns (e.g.
+        // "answersLabeled.Service Availed") so every field gets its own
+        // column instead of one JSON blob per cell.
+        const isPlainObject = (v) =>
+          v !== null &&
+          typeof v === "object" &&
+          !Array.isArray(v) &&
+          !(v instanceof Date) &&
+          !v._bsontype &&
+          Object.getPrototypeOf(v) === Object.prototype;
+        const scalar = (v) => {
+          if (v === undefined || v === null) return "";
+          if (v instanceof Date) return v.toISOString();
+          if (v && v._bsontype) return String(v); // ObjectId, Decimal128…
+          if (Array.isArray(v)) {
+            return v.every((x) => x === null || typeof x !== "object" || x instanceof Date || x?._bsontype)
+              ? v.map(scalar).filter((x) => x !== "").join("; ")
+              : JSON.stringify(v);
+          }
+          if (typeof v === "object") return JSON.stringify(v);
+          return String(v);
+        };
+        const flatten = (obj, prefix = "", out = {}) => {
+          Object.entries(obj || {}).forEach(([k, v]) => {
+            const key = prefix ? `${prefix}.${k}` : k;
+            if (isPlainObject(v) && Object.keys(v).length) flatten(v, key, out);
+            else out[key] = scalar(v);
+          });
+          return out;
+        };
+        const flatDocs = docs.map((d) => flatten(d));
 
-        const csv = header + rows;
-        res.setHeader("Content-Type", "text/csv");
+        // Union of keys, first-seen order
+        const keys = [];
+        const seen = new Set();
+        flatDocs.forEach((d) =>
+          Object.keys(d).forEach((k) => {
+            if (!seen.has(k)) {
+              seen.add(k);
+              keys.push(k);
+            }
+          })
+        );
+
+        const cell = (raw) => {
+          let s = String(raw ?? "");
+          // Prevent CSV formula injection
+          if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+          s = s.replace(/"/g, '""');
+          return /[",\r\n]/.test(s) ? `"${s}"` : s;
+        };
+        const header = keys.map(cell).join(",");
+        const rows = flatDocs.map((d) => keys.map((k) => cell(d[k])).join(","));
+
+        // BOM so Excel opens the file as UTF-8 (Filipino text, em dashes).
+        const csv = "﻿" + [header, ...rows].join("\r\n");
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
         res.setHeader("Content-Disposition", `attachment; filename="${collection}.csv"`);
         return res.send(csv);
       }
@@ -232,7 +261,7 @@ router.get(
 router.get(
   "/email/health",
   authMiddleware,
-  requirePermission("canManageUsers"),
+  requireDeveloper,
   async (req, res) => {
     try {
       const health = await getEmailHealth();
@@ -248,7 +277,7 @@ router.get(
 router.post(
   "/email/test",
   authMiddleware,
-  requirePermission("canManageUsers"),
+  requireDeveloper,
   async (req, res) => {
     try {
       const { to } = req.body;
@@ -268,7 +297,7 @@ router.post(
 router.get(
   "/logs",
   authMiddleware,
-  requirePermission("canManageUsers"),
+  requireDeveloper,
   async (req, res) => {
     try {
       const page = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -322,7 +351,7 @@ router.get(
 router.delete(
   "/logs",
   authMiddleware,
-  requirePermission("canManageUsers"),
+  requireDeveloper,
   async (req, res) => {
     try {
       const olderThanDays = parseInt(req.query.olderThanDays, 10);

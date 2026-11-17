@@ -5,17 +5,14 @@ import {
   Typography,
   Button,
   Form,
-  Spin,
-  Alert,
-  Steps,
   FloatButton,
   Dropdown,
+  ConfigProvider,
 } from "antd";
 import Swal from "sweetalert2";
 import {
   ArrowRightOutlined,
   ArrowLeftOutlined,
-  LoadingOutlined,
   BulbOutlined,
   HomeOutlined,
   TranslationOutlined,
@@ -23,16 +20,20 @@ import {
   FileTextOutlined,
   StarOutlined,
   SafetyCertificateOutlined,
+  CheckOutlined,
 } from "@ant-design/icons";
 import "./survey.css";
 import { useSearchParams } from "react-router-dom";
 import { getQuestions, submitFeedback } from "../services/api";
 import { useNavigate } from "react-router-dom";
-import EMBLogo from "../assets/emblogo.svg";
-import BPLogo from "../assets/bplogo.svg";
+import AgencyHeader from "../components/AgencyHeader/AgencyHeader";
+import { PageLoader, ErrorState } from "../components/StatusUI/StatusUI";
+import { appUrl } from "../utils/basePath";
 import ClientInfoCard from "./components/ClientInfoCard";
 import FeedbackTable from "./components/FeedbackTable";
 import SQDTable from "./components/SQDTable";
+// Loaded after the component stylesheets so the ARTA theme / alignment wins.
+import "./survey-arta.css";
 import { chunk } from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import i18n from "../i18n";
@@ -43,6 +44,8 @@ import {
   AUTO_AGENCY,
   MERGED_CUSTOMER_AGE_GENDER_QID,
   MERGED_CCSQD_QID,
+  ANALYSIS_RESULT_TYPE_FIELD,
+  includesAnalysisService,
 } from "./constants/surveyMeta";
 
 const { Title, Text, Paragraph } = Typography;
@@ -73,9 +76,13 @@ function Survey({ toggleColorScheme }) {
 
   const watchedValues = Form.useWatch([], form);
 
+  // Bumped by "Try again" on the error screen to re-run the fetch below.
+  const [loadAttempt, setLoadAttempt] = useState(0);
+
   useEffect(() => {
     const fetchQuestionsData = async () => {
       try {
+        setError(null);
         setLoading(true);
         const fetchedResponse = await getQuestions();
         //console.log("Fetched questions response:", fetchedResponse);
@@ -169,13 +176,13 @@ function Survey({ toggleColorScheme }) {
         setLoading(false);
       } catch (err) {
         console.error("Failed to fetch questions:", err);
-        setError(t("loadError", "Failed to load questions. Check the API or network."));
+        setError(err || new Error("load failed"));
         setLoading(false);
       }
     };
 
     fetchQuestionsData();
-  }, []);
+  }, [loadAttempt]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -204,31 +211,10 @@ function Survey({ toggleColorScheme }) {
     cardEl?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [currentQuestionIndex, currentSQDGroupIndex]);
 
-  const stepItems = [
-    {
-      title: (
-        <span className="survey-step-title">
-          <IdcardOutlined className="survey-step-icon" />
-          {t("step.primaryInfo")}
-        </span>
-      ),
-    },
-    {
-      title: (
-        <span className="survey-step-title">
-          <FileTextOutlined className="survey-step-icon" />
-          {t("step.citizensCharter")}
-        </span>
-      ),
-    },
-    {
-      title: (
-        <span className="survey-step-title">
-          <StarOutlined className="survey-step-icon" />
-          {isMobile ? t("step.sqdShort") : t("step.sqdFull")}
-        </span>
-      ),
-    },
+  const stepLabels = [
+    t("step.primaryInfo"),
+    t("step.citizensCharter"),
+    isMobile ? t("step.sqdShort") : t("step.sqdFull"),
   ];
 
   const stepIndex =
@@ -255,7 +241,9 @@ function Survey({ toggleColorScheme }) {
       if (!customerType) {
         return {
           canProceed: false,
-          hint: "",
+          hint: t("survey.hint.selectClientType", {
+            defaultValue: "Select your client type to continue.",
+          }),
         };
       }
 
@@ -268,6 +256,18 @@ function Survey({ toggleColorScheme }) {
           canProceed: false,
           hint: t("survey.hint.selectService", {
             defaultValue: "Select at least one service availed.",
+          }),
+        };
+      }
+
+      if (
+        includesAnalysisService(serviceAvailed) &&
+        !String(values[`${base}_${ANALYSIS_RESULT_TYPE_FIELD}`] || "").trim()
+      ) {
+        return {
+          canProceed: false,
+          hint: t("survey.hint.enterAnalysisType", {
+            defaultValue: "Specify the type of result of analyses to continue.",
           }),
         };
       }
@@ -477,7 +477,7 @@ function Survey({ toggleColorScheme }) {
         html: `
           <div style="text-align:center;font-family:inherit;">
             <div style="margin-bottom:14px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#0038a8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
             </div>
             <h3 style="margin:0 0 4px;font-size:17px;font-weight:700;color:inherit;">
               ${t("agencyPrompt.title")}
@@ -492,7 +492,7 @@ function Survey({ toggleColorScheme }) {
                 EMB3Official
               </a>
               <a href="https://r3.emb.gov.ph" target="_blank" rel="noopener noreferrer"
-                style="display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:10px;background:linear-gradient(90deg,#0ea5e9,#22c55e);color:#fff;text-decoration:none;font-size:13px;font-weight:600;width:fit-content;">
+                style="display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:10px;background:linear-gradient(90deg,#0038a8,#1d5be0);color:#fff;text-decoration:none;font-size:13px;font-weight:600;width:fit-content;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 r3.emb.gov.ph
               </a>
@@ -505,7 +505,7 @@ function Survey({ toggleColorScheme }) {
           </div>
         `,
         confirmButtonText: t("agencyPrompt.close", "Close"),
-        confirmButtonColor: "#0ea5e9",
+        confirmButtonColor: "#0038a8",
         showCloseButton: true,
         customClass: {
           popup: "swal-agency-popup",
@@ -552,9 +552,12 @@ function Survey({ toggleColorScheme }) {
         `${base}_customerType`,
         `${base}_serviceAvailed`,
       ];
-      if (customerType === "Citizen") fieldsToValidate.push(`${base}_gender`);
+      if (customerType === "Citizen")
+        fieldsToValidate.push(`${base}_gender`, `${base}_age`);
       if (customerType === "Business") fieldsToValidate.push(`${base}_companyName`);
       if (customerType === "Government") fieldsToValidate.push(`${base}_agencyName`);
+      if (includesAnalysisService(values[`${base}_serviceAvailed`]))
+        fieldsToValidate.push(`${base}_${ANALYSIS_RESULT_TYPE_FIELD}`);
 
       try {
         await form.validateFields(fieldsToValidate);
@@ -647,11 +650,18 @@ function Survey({ toggleColorScheme }) {
       title: t("summary.confirmTitle"),
       html: summaryHTML,
       showCancelButton: true,
-      width: Math.min(window.innerWidth * 0.95, 600), // <-- dynamic width
       confirmButtonText: t("summary.submit"),
-      cancelButtonText: t("summary.cancel"),
+      cancelButtonText: t("summary.goBackEdit", { defaultValue: "Go back and edit" }),
+      // Cancel sits on the left, Submit on the right; nothing is pre-focused so
+      // a stray Enter cannot submit before the client has read the summary.
+      reverseButtons: true,
+      focusConfirm: false,
+      buttonsStyling: true,
       customClass: {
-        popup: "swal-wide",
+        popup: "survey-review",
+      },
+      didOpen: (popup) => {
+        popup.querySelector(".swal2-html-container")?.scrollTo?.(0, 0);
       },
     });
 
@@ -682,43 +692,27 @@ function Survey({ toggleColorScheme }) {
   };
 
   if (loading) {
-    return (
-      <div className="survey-page-container flex items-center justify-center min-h-screen">
-        <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
-      </div>
-    );
+    return <PageLoader message={t("survey.loadingQuestions", { defaultValue: "Loading the survey…" })} />;
   }
 
   if (error) {
     return (
-      <div className="survey-page-container flex items-center justify-center min-h-screen">
-        <Alert message={t("errorLabel", "Error")} description={error} type="error" showIcon />
-      </div>
+      <ErrorState
+        error={error}
+        fullPage
+        title={t("survey.loadErrorTitle", { defaultValue: "We couldn't load the survey" })}
+        onRetry={() => setLoadAttempt((n) => n + 1)}
+        retryLabel={t("summary.retry", { defaultValue: "Try again" })}
+        homeHref={appUrl("/client")}
+        homeLabel={t("survey.backToStart", { defaultValue: "Back to the start page" })}
+      />
     );
   }
 
   return (
+    <ConfigProvider theme={{ token: { colorPrimary: "#0038a8" } }}>
     <div className="survey-page-container">
-      <header className="agency-header-survey">
-        <div className="agency-header-inner-survey">
-          <img src={EMBLogo} alt="EMB Logo" className="logo-svg-emb" />
-
-          <div className="agency-header-text">
-            <span className="republic-text">{t("agencyTitle")}</span>
-            <span className="department-text">
-              {t("department")}
-            </span>
-            <span className="bureau-text">
-              {t("bureau")}
-            </span>
-            <span className="address-text">
-              {t("address1")}, {t("address2")}
-            </span>
-          </div>
-
-          <img src={BPLogo} alt="BP Logo" className="logo-svg-bp" />
-        </div>
-      </header>
+      <AgencyHeader />
       <Card className="survey-page-content">
         <div className="survey-intro">
           <div className="survey-intro-left">
@@ -735,20 +729,35 @@ function Survey({ toggleColorScheme }) {
           <div className="survey-intro-right">
             <div className="survey-section-pill">
               <span className="survey-section-pill-icon">{sectionMeta.icon}</span>
-              <span className="survey-section-pill-text">{sectionMeta.title}</span>
+              <span className="survey-section-pill-text">
+                {t("survey.stepOf", {
+                  current: stepIndex + 1,
+                  total: stepLabels.length,
+                  defaultValue: "Step {{current}} of {{total}}",
+                })}
+              </span>
             </div>
 
           </div>
         </div>
 
-        <Steps
-          progressDot
-          direction="horizontal"
-          responsive={false}
-          current={stepIndex}
-          items={stepItems}
-          className="survey-steps"
-        />
+        <ol className="survey-stepper" aria-label={t("survey.progress", { defaultValue: "Survey progress" })}>
+          {stepLabels.map((label, i) => {
+            const state = i < stepIndex ? "is-done" : i === stepIndex ? "is-current" : "";
+            return (
+              <li
+                key={i}
+                className={`survey-stepper-item ${state}`}
+                aria-current={i === stepIndex ? "step" : undefined}
+              >
+                <span className="survey-stepper-dot">
+                  {i < stepIndex ? <CheckOutlined /> : i + 1}
+                </span>
+                <span className="survey-stepper-label">{label}</span>
+              </li>
+            );
+          })}
+        </ol>
         <Form
           form={form}
           layout="vertical"
@@ -870,6 +879,16 @@ function Survey({ toggleColorScheme }) {
             </Button>
           </Space>
 
+          {/* Tell the client why "Next" is disabled instead of leaving them
+              guessing. aria-live announces it to screen readers. */}
+          <div className="survey-actions-hint-slot" aria-live="polite">
+            {!stepState.canProceed && stepState.hint && !submitting && (
+              <div className="survey-actions-hint" role="status">
+                <Text className="survey-actions-hint-text">{stepState.hint}</Text>
+              </div>
+            )}
+          </div>
+
         </div>
       </Card>
 
@@ -903,6 +922,7 @@ function Survey({ toggleColorScheme }) {
         </span>
       </footer>
     </div>
+    </ConfigProvider>
   );
 }
 

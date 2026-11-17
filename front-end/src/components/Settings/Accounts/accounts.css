@@ -1,0 +1,264 @@
+/* Developer Settings → Accounts. Uses the admin shell's --adm-* variables. */
+
+.acc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.acc-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--adm-border-soft);
+  border-radius: 12px;
+  background: var(--adm-surface);
+  color: var(--adm-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.acc-stat span {
+  color: var(--adm-text);
+  font-family: "Sora", "Plus Jakarta Sans", system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.acc-stat.is-warn span {
+  color: #d48806;
+}
+
+.acc-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.acc-search {
+  max-width: 360px;
+}
+
+.acc-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.acc-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--adm-primary-soft);
+  color: var(--adm-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.acc-avatar.is-dev {
+  background: linear-gradient(135deg, #0038a8, #1d5be0);
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--adm-surface), 0 0 0 3.5px #fcd116;
+}
+
+.acc-user-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.acc-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--adm-text);
+  font-weight: 600;
+}
+
+.acc-you.ant-tag {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 16px;
+}
+
+.acc-sub,
+.acc-muted {
+  color: var(--adm-muted);
+  font-size: 12.5px;
+}
+
+.acc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.acc-tags .ant-tag {
+  margin: 0;
+}
+
+.acc-perm-all {
+  color: var(--adm-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.acc-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.acc-status.is-ok { color: #389e0d; }
+.acc-status.is-pending { color: #d48806; }
+
+.acc-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+
+/* ── Access dialog ─────────────────────────────────────────────────────── */
+
+.acc-dev-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px dashed var(--adm-border);
+  border-radius: 12px;
+  background: var(--adm-primary-soft);
+}
+
+.acc-dev-row > .anticon {
+  margin-top: 3px;
+  color: var(--adm-primary);
+}
+
+.acc-dev-row div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.acc-dev-row span {
+  color: var(--adm-muted);
+  font-size: 12.5px;
+}
+
+.acc-legacy {
+  margin-bottom: 12px;
+}
+
+.acc-roles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.acc-role {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--adm-border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--adm-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.acc-role span {
+  color: var(--adm-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.acc-role:hover {
+  border-color: var(--adm-primary);
+}
+
+.acc-role.is-on {
+  border-color: var(--adm-primary);
+  box-shadow: 0 0 0 1px var(--adm-primary);
+  background: var(--adm-primary-soft);
+}
+
+.acc-role:focus-visible {
+  outline: 2px solid var(--adm-primary);
+  outline-offset: 2px;
+}
+
+.acc-perm-head {
+  margin: 4px 0 6px;
+  color: var(--adm-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.acc-perm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--adm-border-soft);
+}
+
+.acc-perm div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.acc-perm span {
+  color: var(--adm-muted);
+  font-size: 12.5px;
+}
+
+.acc-perm .ant-tag {
+  margin: 0;
+}
+
+.acc-changes {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(250, 173, 20, 0.1);
+  border: 1px solid rgba(250, 173, 20, 0.4);
+  font-size: 13px;
+}
+
+.acc-changes ul {
+  margin: 6px 0 0;
+  padding-inline-start: 18px;
+}
+
+.acc-nochange {
+  margin: 12px 0 0;
+}
+
+@media (max-width: 767px) {
+  .acc-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .acc-roles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .acc-search {
+    max-width: none;
+  }
+}

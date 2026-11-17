@@ -1,165 +1,171 @@
+// Builds the HTML for the "review your answers" dialog shown before the survey
+// is submitted. Markup only — the styles live in survey-arta.css (.review-*).
+//
+// Everything the client typed is escaped before it is placed in the HTML.
+
+const PERSONAL_PREFIXES = [
+  "answer_merged_customer_age_gender_question_",
+  "answer_merged_info_question_",
+];
+
+// Display order for the personal-information rows.
+const PERSONAL_ORDER = [
+  "region",
+  "agency",
+  "customerType",
+  "companyName",
+  "agencyName",
+  "employeeName",
+  "age",
+  "gender",
+  "serviceAvailed",
+  "analysisResultType",
+  "analysisControlNumber",
+  "assistPersonnel",
+];
+
+const SQD_CODES = ["Q10", "Q11", "Q12", "Q13", "Q14", "Q15", "Q16", "Q17", "Q18"];
+const CC_CODES = ["Q7", "Q8", "Q9"];
+
+// Stored rating value -> translation key + chip tone.
+const RATINGS = {
+  "Strongly Disagree": ["stronglyDisagree", "bad"],
+  StronglyDisagree: ["stronglyDisagree", "bad"],
+  Disagree: ["disagree", "bad"],
+  Satisfactory: ["satisfactory", "mid"],
+  Agree: ["agree", "good"],
+  "Strongly Agree": ["stronglyAgree", "good"],
+  StronglyAgree: ["stronglyAgree", "good"],
+  "Not Applicable": ["notApplicable", "na"],
+  NA: ["notApplicable", "na"],
+};
+
+const escapeHtml = (s) =>
+  String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const isBlank = (v) =>
+  v === undefined || v === null || (Array.isArray(v) ? v.length === 0 : String(v).trim() === "");
+
 export const buildGroupedSummaryHTML = (formValues, questionData, t) => {
-  const sections = {
-    personalInfo: [],
-    citizensCharter: [],
-    sqd: [],
-    remarks: [],
-  };
+  const personal = [];
+  const cc = [];
+  const sqd = [];
+  let remarks = "";
 
-  // Map for rating translations
-  const ratingTranslationMap = {
-    "Strongly Disagree": "stronglyDisagree",
-    Disagree: "disagree",
-    Satisfactory: "satisfactory",
-    Agree: "agree",
-    "Strongly Agree": "stronglyAgree",
-    "Not Applicable": "notApplicable",
-    // Also support short keys if needed
-    StronglyDisagree: "stronglyDisagree",
-    Disagree: "disagree",
-    Satisfactory: "satisfactory",
-    Agree: "agree",
-    StronglyAgree: "stronglyAgree",
-    NA: "notApplicable",
-  };
-
-  for (const [id, answer] of Object.entries(formValues)) {
-    let display = Array.isArray(answer) ? answer.join(", ") : answer;
-    if (display === undefined || display === null) display = ""; // <-- add this line
-    let label = "";
-
-    // Personal Info fields
-    if (id.startsWith("answer_merged_customer_age_gender_question_")) {
-      const field = id.replace(
-        "answer_merged_customer_age_gender_question_",
-        ""
-      );
-      label = t(`summaryLabels.${field}`) || field;
-      sections.personalInfo.push({ label, value: display });
-      continue;
+  // ── Personal information ──
+  const personalValues = {};
+  for (const [id, answer] of Object.entries(formValues || {})) {
+    const prefix = PERSONAL_PREFIXES.find((p) => id.startsWith(p));
+    if (!prefix || isBlank(answer)) continue;
+    personalValues[id.slice(prefix.length)] = answer;
+  }
+  const personalKeys = [
+    ...PERSONAL_ORDER.filter((k) => k in personalValues),
+    ...Object.keys(personalValues).filter((k) => !PERSONAL_ORDER.includes(k)),
+  ];
+  for (const key of personalKeys) {
+    const answer = personalValues[key];
+    let value;
+    if (key === "gender") {
+      value = escapeHtml(t(`gender.${answer}`, { defaultValue: String(answer) }));
+    } else if (key === "customerType") {
+      value = escapeHtml(t(`clientType${answer}`, { defaultValue: String(answer) }));
+    } else if (Array.isArray(answer)) {
+      value = answer.map((a) => escapeHtml(a)).join("<br>");
+    } else {
+      value = escapeHtml(answer);
     }
+    personal.push({
+      label: escapeHtml(t(`summaryLabels.${key}`, { defaultValue: key })),
+      value,
+    });
+  }
 
-    if (id.startsWith("answer_merged_info_question_")) {
-      const field = id.replace("answer_merged_info_question_", "");
-      label = t(`summaryLabels.${field}`) || field;
-      sections.personalInfo.push({ label, value: display });
-      continue;
-    }
+  // ── Questions, in questionnaire order ──
+  const questions = [...(questionData || [])].sort(
+    (a, b) =>
+      Number(String(a.questionCode || "").replace(/\D/g, "")) -
+      Number(String(b.questionCode || "").replace(/\D/g, ""))
+  );
 
-    // Match question by ID
-    const question = questionData.find((q) => `answer_${q._id}` === id);
-    if (question) {
-      label =
-        t(`questions.${question.questionCode}.text`) || question.questionText;
+  for (const question of questions) {
+    const answer = formValues?.[`answer_${question._id}`];
+    if (isBlank(answer)) continue;
+    const code = question.questionCode;
+    const label = escapeHtml(
+      t(`questions.${code}.text`, { defaultValue: question.questionText || code })
+    );
 
-      let valueToDisplay = display;
-      const options = t(`questions.${question.questionCode}.options`, {
-        returnObjects: true,
+    if (SQD_CODES.includes(code)) {
+      const [ratingKey, tone] = RATINGS[answer] || [];
+      const text = ratingKey ? t(`rating.${ratingKey}`) : String(answer);
+      sqd.push({
+        label,
+        value: `<span class="review-chip review-chip--${tone || "mid"}">${escapeHtml(text)}</span>`,
       });
-
-      // For SQD and rating questions, translate the rating value
-      if (
-        [
-          "Q10",
-          "Q11",
-          "Q12",
-          "Q13",
-          "Q14",
-          "Q15",
-          "Q16",
-          "Q17",
-          "Q18",
-        ].includes(question.questionCode)
-      ) {
-        // Try to translate using ratingTranslationMap
-        const ratingKey =
-          ratingTranslationMap[display] || ratingTranslationMap[answer] || null;
-        if (ratingKey) {
-          valueToDisplay = t(`rating.${ratingKey}`);
-        }
-        sections.sqd.push({ label, value: valueToDisplay });
-      } else if (["Q7", "Q8", "Q9"].includes(question.questionCode)) {
-        // For Citizens Charter, always show the selected option in the current language
-        if (Array.isArray(options)) {
-          // If answer matches an option in current language, use it
-          if (options.includes(display)) {
-            valueToDisplay = display;
-          } else {
-            // Try to find index in other language and map to current
-            // Get both language options
-            const enOptions = t(`questions.${question.questionCode}.options`, { lng: 'en', returnObjects: true });
-            const filOptions = t(`questions.${question.questionCode}.options`, { lng: 'fil', returnObjects: true });
-            let idx = enOptions.indexOf(display);
-            if (idx === -1) idx = filOptions.indexOf(display);
-            if (idx !== -1) {
-              valueToDisplay = options[idx];
-            } else {
-              valueToDisplay = display;
-            }
+    } else if (CC_CODES.includes(code)) {
+      // The stored answer is the option text in whichever language it was
+      // picked in. If the language changed since, show the same option (by
+      // position) in the current language.
+      let shown = String(answer);
+      const current = t(`questions.${code}.options`, { returnObjects: true });
+      if (Array.isArray(current) && !current.includes(shown)) {
+        for (const lng of ["en", "fil"]) {
+          const other = t(`questions.${code}.options`, { lng, returnObjects: true });
+          const idx = Array.isArray(other) ? other.indexOf(shown) : -1;
+          if (idx !== -1 && current[idx]) {
+            shown = current[idx];
+            break;
           }
-        } else if (typeof options === "object" && options !== null) {
-          valueToDisplay = options[display] || options[answer] || display;
         }
-        sections.citizensCharter.push({ label, value: valueToDisplay });
-      } else if (question.questionCode === "Q19") {
-        sections.remarks.push({ label, value: valueToDisplay });
       }
+      cc.push({ label, value: escapeHtml(shown) });
+    } else if (code === "Q19") {
+      remarks = escapeHtml(answer);
     }
   }
 
-  const renderSectionTable = (title, items) => {
-    if (!items.length) return "";
-    const rows = items
-      .map(
-        ({ label, value }) =>
-          `<tr>
-          <td style="
-            padding: 6px 12px;
-            border: 1px solid #ccc;
-            font-size: 12px;
-            text-align: left;
-            white-space: normal;
-            word-break: break-word;
-            width: 65%;
-          ">
-            <strong>${label}</strong>
-          </td>
-          <td style="
-            padding: 6px 12px;
-            border: 1px solid #ccc;
-            font-size: 12px;
-            text-align: left;
-            white-space: normal;
-            word-break: break-word;
-            width: 35%;
-          ">
-            ${value}
-          </td>
-        </tr>`
-      )
-      .join("");
-
+  let sectionNo = 0;
+  const section = (title, body, modifier = "") => {
+    if (!body) return "";
+    sectionNo += 1;
     return `
-    <h3 style="margin: 12px 0 6px; font-size: 14px;">${title}</h3>
-    <table style="
-      border-collapse: collapse;
-      width: 100%;
-      min-width: 600px;
-      margin-bottom: 16px;
-      border: 1px solid #ccc;
-      table-layout: fixed;
-    ">
-      <tbody>
-        ${rows}
-      </tbody>
-    </table>
-  `;
+      <section class="review-section ${modifier}">
+        <h3 class="review-section-head">
+          <span class="review-section-num">${sectionNo}</span>
+          <span>${escapeHtml(title)}</span>
+        </h3>
+        ${body}
+      </section>`;
   };
 
+  const rows = (items) =>
+    items.length
+      ? `<dl class="review-list">${items
+          .map(
+            ({ label, value }) =>
+              `<div class="review-row"><dt>${label}</dt><dd>${value}</dd></div>`
+          )
+          .join("")}</dl>`
+      : "";
+
   return [
-    renderSectionTable(t("section.personalInfo"), sections.personalInfo),
-    renderSectionTable(t("section.citizensCharter"), sections.citizensCharter),
-    renderSectionTable(t("section.sqd"), sections.sqd),
-    renderSectionTable(t("section.remarks"), sections.remarks),
+    `<p class="review-lead">${escapeHtml(
+      t("summary.reviewLead", {
+        defaultValue:
+          "Please check your answers. Go back if you need to change anything, then submit.",
+      })
+    )}</p>`,
+    section(t("section.personalInfo"), rows(personal)),
+    section(t("section.citizensCharter"), rows(cc), "review-section--stack"),
+    section(t("section.sqd"), rows(sqd), "review-section--rating"),
+    section(
+      t("section.remarks"),
+      remarks ? `<p class="review-remarks">${remarks}</p>` : "",
+    ),
   ].join("");
 };

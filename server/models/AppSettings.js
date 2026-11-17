@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-// VERA — Virtual Evaluation & Response Assistant configuration.
+// VERA — Environmental Response configuration.
 //
 // The API key is NEVER stored in plain text: the operational source of truth is
 // the provider's server env var (ANTHROPIC_API_KEY / GEMINI_API_KEY), and a key
@@ -16,7 +16,7 @@ const veraSchema = new mongoose.Schema(
 
     // Identity — editable so the office can rebrand the assistant.
     name: { type: String, default: "VERA" },
-    fullName: { type: String, default: "Virtual Evaluation & Response Assistant" },
+    fullName: { type: String, default: "Virtual Environmental Response Assistant" },
     tagline: { type: String, default: "Your client-satisfaction insight partner" },
 
     // How VERA talks. "analyst" leads with figures and a recommended action;
@@ -66,10 +66,32 @@ const veraSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// System-wide switches (Developer Settings → Maintenance). While maintenance
+// is on, every request from anyone but a Developer account is answered 503
+// (middleware/maintenance.js) and the public pages show the maintenance page.
+const maintenanceSchema = new mongoose.Schema(
+  {
+    enabled: { type: Boolean, default: false },
+    message: { type: String, default: "" },
+    endsAt: { type: Date, default: null }, // optional "expected back" time
+    startedAt: { type: Date, default: null },
+    startedBy: { type: String, default: "" },
+    updatedAt: { type: Date, default: null },
+    updatedBy: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
+const systemSchema = new mongoose.Schema(
+  { maintenance: { type: maintenanceSchema, default: () => ({}) } },
+  { _id: false }
+);
+
 const appSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, default: "global", unique: true },
     vera: { type: veraSchema, default: () => ({}) },
+    system: { type: systemSchema, default: () => ({}) },
   },
   { timestamps: true, collection: "app-settings" }
 );

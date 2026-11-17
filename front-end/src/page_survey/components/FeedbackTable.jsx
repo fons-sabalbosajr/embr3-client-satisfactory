@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Form, Typography, Select, Space } from "antd";
+import { Form, Typography, Select } from "antd";
 import { useTranslation } from "react-i18next";
 import "./stylesfeedbacktable.css";
 import i18n from "../../i18n";
@@ -90,7 +90,7 @@ function FeedbackTable({ questions, language, visibleQuestions }) {
     : questions;
 
   return (
-    <Space direction="vertical" className="feedback-table-wrapper">
+    <div className="feedback-table-wrapper">
       {renderQuestions.map((q) => {
         const formItemName = `answer_${q._id}`;
         let isDisabled = false;
@@ -120,9 +120,7 @@ function FeedbackTable({ questions, language, visibleQuestions }) {
             <Form.Item
               name={formItemName}
               label={
-                <Text className={labelClass} style={{ fontSize: 18 }}>
-                  {questionText}
-                </Text>
+                <Text className={labelClass}>{questionText}</Text>
               }
               rules={
                 isDisabled
@@ -134,7 +132,7 @@ function FeedbackTable({ questions, language, visibleQuestions }) {
                   placeholder={t("selectAnswerPlaceholder")}
                   disabled={isDisabled}
                   className="feedback-select"
-                  popupClassName="survey-select-dropdown"
+                  classNames={{ popup: { root: "survey-select-dropdown" } }}
                 >
                   {questionOptions.map((option, idx) => (
                     <Select.Option key={idx} value={option}>
@@ -146,7 +144,7 @@ function FeedbackTable({ questions, language, visibleQuestions }) {
           </div>
         );
       })}
-    </Space>
+    </div>
   );
 }
 

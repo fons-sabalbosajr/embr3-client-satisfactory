@@ -27,7 +27,11 @@ const AppLogs = lazy(() => import("./components/AppLogs/AppLogs"));
 const VeraSettings = lazy(() => import("./components/Settings/VeraSettings/VeraSettings"));
 import Landing from "./pages/Landing/Landing";
 import MaintenancePage from "./components/MaintenancePage";
+import { useMaintenance } from "./utils/maintenance";
 import RequirePermission from "./components/auth/RequirePermission";
+import ErrorBoundary from "./components/StatusUI/ErrorBoundary";
+import { ErrorState, OfflineBanner, PageLoader } from "./components/StatusUI/StatusUI";
+import { appUrl } from "./utils/basePath";
 
 import SurveyPage1 from "./page_survey/Survey";
 
@@ -50,6 +54,7 @@ import {
   migratePlainKeysToEncrypted,
   clearAllStorage,
 } from "./utils/encryptedStorage";
+import { isDeveloperSession } from "./utils/session";
 
 const MainApp = () => {
   // On page load, if not authenticated, hide all localStorage values
@@ -99,8 +104,9 @@ const MainApp = () => {
     return !!(getOpaqueItem("token") ?? localStorage.getItem("token"));
   }, [authTick]);
 
-  // Read maintenance mode from localStorage (or API in future)
-  const maintenanceMode = localStorage.getItem("maintenanceMode") === "true";
+  // Maintenance mode comes from the server (it also refuses non-developer
+  // requests while it is on). Developer accounts are never blocked.
+  const maintenance = useMaintenance();
   const currentUser = (() => {
     try {
       return JSON.parse(getDecryptedItem("user") || "{}");
@@ -109,6 +115,8 @@ const MainApp = () => {
     }
   })();
   const isDeveloper = (currentUser?.position || "").toLowerCase() === "developer";
+  const blocked = maintenance.enabled && !isDeveloper;
+  const gate = (element) => (blocked ? <MaintenancePage maintenance={maintenance} /> : element);
 
   // Auto logout on inactivity after 10 minutes
   useEffect(() => {
@@ -141,10 +149,14 @@ const MainApp = () => {
 
     const resetTimer = () => {
       if (idleTimer) clearTimeout(idleTimer);
-      // Only set idle timer when authenticated
+      // Only set idle timer when authenticated — and never for a Developer
+      // account, which is exempt from the inactivity auto-logout.
       const hasToken = !!(getOpaqueItem("token") ?? localStorage.getItem("token"));
-      if (!hasToken) return;
+      if (!hasToken || isDeveloperSession()) return;
       idleTimer = setTimeout(() => {
+        // Re-check when it fires: the timer is first armed on page load,
+        // before the signed-in profile is cached.
+        if (isDeveloperSession()) return;
         clearAuthAndRedirect();
       }, IDLE_LIMIT_MS);
     };
@@ -182,59 +194,45 @@ const MainApp = () => {
         fontFamily: "Poppins, sans-serif",
       }}
     >
+      <OfflineBanner />
+      <ErrorBoundary fullPage homeHref={appUrl("/")}>
+      <Suspense fallback={<PageLoader message="Loading…" />}>
       <Routes>
         {/* Corporate landing page. The legacy portal chooser stays at /menu. */}
         <Route
           path="/"
-          element={
-            maintenanceMode && !isDeveloper ? (
-              <MaintenancePage />
-            ) : (
-              <Landing
-                toggleColorScheme={toggleColorScheme}
-                colorScheme={colorScheme}
-              />
-            )
-          }
+          element={gate(<Landing toggleColorScheme={toggleColorScheme} colorScheme={colorScheme} />)}
         />
         <Route
           path="/menu"
-          element={
-            maintenanceMode && !isDeveloper ? (
-              <MaintenancePage />
-            ) : (
-              <Menu toggleColorScheme={toggleColorScheme} />
-            )
-          }
+          element={gate(<Menu toggleColorScheme={toggleColorScheme} />)}
         />
         <Route
           path="/client"
-          element={
-            <App
-              toggleColorScheme={toggleColorScheme}
-              colorScheme={colorScheme}
-            />
-          }
+          element={gate(<App toggleColorScheme={toggleColorScheme} colorScheme={colorScheme} />)}
         />
         <Route
           path="/verify"
-          element={maintenanceMode && !isDeveloper ? <MaintenancePage /> : <VerifyPage />}
+          element={gate(<VerifyPage colorScheme={colorScheme} toggleColorScheme={toggleColorScheme} />)}
         />
         <Route
           path="/reset-password"
-          element={maintenanceMode && !isDeveloper ? <MaintenancePage /> : <ResetPassword />}
+          element={gate(<ResetPassword colorScheme={colorScheme} toggleColorScheme={toggleColorScheme} />)}
         />
         <Route
           path="/admin"
           element={
-            maintenanceMode && !isDeveloper ? (
-              <MaintenancePage />
+            // During maintenance the sign-in page stays reachable so a
+            // developer can get in; signed-in staff see the maintenance page.
+            blocked && isAuthenticated ? (
+              <MaintenancePage maintenance={maintenance} signedIn />
             ) : isAuthenticated ? (
-              <AdminPage />
+              <AdminPage maintenance={maintenance} />
             ) : (
               <HomeAdmin
                 toggleColorScheme={toggleColorScheme}
                 colorScheme={colorScheme}
+                maintenance={maintenance}
               />
             )
           }
@@ -248,7 +246,7 @@ const MainApp = () => {
           <Route
             path="logs"
             element={
-              <RequirePermission anyOf={["canManageUsers"]}>
+              <RequirePermission developerOnly>
                 <AppLogs />
               </RequirePermission>
             }
@@ -263,19 +261,17 @@ const MainApp = () => {
           />
           <Route
             path="settings/developer"
-            element={(() => {
-              const user = JSON.parse(getDecryptedItem("user") || "{}");
-              if (user.position === "Developer") {
-                return <DeveloperSettings currentUser={user} />;
-              }
-              return <Navigate to="/admin/dashboard" />;
-            })()}
+            element={
+              <RequirePermission developerOnly>
+                <DeveloperSettings currentUser={JSON.parse(getDecryptedItem("user") || "{}")} />
+              </RequirePermission>
+            }
           />
-          {/* Strict client-side guards for sensitive settings */}
+          {/* Developer section — the server enforces the same (requireDeveloper). */}
           <Route
             path="settings/data-config"
             element={
-              <RequirePermission anyOf={["canEdit", "canManageUsers"]}>
+              <RequirePermission developerOnly>
                 <DataConfig />
               </RequirePermission>
             }
@@ -283,7 +279,7 @@ const MainApp = () => {
           <Route
             path="settings/backup"
             element={
-              <RequirePermission anyOf={["canManageUsers"]}>
+              <RequirePermission developerOnly>
                 <BackupData />
               </RequirePermission>
             }
@@ -291,7 +287,7 @@ const MainApp = () => {
           <Route
             path="settings/vera"
             element={
-              <RequirePermission anyOf={["canManageUsers"]}>
+              <RequirePermission developerOnly>
                 <VeraSettings />
               </RequirePermission>
             }
@@ -299,14 +295,16 @@ const MainApp = () => {
         </Route>
         <Route
           path="/survey/page1"
-          element={
-            <SurveyPage1
-              toggleColorScheme={toggleColorScheme}
-              colorScheme={colorScheme}
-            />
-          }
+          element={gate(<SurveyPage1 toggleColorScheme={toggleColorScheme} colorScheme={colorScheme} />)}
+        />
+        {/* Anything else: a branded 404 with a way home. */}
+        <Route
+          path="*"
+          element={<ErrorState variant="notFound" fullPage homeHref={appUrl("/")} />}
         />
       </Routes>
+      </Suspense>
+      </ErrorBoundary>
     </MantineProvider>
   );
 };

@@ -1,75 +1,352 @@
-/* VERA — floating chatbot. Navy #0C2340 (OCSM admin), blue #1677ff, light
-   #e6f4ff with a blue→teal→green flame accent. Responsive + accessible (focus
-   rings, reduced motion, mobile full-width sheet). Dark mode follows the admin
-   layout's body[data-theme="dark"]. */
+/* ═══════════════════════════════════════════════════════════════════════════
+   VERA — floating assistant (OCSM admin)
+   ═══════════════════════════════════════════════════════════════════════════
+   Ported from EMBR3 ESWMP (the UCDS VERA design): a launcher pill inside a
+   border beam (VeraEdgeBeam), the animated dotted flame, the introduction card she speaks
+   from, and a palette derived from ONE accent — the app's own primary colour,
+   set inline as --v-app-accent by VeraChat.
+
+   Every colour is a token on .vera-root, keyed by its data-theme (the app's
+   light/dark mode), so VERA follows the app rather than the operating system.
+   Nothing below names a colour outside these two blocks, apart from the error
+   state.
+
+   OCSM has no Messages button, so the launcher sits alone in the bottom-right
+   corner with the introduction card just above it.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .vera-root {
-  --vera-blue: #1677ff;
-  --vera-teal: #13c2c2;
-  --vera-green: #52c41a;
-  --vera-navy: #0c2340;
-  --vera-grad: linear-gradient(135deg, #1677ff 0%, #13c2c2 55%, #52c41a 100%);
-  --vera-surface: #ffffff;
-  --vera-surface-2: #f6f9fc;
-  --vera-surface-3: #fbfdff;
-  --vera-border: #e4ebf2;
-  --vera-text: #1f2f45;
-  --vera-muted: #5a7089;
+  --v-app-accent: #1677ff;
+  --v-bg: color-mix(in srgb, var(--v-app-accent) 8%, #f7fafc);
+  --v-surface: #ffffff;
+  --v-ink: color-mix(in srgb, var(--v-app-accent) 20%, #111827);
+  --v-muted: color-mix(in srgb, var(--v-app-accent) 22%, #5b6472);
+  --v-line: color-mix(in srgb, var(--v-app-accent) 22%, #d9e1e8);
+  --v-chip: color-mix(in srgb, var(--v-app-accent) 12%, #eef3f7);
+  --v-chip-hover: color-mix(in srgb, var(--v-app-accent) 18%, #e6edf3);
+  --v-chip-on: var(--v-app-accent);
+  --v-chip-on-ink: #ffffff;
+  --v-accent: var(--v-app-accent);
+  --v-accent-ink: #ffffff;
+  --v-accent-text: var(--v-app-accent);
+  --v-ring: color-mix(in srgb, var(--v-app-accent) 35%, transparent);
+  --v-shadow: 0 18px 48px color-mix(in srgb, var(--v-app-accent) 18%, rgba(13, 43, 49, 0.12)), 0 2px 6px rgba(13, 43, 49, 0.06);
+  --v-err-bg: #fdecec;
+  --v-err-line: #f4c7c7;
+  --v-err-ink: #a0262e;
+  --v-font: "Bricolage Grotesque", "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   position: fixed;
   z-index: 1000;
-  font-family: "Inter", "Plus Jakarta Sans", "Poppins", sans-serif;
+  color-scheme: light;
 }
 
-body[data-theme="dark"] .vera-root {
-  --vera-surface: #16233a;
-  --vera-surface-2: #12203a;
-  --vera-surface-3: #0f1a2b;
-  --vera-border: #24365a;
-  --vera-text: #e6eefc;
-  --vera-muted: #9db4cf;
+.vera-root[data-theme="dark"] {
+  --v-bg: color-mix(in srgb, var(--v-app-accent) 10%, #0f1115);
+  --v-surface: color-mix(in srgb, var(--v-app-accent) 9%, #151922);
+  --v-ink: color-mix(in srgb, var(--v-app-accent) 10%, #e8edf3);
+  --v-muted: color-mix(in srgb, var(--v-app-accent) 22%, #9aa6b2);
+  --v-line: color-mix(in srgb, var(--v-app-accent) 28%, #202632);
+  --v-chip: color-mix(in srgb, var(--v-app-accent) 15%, #1b2130);
+  --v-chip-hover: color-mix(in srgb, var(--v-app-accent) 22%, #222a38);
+  --v-accent-text: color-mix(in srgb, var(--v-app-accent) 78%, #ffffff);
+  --v-ring: color-mix(in srgb, var(--v-app-accent) 45%, transparent);
+  --v-shadow: 0 18px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px color-mix(in srgb, var(--v-app-accent) 18%, transparent);
+  --v-err-bg: #3a1418;
+  --v-err-line: #6b2a30;
+  --v-err-ink: #ffb4b4;
+  color-scheme: dark;
 }
 
-/* ── Launcher ─────────────────────────────────────────────────────────────── */
+/* ═══ The mark: flame and edge beam ═══════════════════════════════════════ */
+
+.vera-mark {
+  display: block;
+  flex: none;
+}
+
+/* Laid over its parent's rounded edge (size and offsets set inline). The
+   parent's content sits above it, so the beam's inner glow never washes over
+   text. */
+.vera-edge-beam {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.vera-header__mark {
+  display: inline-flex;
+  flex: none;
+}
+
+/* ═══ Launcher ═════════════════════════════════════════════════════════════ */
+
+/* The beam's box (border-beam, as in EMBR3 ESWMP) holds the launcher in the
+   corner; the library gives it position: relative, hence the !important. */
+.vera-launcher-dock {
+  position: fixed !important;
+  bottom: 32px;
+  right: 32px;
+  z-index: 1000;
+  border-radius: 999px;
+  transition: transform 0.18s ease;
+}
+
+.vera-launcher-dock:hover {
+  transform: translateY(-2px);
+}
+
+/* A gentle bob while the floating card is speaking, so the eye finds VERA. */
+.vera-launcher-dock.is-nudging {
+  animation: vera-dock-bob 0.9s ease-in-out 4 alternate;
+}
+
+@keyframes vera-dock-bob {
+  to {
+    transform: translateY(-5px);
+  }
+}
+
 .vera-launcher {
-  position: fixed;
-  bottom: 28px;
-  right: 28px;
-  z-index: 1000;
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  height: 48px;
-  padding: 0 20px 0 8px;
-  border: none;
-  border-radius: 26px;
-  background: var(--vera-navy);
-  color: #fff;
+  gap: 10px;
+  padding: 6px 20px 6px 10px;
+  border: 1px solid var(--v-line);
+  border-radius: 999px;
+  background: var(--v-surface);
+  color: var(--v-ink);
+  font-family: var(--v-font);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--v-shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.vera-launcher:hover {
+  border-color: var(--v-accent);
+}
+
+.vera-launcher:focus-visible {
+  outline: 2px solid var(--v-accent);
+  outline-offset: 3px;
+}
+
+.vera-launcher__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.vera-launcher__label {
   font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.vera-launcher__sub {
+  font-size: 11.5px;
+  color: var(--v-muted);
+}
+
+/* ═══ Floating card (contextual nudge) ═════════════════════════════════════
+   The introduction card: it rises in above the launcher, her flame pops and
+   ignites, bobs while the message types itself out, then settles. A tail
+   points down at the launcher. */
+
+.vera-intro {
+  position: fixed;
+  right: 32px;
+  bottom: 100px;
+  z-index: 1001;
+  width: min(340px, calc(100vw - 32px));
+  padding: 16px 16px 14px;
+  border: 1px solid var(--v-line);
+  border-radius: 16px;
+  background: var(--v-surface);
+  color: var(--v-ink);
+  font-family: var(--v-font);
+  box-shadow: var(--v-shadow);
+  animation: vera-intro-rise 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+
+/* A tail pointing down at the launcher. */
+.vera-intro::after {
+  content: "";
+  position: absolute;
+  right: 44px;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  background: var(--v-surface);
+  border-right: 1px solid var(--v-line);
+  border-bottom: 1px solid var(--v-line);
+  transform: rotate(45deg);
+}
+
+.vera-intro__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vera-intro__mark {
+  display: inline-flex;
+  flex: none;
+  border-radius: 50%;
+  animation: vera-mark-pop 0.7s cubic-bezier(0.2, 0.9, 0.25, 1.4) both;
+}
+
+.vera-intro__mark.is-speaking {
+  animation: vera-mark-pop 0.7s cubic-bezier(0.2, 0.9, 0.25, 1.4) both, vera-mark-speak 1.1s ease-in-out 0.7s infinite;
+}
+
+@keyframes vera-mark-pop {
+  0% {
+    transform: scale(0.3) rotate(-12deg);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.12) rotate(4deg);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes vera-mark-speak {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.06);
+    filter: drop-shadow(0 4px 10px color-mix(in srgb, var(--v-accent) 45%, transparent));
+  }
+}
+
+.vera-intro__who {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.vera-intro__name {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+
+.vera-intro__role {
+  font-size: 12px;
+  color: var(--v-muted);
+}
+
+.vera-intro__close {
+  align-self: flex-start;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.vera-intro__text {
+  margin: 10px 0 12px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  min-height: 3.1em;
+}
+
+.vera-intro__text:last-child {
+  margin-bottom: 0;
+}
+
+.vera-intro__caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: var(--v-accent);
+  animation: vera-caret 0.9s steps(1) infinite;
+}
+
+.vera-intro__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vera-intro__primary,
+.vera-intro__secondary {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(12, 35, 64, 0.35);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, opacity 0.15s ease;
 }
-.vera-launcher:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(12, 35, 64, 0.4); }
-.vera-launcher:focus-visible { outline: 3px solid #91caff; outline-offset: 2px; }
-.vera-launcher-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: inset 0 0 0 2px rgba(19, 194, 194, 0.25);
+
+.vera-intro__primary {
+  border: 1px solid var(--v-accent);
+  background: var(--v-accent);
+  color: var(--v-accent-ink);
 }
-.vera-launcher-label { line-height: 1; white-space: nowrap; }
 
-/* Public mount sits above the landing page's theme toggle. */
-.vera-root-public .vera-launcher { bottom: 84px; }
-.vera-root-public .vera-window { bottom: 84px; }
-.vera-root-public .vera-nudge { bottom: 144px; }
+.vera-intro__secondary {
+  border: 1px solid var(--v-line);
+  background: transparent;
+  color: var(--v-ink);
+}
 
-/* ── Window ───────────────────────────────────────────────────────────────── */
+.vera-intro__primary:hover,
+.vera-intro__secondary:hover {
+  transform: translateY(-1px);
+}
+
+.vera-intro__primary:focus-visible,
+.vera-intro__secondary:focus-visible {
+  outline: 2px solid var(--v-accent);
+  outline-offset: 2px;
+}
+
+@keyframes vera-intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes vera-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.vera-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ═══ Window ═══════════════════════════════════════════════════════════════
+   One surface: a header that carries identity + status, a conversation on a
+   faint accent wash, and a single composer card at the bottom (input, live
+   snapshot, send). Wide mode gives long briefs room on a desktop. */
+
 .vera-window {
   position: fixed;
   bottom: 28px;
@@ -77,380 +354,914 @@ body[data-theme="dark"] .vera-root {
   z-index: 1001;
   display: flex;
   flex-direction: column;
-  width: 390px;
+  width: 410px;
   max-width: calc(100vw - 32px);
-  height: 580px;
-  /* dvh tracks the viewport as it actually is on mobile browsers; vh is the
-     fallback for browsers without dvh. */
+  height: 640px;
+  /* `vh` on a mobile browser is measured against the LARGEST viewport — the one
+     with the URL bar retracted — so a window sized in vh is taller than the
+     space actually on screen. `dvh` tracks the viewport as it is; the vh line
+     stays first as the fallback. */
   max-height: calc(100vh - 56px);
   max-height: calc(100dvh - 56px);
-  background: var(--vera-surface);
-  color: var(--vera-text);
-  border-radius: 16px;
-  box-shadow: 0 18px 48px rgba(12, 35, 64, 0.3);
+  background: var(--v-surface);
+  color: var(--v-ink);
+  font-family: var(--v-font);
+  border: 1px solid var(--v-line);
+  border-radius: 22px;
+  box-shadow: var(--v-shadow);
   overflow: hidden;
-  animation: vera-pop 0.16s ease-out;
+  animation: veraPop 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.05);
+  transition: width 0.22s ease, height 0.22s ease;
 }
-@keyframes vera-pop { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
 
-.vera-window-min { height: auto; }
+@keyframes veraPop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 
-.vera-window-mobile {
+.vera-window--wide {
+  width: min(680px, calc(100vw - 56px));
+  height: min(780px, calc(100dvh - 56px));
+}
+
+.vera-window--min {
+  height: auto;
+}
+
+.vera-window--mobile {
   right: 0;
   left: 0;
-  bottom: 0 !important;
+  bottom: 0;
   width: 100%;
   max-width: 100%;
-  height: 84vh;
-  height: 84dvh;
-  max-height: 84dvh;
-  border-radius: 16px 16px 0 0;
+  height: 86vh;
+  height: 86dvh;
+  max-height: 86dvh;
+  border-radius: 22px 22px 0 0;
+  border-bottom: 0;
+  /* Home-indicator gutter on notched phones. */
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Landscape phone: 86% of a ~430px-tall viewport leaves almost nothing for
+   the message list. */
 @media (max-height: 520px) and (orientation: landscape) {
-  .vera-window-mobile {
+  .vera-window--mobile {
     height: 100dvh;
     max-height: 100dvh;
     border-radius: 0;
   }
 }
 
-/* ── Header ───────────────────────────────────────────────────────────────── */
+/* ═══ Header ═══════════════════════════════════════════════════════════════ */
+
 .vera-header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
-  background: var(--vera-navy);
-  background-image: linear-gradient(135deg, #0a1b33 0%, #0c2340 60%, #0958d9 170%);
-  color: #fff;
+  gap: 10px;
+  padding: 14px 12px 14px 16px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--v-accent) 14%, transparent) 0%, transparent 60%),
+    var(--v-surface);
+  border-bottom: 1px solid var(--v-line);
 }
-.vera-header-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.vera-header-icon {
-  display: inline-flex;
+
+.vera-header__id {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
+  gap: 12px;
+  min-width: 0;
+}
+
+.vera-header__mark {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--v-chip);
+  box-shadow: inset 0 0 0 1px var(--v-line);
+}
+
+.vera-header__text {
+  min-width: 0;
+}
+
+.vera-header__name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.vera-header__sub {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--v-muted);
+  min-width: 0;
+}
+
+.vera-header__status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vera-status-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: #fff;
+  display: inline-block;
   flex: 0 0 auto;
 }
-.vera-header-name { font-size: 16px; font-weight: 700; line-height: 1.1; }
-.vera-header-sub { display: flex; align-items: center; gap: 6px; font-size: 11.5px; opacity: 0.9; white-space: nowrap; }
-.vera-status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.vera-status-dot.online { background: #52c41a; box-shadow: 0 0 0 3px rgba(82, 196, 26, 0.25); }
-.vera-status-dot.lite { background: #13c2c2; box-shadow: 0 0 0 3px rgba(19, 194, 194, 0.22); }
-.vera-status-dot.off { background: #8c8c8c; box-shadow: 0 0 0 3px rgba(140, 140, 140, 0.22); }
 
-.vera-header-actions { display: flex; gap: 4px; }
+.vera-status-dot--online {
+  background: #22a06b;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #22a06b 22%, transparent);
+}
+
+.vera-status-dot--lite {
+  background: var(--v-muted);
+  box-shadow: 0 0 0 3px var(--v-chip);
+}
+
+.vera-status-dot--busy {
+  background: var(--v-accent);
+  animation: veraPulse 1.2s ease-in-out infinite;
+}
+
+.vera-status-dot--off {
+  background: var(--v-err-ink);
+  box-shadow: 0 0 0 3px var(--v-err-bg);
+}
+
+@keyframes veraPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--v-ring);
+  }
+  50% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+
+.vera-header__actions {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
 .vera-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   background: transparent;
-  color: #cfe0ff;
+  color: var(--v-muted);
   cursor: pointer;
   font-size: 14px;
   transition: background 0.15s ease, color 0.15s ease;
 }
-.vera-icon-btn:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
-.vera-icon-btn:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
 
-.vera-full-name {
-  padding: 6px 14px;
-  font-size: 11px;
-  color: var(--vera-muted);
-  background: var(--vera-surface-2);
-  border-bottom: 1px solid var(--vera-border);
+.vera-icon-btn:hover:not(:disabled) {
+  background: var(--v-chip);
+  color: var(--v-ink);
 }
 
-/* ── Messages ─────────────────────────────────────────────────────────────── */
+.vera-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.vera-icon-btn:focus-visible {
+  outline: 2px solid var(--v-accent);
+  outline-offset: 1px;
+}
+
+/* ═══ Conversation ═════════════════════════════════════════════════════════ */
+
 .vera-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 14px;
-  background: var(--vera-surface-3);
+  overscroll-behavior: contain;
+  padding: 18px 16px 12px;
+  background: var(--v-bg);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  overscroll-behavior: contain;
+  gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--v-line) transparent;
 }
-.vera-msg { display: flex; }
-.vera-msg-user { justify-content: flex-end; }
-.vera-msg-assistant { justify-content: flex-start; }
+
+.vera-window--wide .vera-messages {
+  padding-inline: 28px;
+}
+
+/* ── Welcome (empty conversation) ───────────────────────────────────────── */
+
+.vera-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin: auto 0;
+  padding: 6px 4px 4px;
+  animation: vera-fade-up 0.35s ease both;
+}
+
+.vera-welcome__mark {
+  display: inline-grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--v-accent) 16%, transparent), transparent 70%),
+    var(--v-surface);
+  box-shadow: inset 0 0 0 1px var(--v-line), 0 10px 30px color-mix(in srgb, var(--v-accent) 14%, transparent);
+}
+
+.vera-welcome__title {
+  margin: 12px 0 2px;
+  font-family: var(--v-font);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--v-ink);
+}
+
+.vera-welcome__role {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--v-muted);
+}
+
+.vera-welcome__greeting {
+  max-width: 340px;
+  margin: 10px 0 14px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--v-ink);
+}
+
+.vera-starters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.vera-starter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--v-line);
+  border-radius: 14px;
+  background: var(--v-surface);
+  color: var(--v-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.vera-starter__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.vera-starter__icon {
+  color: var(--v-accent-text);
+}
+
+.vera-starter__go {
+  flex: none;
+  font-size: 12px;
+  color: var(--v-muted);
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.vera-starter:hover:not(:disabled) {
+  border-color: var(--v-accent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--v-accent) 12%, transparent);
+  transform: translateY(-1px);
+}
+
+.vera-starter:hover:not(:disabled) .vera-starter__go {
+  color: var(--v-accent-text);
+  transform: translateX(2px);
+}
+
+.vera-starter--snapshot {
+  background: var(--v-chip);
+  border-style: dashed;
+}
+
+.vera-starter:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.vera-starter:focus-visible {
+  outline: 2px solid var(--v-accent);
+  outline-offset: 2px;
+}
+
+@keyframes vera-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Messages ───────────────────────────────────────────────────────────── */
+
+.vera-msg {
+  display: flex;
+  flex-direction: column;
+  animation: vera-fade-up 0.25s ease both;
+}
+
+.vera-msg--user {
+  align-items: flex-end;
+}
+
+.vera-msg--assistant {
+  align-items: stretch;
+}
+
+.vera-msg__who {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 6px 2px;
+  font-size: 12px;
+  color: var(--v-muted);
+}
+
+.vera-msg__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #2dd6d6, var(--v-accent));
+}
+
+.vera-msg__name {
+  font-weight: 700;
+  color: var(--v-ink);
+}
+
+.vera-msg__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--v-chip);
+  color: var(--v-accent-text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.vera-msg__time {
+  font-size: 11px;
+  color: var(--v-muted);
+}
+
+.vera-msg__who .vera-msg__time::before {
+  content: "·";
+  margin-right: 7px;
+}
+
+.vera-msg__time--user {
+  margin: 4px 4px 0 0;
+}
 
 .vera-bubble {
-  max-width: 86%;
-  padding: 9px 12px;
-  border-radius: 14px;
   font-size: 13.5px;
-  line-height: 1.5;
-  white-space: pre-wrap;
+  line-height: 1.6;
   word-break: break-word;
-}
-.vera-msg-assistant .vera-bubble {
-  background: var(--vera-surface);
-  color: var(--vera-text);
-  border: 1px solid var(--vera-border);
-  border-bottom-left-radius: 4px;
-}
-.vera-msg-user .vera-bubble {
-  background: var(--vera-grad);
-  color: #fff;
-  border-bottom-right-radius: 4px;
-}
-.vera-bubble-insights {
-  border-left: 3px solid var(--vera-teal) !important;
-  font-variant-numeric: tabular-nums;
-}
-.vera-bubble-error { background: #fff2f0 !important; border-color: #ffccc7 !important; color: #a8071a !important; }
-.vera-bubble-warn { margin-right: 6px; }
-.vera-bubble-note {
-  margin-top: 8px;
-  padding-top: 6px;
-  border-top: 1px dashed var(--vera-border);
-  font-size: 11px;
-  color: var(--vera-muted);
-  display: flex;
-  gap: 5px;
-  align-items: center;
+  overflow-wrap: anywhere;
 }
 
-/* Thinking state */
-.vera-thinking { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.vera-thinking-flame { display: inline-flex; line-height: 0; }
-.vera-thinking-text { font-size: 12.5px; color: var(--vera-muted); font-style: italic; }
-.vera-cancel-btn {
-  border: 1px solid var(--vera-border);
-  background: var(--vera-surface);
-  color: var(--vera-muted);
-  font-size: 11px;
-  border-radius: 10px;
-  padding: 1px 9px;
+.vera-msg--assistant .vera-bubble {
+  padding: 12px 14px;
+  border: 1px solid var(--v-line);
+  border-radius: 4px 16px 16px 16px;
+  background: var(--v-surface);
+  color: var(--v-ink);
+}
+
+.vera-msg--user .vera-bubble {
+  max-width: 82%;
+  padding: 10px 14px;
+  border-radius: 16px 16px 4px 16px;
+  background: var(--v-chip-on);
+  color: var(--v-chip-on-ink);
+  white-space: pre-wrap;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--v-accent) 22%, transparent);
+}
+
+.vera-msg--assistant .vera-bubble.vera-bubble--error {
+  background: var(--v-err-bg);
+  border-color: var(--v-err-line);
+  color: var(--v-err-ink);
+}
+
+/* The live snapshot reads as a data card. */
+.vera-msg--assistant .vera-bubble.vera-bubble--insights {
+  border-color: color-mix(in srgb, var(--v-accent) 45%, var(--v-line));
+  box-shadow: inset 3px 0 0 var(--v-accent);
+}
+
+.vera-bubble__warn {
+  margin-right: 6px;
+  float: left;
+  margin-top: 4px;
+}
+
+.vera-bubble__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--v-line);
+  font-size: 11.5px;
+  color: var(--v-muted);
+}
+
+.vera-msg__actions {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0 0 2px;
+  min-height: 24px;
+}
+
+.vera-msg__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--v-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
-.vera-cancel-btn:hover { background: #fff2f0; color: #a8071a; border-color: #ffccc7; }
-.vera-cancel-btn:focus-visible { outline: 2px solid #69b1ff; outline-offset: 1px; }
 
-.vera-retry-btn {
+.vera-msg__action:hover {
+  background: var(--v-chip);
+  color: var(--v-ink);
+}
+
+.vera-msg__action--retry {
+  color: var(--v-err-ink);
+}
+
+.vera-msg__action:focus-visible {
+  outline: 2px solid var(--v-accent);
+  outline-offset: 1px;
+}
+
+/* Formatted answer body — tight, with no runaway spacing from the model's
+   markdown. */
+.vera-answer__p {
+  margin: 0 0 8px;
+}
+
+.vera-answer__p:last-child {
+  margin-bottom: 0;
+}
+
+/* The list style is restated, on the list and its items, because a stylesheet
+   elsewhere may set `li { list-style: none }`, which left a numbered answer
+   with no numbers. */
+.vera-answer__list {
+  margin: 0 0 8px;
+  padding-inline-start: 20px;
+}
+
+ol.vera-answer__list {
+  list-style: decimal;
+}
+
+ul.vera-answer__list {
+  list-style: disc;
+}
+
+.vera-answer__list:last-child {
+  margin-bottom: 0;
+}
+
+.vera-answer__list li {
+  margin-bottom: 4px;
+  padding-left: 2px;
+  list-style: inherit;
+}
+
+.vera-answer__list li::marker {
+  color: var(--v-accent-text);
+  font-weight: 700;
+}
+
+.vera-answer strong {
+  font-weight: 700;
+  color: inherit;
+}
+
+.vera-code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--v-chip);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+}
+
+/* ── Pending answer: the flame in its current state, and the stage ──────── */
+
+.vera-thinking {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 10px;
+  padding: 8px 10px 8px 8px;
+  border: 1px solid var(--v-line);
+  border-radius: 999px;
+  background: var(--v-surface);
+}
+
+.vera-thinking__mark {
+  flex: none;
+}
+
+/* A soft shimmer runs across the stage text while VERA works. */
+.vera-thinking__text {
+  font-size: 12.5px;
+  font-weight: 500;
+  background: linear-gradient(90deg, var(--v-muted) 0%, var(--v-ink) 45%, var(--v-muted) 90%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: vera-shimmer 1.8s linear infinite;
+}
+
+@keyframes vera-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.vera-cancel-btn {
+  border: 1px solid var(--v-line);
+  background: transparent;
+  color: var(--v-muted);
+  font: inherit;
+  font-size: 11.5px;
+  border-radius: 999px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+.vera-cancel-btn:hover {
+  background: var(--v-err-bg);
+  color: var(--v-err-ink);
+  border-color: var(--v-err-line);
+}
+
+.vera-cancel-btn:focus-visible {
+  outline: 2px solid var(--v-accent);
+  outline-offset: 1px;
+}
+
+/* ── Inline status banners at the top of the conversation ───────────────── */
+
+.vera-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--v-err-line);
+  border-radius: 12px;
+  background: var(--v-err-bg);
+  color: var(--v-err-ink);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.vera-banner > span:not(.anticon) {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.vera-banner > .anticon {
+  flex: none;
+}
+
+.vera-banner--muted {
+  border-color: var(--v-line);
+  background: var(--v-chip);
+  color: var(--v-ink);
+}
+
+.vera-banner__btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-top: 8px;
-  border: 1px solid #ffccc7;
-  background: #fff;
-  color: #a8071a;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 2px 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   font-size: 12px;
   font-weight: 600;
-  border-radius: 10px;
-  padding: 3px 12px;
   cursor: pointer;
-  transition: background 0.15s ease;
 }
-.vera-retry-btn:hover { background: #fff1f0; }
-.vera-retry-btn:focus-visible { outline: 2px solid #ff7875; outline-offset: 1px; }
 
-.vera-typing { display: inline-flex; gap: 4px; align-items: center; }
-.vera-typing span {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: #9db4cf; display: inline-block;
-  animation: vera-blink 1.2s infinite ease-in-out;
+/* ═══ Composer ═════════════════════════════════════════════════════════════ */
+
+.vera-composer {
+  padding: 10px 12px 8px;
+  border-top: 1px solid var(--v-line);
+  background: var(--v-surface);
 }
-.vera-typing span:nth-child(2) { animation-delay: 0.2s; }
-.vera-typing span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes vera-blink { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
 
-/* Starter questions */
-.vera-starters { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
-.vera-starters-label { font-size: 11px; color: var(--vera-muted); margin-bottom: 2px; }
-.vera-starter-chip {
-  text-align: left;
-  padding: 8px 11px;
-  border: 1px solid #bfdbff;
-  border-radius: 10px;
-  background: #e6f4ff;
-  color: #0958d9;
-  font-size: 12.5px;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+.vera-window--wide .vera-composer {
+  padding-inline: 24px;
 }
-.vera-starter-chip:hover { background: #d6ebff; border-color: #69b1ff; }
-.vera-starter-chip:focus-visible { outline: 2px solid #69b1ff; outline-offset: 1px; }
-body[data-theme="dark"] .vera-starter-chip { background: #14294a; border-color: #2a4a80; color: #91caff; }
-body[data-theme="dark"] .vera-starter-chip:hover { background: #1a3560; }
 
-/* ── Quick actions ────────────────────────────────────────────────────────── */
-.vera-quick-actions {
+.vera-composer__box {
+  border: 1px solid var(--v-line);
+  border-radius: 16px;
+  background: var(--v-bg);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.vera-composer__box:focus-within {
+  border-color: var(--v-accent);
+  box-shadow: 0 0 0 3px var(--v-ring);
+}
+
+.vera-composer__box.is-disabled {
+  opacity: 0.6;
+}
+
+/* A bare <textarea> MUST declare its own background and colour: otherwise the
+   browser paints its default, which follows the OS theme rather than the
+   app's, and dark text lands on a dark box. */
+.vera-input {
+  display: block;
+  width: 100%;
+  resize: none;
+  min-height: 44px;
+  max-height: 140px;
+  padding: 12px 14px 4px;
+  border: 0;
+  border-radius: 16px 16px 0 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  font-family: inherit;
+  background: transparent;
+  color: var(--v-ink);
+  outline: none;
+}
+
+.vera-input::placeholder {
+  color: var(--v-muted);
+  opacity: 0.85;
+}
+
+.vera-input:disabled {
+  cursor: not-allowed;
+}
+
+.vera-composer__bar {
   display: flex;
-  gap: 6px;
-  padding: 8px 12px;
-  border-top: 1px solid var(--vera-border);
-  background: var(--vera-surface);
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 6px 8px;
 }
-.vera-quick-actions:empty { display: none; }
-.vera-quick-btn {
+
+.vera-chip-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
-  border: 1px solid var(--vera-border);
-  border-radius: 16px;
-  background: var(--vera-surface-2);
-  color: var(--vera-text);
+  padding: 4px 10px;
+  border: 1px solid var(--v-line);
+  border-radius: 999px;
+  background: var(--v-surface);
+  color: var(--v-muted);
+  font: inherit;
   font-size: 12px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.vera-quick-btn:hover { background: #e6f4ff; }
-.vera-quick-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.vera-quick-btn:focus-visible { outline: 2px solid #69b1ff; outline-offset: 1px; }
-.vera-quick-clear { margin-left: auto; color: #a8071a; border-color: #ffd6d0; background: #fff5f4; }
-.vera-quick-clear:hover { background: #ffe7e3; }
-body[data-theme="dark"] .vera-quick-btn:hover { background: #1a3560; }
-body[data-theme="dark"] .vera-quick-clear { background: #3a1d1d; border-color: #5c2a2a; color: #ff9c8f; }
 
-/* ── Input ────────────────────────────────────────────────────────────────── */
-.vera-input-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  padding: 10px 12px;
-  border-top: 1px solid var(--vera-border);
-  background: var(--vera-surface);
+.vera-chip-btn:hover:not(:disabled) {
+  border-color: var(--v-accent);
+  color: var(--v-accent-text);
 }
-.vera-input {
+
+.vera-chip-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.vera-chip-btn:focus-visible {
+  outline: 2px solid var(--v-accent);
+  outline-offset: 1px;
+}
+
+.vera-composer__hint {
   flex: 1;
-  resize: none;
-  max-height: 96px;
-  min-height: 38px;
-  padding: 9px 12px;
-  border: 1px solid var(--vera-border);
-  border-radius: 12px;
-  font-size: 13.5px;
-  line-height: 1.4;
-  font-family: inherit;
-  color: var(--vera-text);
-  background: var(--vera-surface);
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  font-size: 11px;
+  color: var(--v-muted);
 }
-.vera-input:focus { border-color: #69b1ff; box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15); }
-.vera-input:disabled { opacity: 0.6; }
+
 .vera-send-btn {
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border: none;
-  border-radius: 12px;
-  background: var(--vera-grad);
-  color: #fff;
-  font-size: 16px;
+  border-radius: 11px;
+  background: var(--v-accent);
+  color: var(--v-accent-ink);
+  font-size: 15px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.15s ease, transform 0.1s ease;
+  transition: opacity 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
 }
-.vera-send-btn:hover:not(:disabled) { transform: translateY(-1px); }
-.vera-send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.vera-send-btn:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; }
+
+.vera-send-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px var(--v-ring);
+}
+
+.vera-send-btn:disabled {
+  background: var(--v-chip);
+  color: var(--v-muted);
+  cursor: not-allowed;
+}
+
+.vera-send-btn:focus-visible {
+  outline: 2px solid var(--v-accent);
+  outline-offset: 2px;
+}
 
 .vera-disclaimer {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
-  padding: 6px 12px 10px;
+  margin: 7px 2px 0;
   font-size: 10.5px;
-  color: var(--vera-muted);
-  background: var(--vera-surface);
+  line-height: 1.45;
+  color: var(--v-muted);
 }
+
+.vera-disclaimer .anticon {
+  margin-top: 2px;
+}
+
+/* ═══ Motion & print ═══════════════════════════════════════════════════════ */
 
 @media (prefers-reduced-motion: reduce) {
-  .vera-window, .vera-launcher, .vera-send-btn, .vera-nudge-anim { animation: none; transition: none; }
-  .vera-typing span { animation: none; opacity: 0.6; }
+  .vera-window,
+  .vera-launcher,
+  .vera-launcher-dock,
+  .vera-send-btn,
+  .vera-status-dot--busy,
+  .vera-intro,
+  .vera-intro__caret,
+  .vera-intro__mark,
+  .vera-intro__mark.is-speaking,
+  .vera-welcome,
+  .vera-msg,
+  .vera-starter,
+  .vera-thinking__text {
+    animation: none;
+    transition: none;
+  }
+  .vera-thinking__text {
+    color: var(--v-muted);
+    background: none;
+  }
+  .vera-launcher-dock:hover {
+    transform: none;
+  }
 }
 
-/* ── Tablet ─────────────────────────────────────────────────────────────── */
+@media print {
+  .vera-launcher-dock,
+  .vera-launcher,
+  .vera-window,
+  .vera-intro {
+    display: none !important;
+  }
+}
+
+/* ═══ Tablet ═══════════════════════════════════════════════════════════════
+   `isMobile` in the admin is `!screens.md`, so a 768–991px tablet gets the
+   desktop floating window. Widening it and letting it use the height keeps the
+   conversation readable without switching to the mobile sheet. */
 @media (max-width: 991px) {
   .vera-window {
     width: 440px;
-    height: 620px;
+    height: 640px;
     max-height: calc(100dvh - 96px);
     right: 24px;
     bottom: 24px;
   }
-  .vera-bubble { max-width: 90%; }
+  .vera-window--wide {
+    width: min(620px, calc(100vw - 48px));
+  }
 }
 
-/* ── Phone ──────────────────────────────────────────────────────────────── */
+/* ═══ Phone: the flame alone, in a round button with the beam on its edge ══ */
 @media (max-width: 576px) {
-  .vera-launcher { bottom: 20px; right: 20px; padding: 0; width: 52px; height: 52px; justify-content: center; }
-  .vera-launcher-label { display: none; }
-  .vera-launcher-icon { width: 40px; height: 40px; }
-  .vera-root-public .vera-launcher { bottom: 80px; right: 16px; }
-  .vera-nudge { bottom: 84px; right: 16px; left: 16px; max-width: none; }
-  .vera-root-public .vera-nudge { bottom: 144px; }
-}
-
-/* ── Contextual nudge bubble ────────────────────────────────────────────── */
-.vera-nudge {
-  position: fixed;
-  right: 32px;
-  bottom: 88px;
-  z-index: 1001;
-  max-width: 290px;
-  display: flex;
-  gap: 10px;
-  padding: 14px 16px 14px 14px;
-  background: var(--vera-surface);
-  color: var(--vera-text);
-  border: 1px solid var(--vera-border);
-  border-radius: 14px 14px 4px 14px;
-  box-shadow: 0 12px 30px rgba(12, 35, 64, 0.22);
-}
-.vera-nudge-anim { animation: vera-nudge-in 0.36s cubic-bezier(0.34, 1.56, 0.64, 1); }
-@keyframes vera-nudge-in { from { opacity: 0; transform: translateY(10px) scale(0.94); } to { opacity: 1; transform: none; } }
-.vera-nudge-icon {
-  flex: 0 0 auto;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0fbfb;
-  box-shadow: inset 0 0 0 2px rgba(19, 194, 194, 0.25);
-}
-.vera-nudge-body { display: flex; flex-direction: column; gap: 8px; }
-.vera-nudge-text { margin: 0; font-size: 13px; line-height: 1.5; color: var(--vera-text); }
-.vera-nudge-cta {
-  align-self: flex-start;
-  border: none;
-  cursor: pointer;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #fff;
-  padding: 6px 14px;
-  border-radius: 8px;
-  background: var(--vera-grad);
-}
-.vera-nudge-cta:focus-visible { outline: 3px solid #91caff; outline-offset: 2px; }
-.vera-nudge-close {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-  color: #94a3b8;
+  .vera-launcher-dock {
+    bottom: 20px;
+    right: 20px;
+    border-radius: 50%;
+  }
+  .vera-launcher {
+    padding: 6px;
+    border-radius: 50%;
+  }
+  .vera-launcher__text {
+    display: none;
+  }
+  .vera-msg--user .vera-bubble {
+    max-width: 90%;
+  }
+  .vera-messages {
+    padding-inline: 12px;
+  }
+  .vera-welcome__mark {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+  }
+  .vera-welcome__title {
+    font-size: 19px;
+  }
+  .vera-welcome__greeting {
+    margin: 8px 0 12px;
+    font-size: 13px;
+  }
+  .vera-starters {
+    gap: 6px;
+  }
+  /* It has to fit a 320px screen beside its own inset. The round launcher is
+     at bottom 20 (52px), so the card clears 20 + 52 + 16. */
+  .vera-intro {
+    right: 16px;
+    left: 16px;
+    width: auto;
+    bottom: 88px;
+  }
+  .vera-intro::after {
+    right: 32px;
+  }
 }

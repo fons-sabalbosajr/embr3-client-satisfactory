@@ -1,4 +1,5 @@
 import express from "express";
+import { parseServiceList } from "../utils/parseServiceList.js";
 
 const router = express.Router();
 
@@ -6,11 +7,7 @@ const router = express.Router();
 // Note: Values used in the browser are inherently public.
 router.get("/", (req, res) => {
   try {
-    const parseList = (s) =>
-      (s || "")
-        .split(",")
-        .map((x) => x.trim())
-        .filter(Boolean);
+    const parseList = parseServiceList;
     res.json({
       // Keys used by frontend-only crypto (not secure, just obfuscation)
       menuSecretKey: process.env.MENU_SECRET_KEY || "",

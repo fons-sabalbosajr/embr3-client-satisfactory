@@ -360,6 +360,24 @@ function MeasurementViewModal({ visible, onClose, record }) {
             </Space>
           </div>
         )}
+
+        {labeled["Type of Result of Analyses"] && (
+          <div style={{ marginTop: 12 }}>
+            <Text strong style={{ fontSize: 12, display: "block", marginBottom: 6 }}>
+              Type of Result of Analyses
+            </Text>
+            <Text>{labeled["Type of Result of Analyses"]}</Text>
+          </div>
+        )}
+
+        {labeled["Analysis Control Number"] && (
+          <div style={{ marginTop: 12 }}>
+            <Text strong style={{ fontSize: 12, display: "block", marginBottom: 6 }}>
+              Analysis Control Number
+            </Text>
+            <Text>{labeled["Analysis Control Number"]}</Text>
+          </div>
+        )}
       </Card>
 
       {/* Tabs */}

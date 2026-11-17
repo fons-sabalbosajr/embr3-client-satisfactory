@@ -1,4 +1,5 @@
 import Feedback from "../models/Feedback.js";
+import { cacheUpdate } from "../utils/surveyCache.js";
 
 export const updateFeedback = async (req, res) => {
   try {
@@ -15,6 +16,7 @@ export const updateFeedback = async (req, res) => {
 
     // Emit socket event if update was successful
     if (updated) {
+      cacheUpdate(updated);
       try {
         const io = req.app.get("io");
         if (io) io.to("measurements").emit("feedbackUpdated", updated);

@@ -1,10 +1,8 @@
-// VERA — Virtual Evaluation & Response Assistant API.
+// VERA — Virtual Environmental Response Assistant API.
 //
 //   GET  /api/vera/status          (auth)   widget bootstrap: mode, greeting, starters
 //   POST /api/vera/chat            (auth)   admin chat, grounded in live survey insights
 //   GET  /api/vera/insights        (auth)   the live aggregates as JSON + a readable brief
-//   GET  /api/vera/public-status   (open)   landing-page widget bootstrap
-//   POST /api/vera/public-chat     (open)   landing-page chat, help library only
 //   GET  /api/vera/settings        (manage) full settings (key masked)
 //   PUT  /api/vera/settings        (manage) update settings; blank key keeps stored key
 //   POST /api/vera/settings/test   (manage) provider round-trip
@@ -16,9 +14,8 @@
 
 import express from "express";
 import crypto from "crypto";
-import rateLimit from "express-rate-limit";
 import authMiddleware from "../middleware/auth.js";
-import { requirePermission } from "../middleware/permission.js";
+import { requireDeveloper } from "../middleware/permission.js";
 import User from "../models/User.js";
 import Log, { writeLog } from "../models/Log.js";
 import { loadSettings } from "../models/AppSettings.js";
@@ -59,22 +56,6 @@ function statusPayload(cfg, realm) {
     liveInsights: realm === "admin" ? cfg.liveInsights !== false : false,
   };
 }
-
-// Per-IP ceiling for the anonymous landing-page chat, on top of the global limiter.
-const publicLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000,
-  max: async (req) => {
-    try {
-      const { cfg } = await veraSettings();
-      return Math.max(1, Number(cfg.publicWindowLimit) || 20);
-    } catch {
-      return 20;
-    }
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { ok: false, code: "rate_limited", message: "You've sent a lot of messages in a short time. Please wait a few minutes." },
-});
 
 // ── Admin realm ──────────────────────────────────────────────────────────────
 router.get("/status", authMiddleware, async (_req, res) => {
@@ -200,40 +181,9 @@ router.post("/chat", authMiddleware, async (req, res) => {
   }
 });
 
-// ── Public realm (landing page) ──────────────────────────────────────────────
-router.get("/public-status", async (_req, res) => {
-  try {
-    const { cfg } = await veraSettings();
-    res.json(statusPayload(cfg, "public"));
-  } catch {
-    res.json(statusPayload({}, "public"));
-  }
-});
-
-router.post("/public-chat", publicLimiter, async (req, res) => {
-  const { cfg } = await veraSettings().catch(() => ({ cfg: {} }));
-  if (!cfg.enabled || !cfg.publicEnabled) {
-    return res.status(200).json({ ok: false, code: "disabled", message: "The assistant is currently unavailable." });
-  }
-  const message = vera.sanitizeInput(req.body?.message);
-  const history = Array.isArray(req.body?.history) ? req.body.history.slice(-6) : [];
-  if (!message) return res.status(400).json({ ok: false, code: "empty", message: "Please type your question." });
-
-  const controller = new AbortController();
-  const abortTimer = setTimeout(() => controller.abort(), provider.resolveTimeoutMs(cfg) + 2000);
-  try {
-    // Public realm never receives insights — hard-coded here, not from the request.
-    const result = await vera.answer({ message, history, realm: "public", settings: cfg, signal: controller.signal });
-    clearTimeout(abortTimer);
-    // Metadata only — an anonymous visitor's message is never stored.
-    writeLog({ level: "info", type: "vera", message: `VERA public chat (${result.source})`, ip: req.ip, meta: { realm: "public", source: result.source } });
-    return res.json({ ok: true, answer: result.answer, source: result.source });
-  } catch (err) {
-    clearTimeout(abortTimer);
-    const fallback = vera.fallbackFor({ message, realm: "public", settings: cfg });
-    return res.json({ ok: true, answer: fallback, source: "fallback", degraded: true });
-  }
-});
+// VERA is admin-only. The former anonymous landing-page endpoints
+// (/public-status, /public-chat) were removed so the assistant — and the AI
+// provider quota behind it — cannot be reached without signing in.
 
 // ── Settings (Manage Users permission, admins and Developers pass) ───────────
 function settingsPayload(cfg) {
@@ -245,7 +195,7 @@ function settingsPayload(cfg) {
   };
 }
 
-router.get("/settings", authMiddleware, requirePermission("canManageUsers"), async (_req, res) => {
+router.get("/settings", authMiddleware, requireDeveloper, async (_req, res) => {
   try {
     const { cfg } = await veraSettings();
     const usageToday = await Log.countDocuments({ type: "vera", createdAt: { $gte: startOfToday() } }).catch(() => 0);
@@ -267,7 +217,7 @@ const num = (v, def, min, max) => {
   return Math.min(max, Math.max(min, n));
 };
 
-router.put("/settings", authMiddleware, requirePermission("canManageUsers"), async (req, res) => {
+router.put("/settings", authMiddleware, requireDeveloper, async (req, res) => {
   try {
     const b = req.body || {};
     const doc = await loadSettings();
@@ -277,7 +227,7 @@ router.put("/settings", authMiddleware, requirePermission("canManageUsers"), asy
     if (typeof b.enabled === "boolean") v.enabled = b.enabled;
     if (typeof b.publicEnabled === "boolean") v.publicEnabled = b.publicEnabled;
     if (b.name !== undefined) v.name = str(b.name, 40) || "VERA";
-    if (b.fullName !== undefined) v.fullName = str(b.fullName, 120) || "Virtual Evaluation & Response Assistant";
+    if (b.fullName !== undefined) v.fullName = str(b.fullName, 120) || "Virtual Environmental Response Assistant";
     if (b.tagline !== undefined) v.tagline = str(b.tagline, 160);
     if (["analyst", "friendly", "formal"].includes(b.tone)) v.tone = b.tone;
     if (["brief", "balanced", "detailed"].includes(b.responseLength)) v.responseLength = b.responseLength;
@@ -320,7 +270,7 @@ router.put("/settings", authMiddleware, requirePermission("canManageUsers"), asy
   }
 });
 
-router.post("/settings/test", authMiddleware, requirePermission("canManageUsers"), async (_req, res) => {
+router.post("/settings/test", authMiddleware, requireDeveloper, async (_req, res) => {
   const doc = await loadSettings();
   const cfg = doc.vera.toObject();
   if (provider.resolveProvider(cfg) === "none") {
@@ -343,7 +293,7 @@ router.post("/settings/test", authMiddleware, requirePermission("canManageUsers"
   }
 });
 
-router.delete("/settings/key", authMiddleware, requirePermission("canManageUsers"), async (req, res) => {
+router.delete("/settings/key", authMiddleware, requireDeveloper, async (req, res) => {
   try {
     const doc = await loadSettings();
     doc.vera.provider.apiKeyEnc = "";

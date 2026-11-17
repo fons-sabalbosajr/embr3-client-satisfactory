@@ -28,6 +28,7 @@ import svgr from "vite-plugin-svgr";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { execSync } from "child_process";
 
 // Load server .env if present so dev proxy can use the same addresses
 // as the backend. We avoid requiring the 'dotenv' package here by doing a
@@ -77,21 +78,71 @@ const BACKEND = explicitBackend
 // Helpful debug logging when vite starts so we know what the dev proxy will target
 console.log(`[vite] dev proxy BACKEND=${BACKEND}`);
 
+// The app is served under /ocsm/ everywhere — dev, preview and production —
+// so URLs are the same on every machine (/ocsm/admin/..., /ocsm/client).
+// Override with VITE_BASE only if you really need a different prefix.
+const BASE = `/${String(process.env.VITE_BASE || "/ocsm/").replace(/^\/+|\/+$/g, "")}/`.replace(/^\/\/$/, "/");
+
+// App version shown at the bottom of the admin sidebar. The number comes from
+// package.json ("version"); the build stamp adds the date and git commit so a
+// deployed bundle can be traced back to its source.
+const APP_VERSION = (() => {
+  try { return JSON.parse(fs.readFileSync(path.resolve(__dirname, "package.json"), "utf8")).version || "0.0.0"; }
+  catch { return "0.0.0"; }
+})();
+const APP_COMMIT = (() => {
+  try { return execSync("git rev-parse --short HEAD", { cwd: __dirname, stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); }
+  catch { return ""; }
+})();
+const APP_BUILT_AT = new Date().toISOString();
+const BASE_PREFIX = BASE.replace(/\/$/, ""); // "/ocsm" ("" when served at root)
+const stripBase = (p) => (BASE_PREFIX && p.startsWith(BASE_PREFIX) ? p.slice(BASE_PREFIX.length) || "/" : p);
+
+// Old root-level links (/admin, /client, /survey/page1, /) → /ocsm/... so
+// bookmarks and printed QR codes made before the prefix keep working in dev.
+function redirectToBase() {
+  const middleware = (req, res, next) => {
+    const url = req.url || "/";
+    const isPage = req.method === "GET" && String(req.headers.accept || "").includes("text/html");
+    if (BASE_PREFIX && isPage && url !== BASE && !url.startsWith(`${BASE_PREFIX}/`)) {
+      res.statusCode = 302;
+      res.setHeader("Location", url === BASE_PREFIX ? BASE : `${BASE_PREFIX}${url}`);
+      res.end();
+      return;
+    }
+    next();
+  };
+  return {
+    name: "ocsm-redirect-to-base",
+    configureServer(server) { server.middlewares.use(middleware); },
+    configurePreviewServer(server) { server.middlewares.use(middleware); },
+  };
+}
+
+// Dev proxy: the browser calls /ocsm/api and /ocsm/socket.io (same as behind
+// nginx in production); the prefix is stripped before reaching Node.
+const proxy = {
+  [`${BASE_PREFIX}/api`]: { target: BACKEND, changeOrigin: true, rewrite: stripBase },
+  [`${BASE_PREFIX}/socket.io`]: { target: BACKEND, ws: true, changeOrigin: true, rewrite: stripBase },
+};
+
 export default defineConfig({
-  // Serve app at root during dev; /ocsm/ in production
-  base: process.env.NODE_ENV === 'production' || process.env.VITE_BASE ? (process.env.VITE_BASE || '/ocsm/') : '/',
-  plugins: [react(), svgr()],
+  base: BASE,
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+    __APP_COMMIT__: JSON.stringify(APP_COMMIT),
+    __APP_BUILT_AT__: JSON.stringify(APP_BUILT_AT),
+  },
+  plugins: [redirectToBase(), react(), svgr()],
   server: {
     port: 5174,
     host: "0.0.0.0",
-    proxy: {
-      "/api": BACKEND,
-      // Proxy Socket.IO websocket requests
-      "/socket.io": {
-        target: BACKEND,
-        ws: true,
-      },
-    },
+    proxy,
+  },
+  preview: {
+    port: 4174,
+    host: "0.0.0.0",
+    proxy,
   },
   build: {
     // Split large vendor libraries into separate chunks for better caching

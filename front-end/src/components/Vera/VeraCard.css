@@ -1,36 +1,49 @@
+/* Dashboard VERA card — the flame in its app tile, tips that rotate, and an
+   "Ask VERA" action. Colours follow the admin accent (--ant-color-primary is
+   not exposed, so the ARTA blue is the light default and a lighter tint the
+   dark one). */
+
 .vera-card {
+  --vc-accent: #0038a8;
+  --vc-ink: #0a1a3f;
+  --vc-muted: #4a5878;
+  --vc-line: rgba(0, 56, 168, 0.18);
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 58px;
-  padding: 6px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(19, 194, 194, 0.28);
-  background: linear-gradient(135deg, rgba(22, 119, 255, 0.07) 0%, rgba(82, 196, 26, 0.1) 100%);
-  box-shadow: 0 0 0 1px rgba(19, 194, 194, 0.06), 0 6px 18px rgba(19, 194, 194, 0.1);
+  gap: 12px;
+  min-height: 64px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--vc-line);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(45, 214, 214, 0.12), transparent 55%),
+    linear-gradient(135deg, rgba(0, 56, 168, 0.06) 0%, rgba(82, 196, 26, 0.07) 100%),
+    #fff;
+  box-shadow: 0 6px 18px rgba(0, 32, 96, 0.08);
   min-width: 280px;
-  max-width: 640px;
-  flex: 1 1 400px;
+  max-width: 660px;
+  flex: 1 1 420px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 body[data-theme="dark"] .vera-card {
-  border-color: rgba(19, 194, 194, 0.35);
-  background: linear-gradient(135deg, rgba(22, 119, 255, 0.12) 0%, rgba(82, 196, 26, 0.12) 100%);
+  --vc-accent: #a9c1ff;
+  --vc-ink: #eef3ff;
+  --vc-muted: #a9b6d4;
+  --vc-line: rgba(169, 193, 255, 0.22);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(45, 214, 214, 0.16), transparent 55%),
+    linear-gradient(135deg, #0b1f38 0%, #0f2745 60%, #123b52 100%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 
 .vera-card-icon {
   flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: #fff;
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 0 0 2px rgba(19, 194, 194, 0.25);
+  border-radius: 12px;
 }
-body[data-theme="dark"] .vera-card-icon { background: #0f1a2b; }
 
 .vera-card-body { min-width: 0; flex: 1; }
 
@@ -38,41 +51,48 @@ body[data-theme="dark"] .vera-card-icon { background: #0f1a2b; }
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 1px;
+  margin-bottom: 2px;
   flex-wrap: wrap;
 }
 
-.vera-card-title { font-size: 11px; color: #08979c; }
-body[data-theme="dark"] .vera-card-title { color: #5cd6d6; }
+.vera-card-title.ant-typography {
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  color: var(--vc-accent);
+}
 
-.vera-card-tag { font-size: 9px; line-height: 15px; margin: 0; padding: 0 5px; }
+.vera-card-tag { font-size: 10px; line-height: 16px; margin: 0; padding: 0 6px; border-radius: 999px; }
 
-.vera-card-text {
-  font-size: 12px;
-  line-height: 1.3;
-  color: #14243b;
+.vera-card-text.ant-typography {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--vc-ink);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-body[data-theme="dark"] .vera-card-text { color: #cfe3f5; }
 
 .vera-card-actions {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   flex-shrink: 0;
 }
 
-.vera-card-ask {
+.vera-card-actions .ant-btn-text { color: var(--vc-muted); }
+
+.vera-card-ask.ant-btn {
   border: none !important;
-  background: linear-gradient(135deg, #1677ff 0%, #13c2c2 55%, #52c41a 100%) !important;
-  font-weight: 600;
-  font-size: 11px;
-  height: 22px;
-  padding: 0 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4096ff 0%, #2dd6d6 60%, #73d13d 100%) !important;
+  color: #0b1f38 !important;
+  font-weight: 700;
+  font-size: 11.5px;
+  height: 24px;
+  padding: 0 12px;
+  box-shadow: 0 4px 12px rgba(45, 214, 214, 0.3);
 }
 
 @media (max-width: 575px) {

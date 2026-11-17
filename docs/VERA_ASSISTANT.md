@@ -1,4 +1,4 @@
-# VERA — Virtual Evaluation & Response Assistant
+# VERA — Virtual Environmental Response Assistant
 
 VERA is the OCSM's in-app assistant. Unlike a help-desk bot, the admin-side VERA is an
 **insight analyst**: every answer is grounded in live aggregates computed from the
@@ -10,8 +10,11 @@ as a short brief — headline → key figures → what it means → suggested ac
 | --- | --- | --- | --- |
 | Admin widget (bottom-right of every admin page) | `POST /api/vera/chat` | any logged-in user | Survey figures, trends, remarks, ARTA scoring, how to use each admin page |
 | Dashboard card | — | any logged-in user | Rotating tips; "Ask VERA" opens the widget with a seeded question |
-| Landing-page widget | `POST /api/vera/public-chat` | anonymous | What the survey is, how long it takes, privacy, survey types, languages — **no data** |
 | Settings → VERA Assistant | `GET/PUT /api/vera/settings` | Manage Users permission or Developer | Provider, model, key, tone, starters, live-data window, limits, logging |
+
+VERA is **admin-only**. It is not mounted on the landing page, the `/client` page or
+the survey, and there are no anonymous `/api/vera` endpoints (the former
+`public-status` / `public-chat` routes were removed).
 
 ## Modes
 
@@ -28,7 +31,15 @@ as a short brief — headline → key figures → what it means → suggested ac
 | Variable | Purpose |
 | --- | --- |
 | `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | Takes precedence over a key stored from the UI |
-| `ANTHROPIC_MODEL` / `GEMINI_MODEL` | Default model when none is set in the UI |
+| `ANTHROPIC_MODEL` / `GEMINI_MODEL` | Default model when none is set in the UI (Gemini default: `gemini-3.5-flash`) |
+| `GEMINI_FALLBACK_MODEL` | Used once when the chosen Gemini model is overloaded (503) or stalls past 60% of the timeout. Default `gemini-3.5-flash-lite`; set empty to disable |
+
+**Gemini thinking.** Gemini 3.x models reason before answering, and those
+thinking tokens count against the output limit. VERA maps its *Effort* setting
+to Gemini's thinking level (low → minimal, medium → low, high → high) and adds
+the thinking allowance on top of *Max tokens*, so answers are not cut off.
+Pro models return HTTP 429 "quota exceeded" on the free tier; use a Flash model
+unless billing is enabled.
 | `SECRET_ENCRYPTION_KEY` | 64 hex chars used to encrypt the stored key (falls back to a key derived from `JWT_SECRET`) |
 
 Claude requests use adaptive thinking with the configured effort, and opt into
@@ -40,9 +51,9 @@ the plain shape if the deployment rejects the beta.
 * Input sanitised and capped (1,000 chars); output rendered as plain text.
 * Credentials / env / connection-string questions are refused for every role.
 * Admin VERA reports aggregates only — it refuses to look up a named client's contact details.
-* Public VERA never receives insights; data questions get a fixed "no access" reply.
-* Rate limits: 40 req/min per IP on `/api/vera`, a per-visitor window on the public chat,
-  a per-user daily limit (settings), and an 8-second duplicate guard.
+* Every `/api/vera` route requires a signed-in user.
+* Rate limits: 40 req/min per IP on `/api/vera`, a per-user daily limit (settings),
+  and an 8-second duplicate guard.
 * Usage is written to the `Log` collection with `type: "vera"` (metadata by default).
 
 ## Files

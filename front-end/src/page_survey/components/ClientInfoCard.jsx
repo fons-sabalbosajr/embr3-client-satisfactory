@@ -1,25 +1,39 @@
 // src/page-survey/components/ClientInfoCard.jsx
 import React, { useEffect, useMemo } from "react";
-import { Form, Input, Radio, Select, Space, Row, Col, Typography } from "antd";
+import { AutoComplete, Form, Input, Radio, Select, Row, Col, Typography } from "antd";
+import {
+  UserOutlined,
+  ShopOutlined,
+  BankOutlined,
+  ExperimentOutlined,
+} from "@ant-design/icons";
 import socket from "../../utils/socket";
 import "./stylesclientinfocard.css";
 import { useTranslation } from "react-i18next";
 import { isEqual } from "lodash";
 import { getDecryptedItem, setEncryptedItem } from "../../utils/encryptedStorage";
-import { getServiceCategories } from "../../services/api";
+import { getAssistPersonnel, getServiceCategories } from "../../services/api";
+import {
+  ANALYSIS_RESULT_TYPE_FIELD,
+  ANALYSIS_CONTROL_NUMBER_FIELD,
+  includesAnalysisService,
+} from "../constants/surveyMeta";
+
+const { Text } = Typography;
 
 function ClientInfoCard({ formItemName, form, options, isInternalSurvey = false }) {
   let { genderOptions, serviceOptions } = options;
-  // Ensure 'RatherNotSay' is always present
-  if (!genderOptions.includes('RatherNotSay')) {
-    genderOptions = [...genderOptions, 'RatherNotSay'];
-  }
-  // Ensure 'LGBTQ++' is always present
-  if (!genderOptions.includes('LGBTQ++')) {
-    genderOptions = [...genderOptions.filter(g => g !== 'RatherNotSay'), 'LGBTQ++', 'RatherNotSay'];
-  }
-  const { Text } = Typography;
+  // Ensure 'LGBTQ++' and 'RatherNotSay' are always present, in that order.
+  genderOptions = [
+    ...genderOptions.filter((g) => g !== "LGBTQ++" && g !== "RatherNotSay"),
+    "LGBTQ++",
+    "RatherNotSay",
+  ];
   const { t } = useTranslation();
+
+  const field = (name) => `${formItemName}_${name}`;
+  const analysisField = field(ANALYSIS_RESULT_TYPE_FIELD);
+  const controlNumberField = field(ANALYSIS_CONTROL_NUMBER_FIELD);
 
   // For internal survey, auto-set to Government
   useEffect(() => {
@@ -32,9 +46,9 @@ function ClientInfoCard({ formItemName, form, options, isInternalSurvey = false 
   }, [isInternalSurvey, form, formItemName]);
 
   const customerTypeOptions = [
-    { value: "Citizen", label: t("clientTypeCitizen") },
-    { value: "Business", label: t("clientTypeBusiness") },
-    { value: "Government", label: t("clientTypeGovernment") },
+    { value: "Citizen", label: t("clientTypeCitizen"), icon: <UserOutlined /> },
+    { value: "Business", label: t("clientTypeBusiness"), icon: <ShopOutlined /> },
+    { value: "Government", label: t("clientTypeGovernment"), icon: <BankOutlined /> },
   ];
 
   useEffect(() => {
@@ -69,7 +83,9 @@ function ClientInfoCard({ formItemName, form, options, isInternalSurvey = false 
     };
   }, [form, formItemName]);
 
-  const customerType = form.getFieldValue(`${formItemName}_customerType`);
+  const customerType = Form.useWatch(field("customerType"), form);
+  const selectedServices = Form.useWatch(field("serviceAvailed"), form);
+  const needsAnalysisType = includesAnalysisService(selectedServices);
 
   // Fetch service category mappings from the server
   const [svcCatMap, setSvcCatMap] = React.useState({ internal: new Set(), external: new Set() });
@@ -95,12 +111,10 @@ function ClientInfoCard({ formItemName, form, options, isInternalSurvey = false 
 
     const internal = [];
     const external = [];
-    const other = [];
     (serviceOptions || []).forEach((opt) => {
       const k = toKey(opt);
       if (svcCatMap.internal.has(k)) internal.push(opt);
       else if (svcCatMap.external.has(k)) external.push(opt);
-      else other.push(opt);
     });
 
     // Filter by survey type
@@ -116,6 +130,30 @@ function ClientInfoCard({ formItemName, form, options, isInternalSurvey = false 
     return toOptions(serviceOptions || []);
   }, [serviceOptions, svcCatMap, isInternalSurvey]);
 
+  // Removing "Analysis of Environmental Samples" must also drop the follow-up
+  // answer, otherwise a stale value would still be submitted (the form keeps
+  // values of unmounted fields).
+  const handleServicesChange = (value) => {
+    if (includesAnalysisService(value)) return;
+    if (form.getFieldValue(analysisField)) form.setFieldValue(analysisField, undefined);
+    if (form.getFieldValue(controlNumberField)) form.setFieldValue(controlNumberField, undefined);
+  };
+
+  // Names past clients entered as the personnel who assisted them. Offered as
+  // suggestions only — the client can still type any name.
+  const [personnelNames, setPersonnelNames] = React.useState([]);
+  useEffect(() => {
+    let cancelled = false;
+    getAssistPersonnel()
+      .then((res) => {
+        if (cancelled) return;
+        const names = Array.isArray(res.data?.names) ? res.data.names : [];
+        setPersonnelNames(names.map((n) => ({ value: n })));
+      })
+      .catch(() => { /* suggestions are optional */ });
+    return () => { cancelled = true; };
+  }, []);
+
   // Prefill and persist assisted personnel name across sessions
   useEffect(() => {
     try {
@@ -130,160 +168,252 @@ function ClientInfoCard({ formItemName, form, options, isInternalSurvey = false 
     }
   }, [form, formItemName]);
 
+  const optionalTag = (
+    <span className="client-info-optional">{t("clientInfo.optional", "Optional")}</span>
+  );
+
   return (
-    <Space direction="vertical" className="client-info-card-space">
+    <div className="client-info-card">
       {isInternalSurvey && (
         <div className="client-info-card-internal-badge">
-          <Text strong style={{ color: "#0284c7" }}>
+          <Text strong>
             {t("internalSurveyBadge", "Internal Survey — EMB Region III Employee")}
           </Text>
         </div>
       )}
 
-      <Form.Item
-        name={`${formItemName}_customerType`}
-        label={t("clientTypeLabel")}
-        rules={[{ required: true, message: t("selectClientType") }]}
-      >
-        <Radio.Group disabled={isInternalSurvey}>
-          <Space direction="vertical" className="client-info-card-radio-space">
-            {customerTypeOptions.map(({ value, label }) => (
-              <div key={value}>
-                <Radio value={value}>{label}</Radio>
-                {customerType === "Business" && value === "Business" && !isInternalSurvey && (
-                  <Form.Item
-                    name={`${formItemName}_companyName`}
-                    noStyle
-                    rules={[
-                      { required: true, message: t("enterCompanyName") },
-                    ]}
-                  >
-                    <Input
-                      placeholder={t("companyNamePlaceholder")}
-                      className="client-info-card-dynamic-input"
-                    />
-                  </Form.Item>
-                )}
-                {customerType === "Government" && value === "Government" && (
-                  <Form.Item
-                    name={`${formItemName}_agencyName`}
-                    noStyle
-                    rules={[
-                      { required: true, message: t("enterAgencyName") },
-                    ]}
-                  >
-                    <Input
-                      placeholder={t("agencyPlaceholder")}
-                      className="client-info-card-dynamic-input"
-                      disabled={isInternalSurvey}
-                    />
-                  </Form.Item>
-                )}
-              </div>
-            ))}
-          </Space>
-        </Radio.Group>
-      </Form.Item>
-
-      {isInternalSurvey && (
-        <Form.Item
-          name={`${formItemName}_employeeName`}
-          label={t("employeeName.label", "Employee Name (Optional)")}
-          rules={[{ required: false }]}
-        >
-          <Input placeholder={t("employeeName.placeholder", "Enter your name (optional)")} />
-        </Form.Item>
-      )}
-
-      {(customerType === "Citizen" || !customerType) && (
-        <Row gutter={16}>
+      {/* ── Office visited (auto-filled) ── */}
+      <section className="client-info-section client-info-section--muted">
+        <h4 className="client-info-section-title">
+          {t("clientInfo.autoFilled", "Office visited")}
+        </h4>
+        <Row gutter={[16, 0]}>
           <Col xs={24} sm={12}>
-            <Form.Item name={`${formItemName}_age`} label={t("ageLabel")}> 
-              <Input type="number" placeholder={t("agePlaceholder")} />
+            <Form.Item name={field("region")} label={t("regionLabel")}>
+              <Input readOnly tabIndex={-1} className="client-info-readonly" />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
-            <Form.Item
-              name={`${formItemName}_gender`}
-              label={t("genderLabel")}
-              rules={[{ required: true, message: t("selectGender") }]}
-            >
-              <Select placeholder={t("selectGender")} popupClassName="survey-select-dropdown"> 
-                {genderOptions.map((g) => (
-                  <Select.Option key={g} value={g}>
-                    {t(`gender.${g}`)}
-                  </Select.Option>
-                ))}
-              </Select>
+            <Form.Item name={field("agency")} label={t("agencyLabel")}>
+              <Input readOnly tabIndex={-1} className="client-info-readonly" />
             </Form.Item>
           </Col>
         </Row>
-      )}
+        <Text className="client-info-note">{t("regionAgencyNote")}</Text>
+      </section>
 
-      <Row gutter={16} align="middle">
-        <Col xs={24} sm={8}>
-          <Form.Item
-            name={`${formItemName}_region`}
-            label={t("regionLabel")}
-          >
-            <Input disabled />
-          </Form.Item>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Form.Item
-            name={`${formItemName}_agency`}
-            label={t("agencyLabel")}
-          >
-            <Input disabled />
-          </Form.Item>
-        </Col>
-        <Col xs={24} sm={8}>
-          <div className="client-info-card-note">
-            <span className="client-info-card-note-text">
-              {t("regionAgencyNote")}
-            </span>
-          </div>
-        </Col>
-      </Row>
+      {/* ── About you ── */}
+      <section className="client-info-section">
+        <h4 className="client-info-section-title">
+          {t("clientInfo.aboutYou", "About you")}
+        </h4>
 
-      <Row gutter={16}>
-        <Col xs={24} sm={12}>
+        <Form.Item
+          name={field("customerType")}
+          label={t("clientTypeLabel")}
+          rules={[{ required: true, message: t("selectClientType") }]}
+        >
+          <Radio.Group disabled={isInternalSurvey} className="client-type-group">
+            {customerTypeOptions.map(({ value, label, icon }) => (
+              <Radio key={value} value={value} className="client-type-option">
+                <span className="client-type-option-icon" aria-hidden="true">
+                  {icon}
+                </span>
+                <span className="client-type-option-label">{label}</span>
+              </Radio>
+            ))}
+          </Radio.Group>
+        </Form.Item>
+
+        {customerType === "Business" && !isInternalSurvey && (
           <Form.Item
-            name={`${formItemName}_assistPersonnel`}
-            label={t('assistPersonnel.label') || 'Assisted Personnel Name'}
-            rules={[{ required: false }]}
+            name={field("companyName")}
+            label={t("clientInfo.companyNameLabel", "Company / Establishment Name")}
+            rules={[{ required: true, whitespace: true, message: t("enterCompanyName") }]}
+          >
+            <Input placeholder={t("companyNamePlaceholder")} maxLength={200} autoComplete="organization" />
+          </Form.Item>
+        )}
+
+        {customerType === "Government" && (
+          <Form.Item
+            name={field("agencyName")}
+            label={t("clientInfo.agencyNameLabel", "Agency Name")}
+            rules={[{ required: true, whitespace: true, message: t("enterAgencyName") }]}
           >
             <Input
-              placeholder={t('assistPersonnel.placeholder') || 'Enter name of personnel who assisted you'}
-              onChange={(e) => {
-                try {
-                  setEncryptedItem("assistPersonnelName", e.target.value || "");
-                } catch {
-                  // ignore
-                }
-              }}
+              placeholder={t("agencyPlaceholder")}
+              disabled={isInternalSurvey}
+              maxLength={200}
+              autoComplete="organization"
             />
           </Form.Item>
-        </Col>
-        <Col xs={24} sm={12}>
+        )}
+
+        {isInternalSurvey && (
           <Form.Item
-            name={`${formItemName}_serviceAvailed`}
-            label={t("serviceAvailedLabel")}
-            rules={[{ required: true, message: t("selectService") }]}
+            name={field("employeeName")}
+            label={
+              <>
+                {t("summaryLabels.employeeName", "Employee Name")} {optionalTag}
+              </>
+            }
           >
-            <Select
-              placeholder={t("selectServicePlaceholder")}
-              mode="multiple"
-              allowClear
-              options={groupedServiceOptions}
-              showSearch
-              optionFilterProp="label"
-              popupClassName="survey-select-dropdown"
+            <Input
+              placeholder={t("employeeName.placeholder", "Enter your name (optional)")}
+              maxLength={120}
+              autoComplete="name"
             />
           </Form.Item>
-        </Col>
-      </Row>
-    </Space>
+        )}
+
+        {(customerType === "Citizen" || !customerType) && (
+          <Row gutter={[16, 0]}>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name={field("age")}
+                label={
+                  <>
+                    {t("ageLabel")} {optionalTag}
+                  </>
+                }
+                rules={[
+                  {
+                    validator: (_, v) =>
+                      v === undefined || v === null || v === "" || (Number(v) >= 1 && Number(v) <= 120)
+                        ? Promise.resolve()
+                        : Promise.reject(new Error(t("ageInvalid", "Enter a valid age (1–120)."))),
+                  },
+                ]}
+              >
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={120}
+                  placeholder={t("agePlaceholder")}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name={field("gender")}
+                label={t("genderLabel")}
+                rules={[{ required: true, message: t("selectGender") }]}
+              >
+                <Select
+                  placeholder={t("selectGender")}
+                  classNames={{ popup: { root: "survey-select-dropdown" } }}
+                  options={genderOptions.map((g) => ({ value: g, label: t(`gender.${g}`) }))}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        )}
+      </section>
+
+      {/* ── Service availed ── */}
+      <section className="client-info-section">
+        <h4 className="client-info-section-title">
+          {t("clientInfo.serviceSection", "Service availed")}
+        </h4>
+
+        <Form.Item
+          name={field("serviceAvailed")}
+          label={t("serviceAvailedLabel")}
+          rules={[{ required: true, message: t("selectService") }]}
+        >
+          <Select
+            placeholder={t("selectServicePlaceholder")}
+            mode="multiple"
+            allowClear
+            options={groupedServiceOptions}
+            showSearch
+            optionFilterProp="label"
+            classNames={{ popup: { root: "survey-select-dropdown survey-service-dropdown" } }}
+            listHeight={320}
+            onChange={handleServicesChange}
+            className="client-info-service-select"
+          />
+        </Form.Item>
+
+        {needsAnalysisType && (
+          <div className="client-info-followup" role="group" aria-label={t("analysisResultType.groupLabel", "Analysis of Environmental Samples")}>
+            <p className="client-info-followup-head">
+              <ExperimentOutlined aria-hidden="true" />
+              <span>{t("analysisResultType.help")}</span>
+            </p>
+            <Row gutter={[16, 0]}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name={analysisField}
+                  label={t("analysisResultType.label", "Type of Result of Analyses")}
+                  rules={[
+                    {
+                      required: true,
+                      whitespace: true,
+                      message: t("analysisResultType.required"),
+                    },
+                  ]}
+                >
+                  <Input
+                    placeholder={t("analysisResultType.placeholder")}
+                    maxLength={200}
+                    autoFocus
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name={controlNumberField}
+                  label={
+                    <>
+                      {t("analysisControlNumber.label", "Control Number")} {optionalTag}
+                    </>
+                  }
+                >
+                  <Input
+                    placeholder={t("analysisControlNumber.placeholder", "Control number on your result of analysis")}
+                    maxLength={60}
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+        )}
+
+        <Form.Item
+          name={field("assistPersonnel")}
+          label={
+            <>
+              {t("assistPersonnel.label", "Assisted Personnel Name")} {optionalTag}
+            </>
+          }
+          extra={personnelNames.length ? t("assistPersonnel.hint", "Start typing to see names from past surveys.") : undefined}
+        >
+          <AutoComplete
+            options={personnelNames}
+            filterOption={(input, option) =>
+              String(option?.value || "").toLowerCase().includes(String(input || "").trim().toLowerCase())
+            }
+            placeholder={t("assistPersonnel.placeholder", "Enter name of personnel who assisted you")}
+            maxLength={200}
+            allowClear
+            backfill
+            classNames={{ popup: { root: "survey-select-dropdown" } }}
+            onChange={(value) => {
+              try {
+                setEncryptedItem("assistPersonnelName", value || "");
+              } catch {
+                // ignore
+              }
+            }}
+          />
+        </Form.Item>
+      </section>
+    </div>
   );
 }
 

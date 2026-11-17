@@ -5,8 +5,27 @@ import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 
+// Remarks have been stored under different question labels over time; edit
+// whichever one the record already uses so we never create a second, empty
+// remarks column in exports.
+const REMARKS_KEYS = ["Remarks/Recommendations:", "Remarks (optional):"];
+const remarksKeyFor = (labeled = {}) =>
+  REMARKS_KEYS.find((k) => labeled[k] !== undefined && labeled[k] !== "") ||
+  Object.keys(labeled).find((k) => /remark|recommend|suggest/i.test(k)) ||
+  REMARKS_KEYS[0];
+
+const ANALYSIS_KEY = "Type of Result of Analyses";
+const CONTROL_NO_KEY = "Analysis Control Number";
+
 function MeasurementFormModal({ visible, onClose, onSubmit, record }) {
   const [form] = Form.useForm();
+  const remarksKey = remarksKeyFor(record?.answersLabeled);
+  const services = record?.answersLabeled?.["Service Availed"];
+  const showAnalysis =
+    !!record?.answersLabeled?.[ANALYSIS_KEY] ||
+    (Array.isArray(services) ? services : services ? [services] : []).some((s) =>
+      /analys[ie]s\s+of\s+environmental\s+samples?/i.test(String(s))
+    );
 
   useEffect(() => {
     if (record) {
@@ -21,7 +40,9 @@ function MeasurementFormModal({ visible, onClose, onSubmit, record }) {
         "Agency Name": record.answersLabeled?.["Agency Name"] || "",
         "Employee Name": record.answersLabeled?.["Employee Name"] || "",
         "Assisted Personnel": record.answersLabeled?.["Assisted Personnel"] || "",
-        "Remarks (optional):": record.answersLabeled?.["Remarks (optional):"] || "",
+        [ANALYSIS_KEY]: record.answersLabeled?.[ANALYSIS_KEY] || "",
+        [CONTROL_NO_KEY]: record.answersLabeled?.[CONTROL_NO_KEY] || "",
+        remarks: record.answersLabeled?.[remarksKeyFor(record.answersLabeled)] || "",
       });
     }
   }, [record, form]);
@@ -39,15 +60,19 @@ function MeasurementFormModal({ visible, onClose, onSubmit, record }) {
         cancelButtonText: "Cancel",
       }).then((result) => {
         if (result.isConfirmed) {
-          const { surveyType, ...labeledValues } = values;
-          onSubmit({
-            ...record,
-            surveyType,
-            answersLabeled: {
-              ...record.answersLabeled,
-              ...labeledValues,
-            },
+          const { surveyType, remarks, ...labeledValues } = values;
+          const answersLabeled = { ...record.answersLabeled };
+          // Only write fields that hold a value or already existed, so the
+          // edit does not add blank keys (= blank columns) to the record.
+          Object.entries(labeledValues).forEach(([key, val]) => {
+            if (val === undefined) return;
+            if (val === "" && answersLabeled[key] === undefined) return;
+            answersLabeled[key] = val;
           });
+          if (remarks || answersLabeled[remarksKey] !== undefined) {
+            answersLabeled[remarksKey] = remarks || "";
+          }
+          onSubmit({ ...record, surveyType, answersLabeled });
           MySwal.fire("Updated!", "The client entry has been updated.", "success");
           onClose();
         }
@@ -72,19 +97,19 @@ function MeasurementFormModal({ visible, onClose, onSubmit, record }) {
           </Select>
         </Form.Item>
         <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
             <Form.Item name="Region" label="Region">
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
             <Form.Item name="Agency" label="Agency">
               <Input />
             </Form.Item>
           </Col>
         </Row>
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={8}>
             <Form.Item name="Customer Type" label="Customer Type">
               <Select>
                 <Select.Option value="Citizen">Citizen</Select.Option>
@@ -93,12 +118,12 @@ function MeasurementFormModal({ visible, onClose, onSubmit, record }) {
               </Select>
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={8}>
             <Form.Item name="Age" label="Age">
               <Input type="number" />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={8}>
             <Form.Item name="Gender" label="Gender">
               <Select allowClear>
                 <Select.Option value="Male">Male</Select.Option>
@@ -116,12 +141,12 @@ function MeasurementFormModal({ visible, onClose, onSubmit, record }) {
         )}
         {customerType === "Government" && (
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="Agency Name" label="Agency Name">
                 <Input />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="Employee Name" label="Employee Name">
                 <Input />
               </Form.Item>
@@ -131,7 +156,21 @@ function MeasurementFormModal({ visible, onClose, onSubmit, record }) {
         <Form.Item name="Assisted Personnel" label="Assisted Personnel">
           <Input />
         </Form.Item>
-        <Form.Item name="Remarks (optional):" label="Remarks">
+        {showAnalysis && (
+          <Row gutter={12}>
+            <Col xs={24} sm={12}>
+              <Form.Item name={ANALYSIS_KEY} label="Type of Result of Analyses">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name={CONTROL_NO_KEY} label="Analysis Control Number">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+        )}
+        <Form.Item name="remarks" label="Remarks / Recommendations">
           <Input.TextArea rows={3} />
         </Form.Item>
       </Form>

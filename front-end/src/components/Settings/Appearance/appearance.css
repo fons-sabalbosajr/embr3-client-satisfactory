@@ -1,0 +1,242 @@
+/* My Account → Appearance. Uses the admin shell's --adm-* variables. */
+
+.ap {
+  padding: 20px 22px;
+  border: 1px solid var(--adm-border-soft, #eaeff8);
+  border-radius: 16px;
+  background: var(--adm-surface, #fff);
+}
+
+.ap-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ap-title {
+  margin: 0;
+  color: var(--adm-text);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.ap-desc {
+  margin: 4px 0 0;
+  color: var(--adm-muted);
+  font-size: 13px;
+}
+
+.ap-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.ap-sub {
+  margin: 20px 0 10px;
+  color: var(--adm-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── Presets ───────────────────────────────────────────────────────────── */
+
+.ap-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.ap-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--adm-border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--adm-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ap-preset:hover {
+  border-color: var(--adm-primary);
+}
+
+.ap-preset.is-on {
+  border-color: var(--adm-primary);
+  box-shadow: 0 0 0 1px var(--adm-primary);
+}
+
+.ap-preset:focus-visible {
+  outline: 2px solid var(--adm-primary);
+  outline-offset: 2px;
+}
+
+.ap-preset__name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.ap-preset__name .anticon {
+  color: var(--adm-primary);
+}
+
+/* Mini admin preview */
+.ap-mini {
+  display: flex;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(10, 26, 63, 0.08);
+}
+
+.ap-mini__sider {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 30%;
+  padding: 10px 6px;
+}
+
+.ap-mini__sider > span {
+  height: 4px;
+  border-radius: 2px;
+  opacity: 0.55;
+}
+
+.ap-mini__sider > span:first-child {
+  width: 60%;
+  opacity: 1;
+}
+
+.ap-mini__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.ap-mini__header {
+  height: 14px;
+  border-bottom: 1px solid;
+}
+
+.ap-mini__card {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  flex: 1;
+  margin: 6px;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.ap-mini__btn {
+  width: 34%;
+  height: 8px;
+  border-radius: 3px;
+}
+
+/* ── Custom colours ────────────────────────────────────────────────────── */
+
+.ap-colors {
+  display: grid;
+  gap: 2px;
+}
+
+.ap-color {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-top: 1px solid var(--adm-border-soft);
+}
+
+.ap-color:first-child {
+  border-top: 0;
+}
+
+.ap-color__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ap-color__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--adm-text);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.ap-color__label code {
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--adm-primary-soft);
+  color: var(--adm-text);
+  font-size: 11.5px;
+}
+
+.ap-default-tag.ant-tag {
+  margin: 0;
+  font-size: 11px;
+}
+
+.ap-color__hint {
+  margin-top: 2px;
+  color: var(--adm-muted);
+  font-size: 12px;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.ap-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--adm-border-soft);
+}
+
+.ap-state {
+  color: var(--adm-muted);
+  font-size: 12.5px;
+}
+
+.ap-state.is-dirty {
+  color: var(--adm-text);
+  font-weight: 600;
+}
+
+.ap-actions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .ap {
+    padding: 16px;
+  }
+  .ap-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

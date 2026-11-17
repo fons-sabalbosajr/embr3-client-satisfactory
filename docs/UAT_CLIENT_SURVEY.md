@@ -250,6 +250,24 @@ Approved by: `____________________`
 
 ---
 
+### Automated pre-check — 2026-11-17
+
+Before handing over to human testers, UAT-01 to UAT-16 were run in headless
+Chromium against the dev build (Playwright). Every API call was mocked, so nothing
+was written to the database. Offline, slow, stalled, 500 and 429 responses were
+simulated at the network layer.
+
+| Result | Cases |
+|---|---|
+| Pass | UAT-01 to UAT-16, plus server 500/429 messages, analysis follow-up field, CC skip logic, Filipino switch mid-survey, phone 390 px layout |
+| Fixed during the run | React "uncontrolled → controlled input" warning on the SQD rating step (`SQDTable`) |
+| Open | **Service Availed** list in the database contains comma-split fragments ("Facilitation", "Evaluation", "Cyanide", "Asbestos", …) shown to clients as services. The cause is fixed in code (Data Config now edits options one per line; env service lists accept `\|`), but the stored Q5 options still need cleaning. |
+
+Measured stall timeout: error dialog after ~31 s (UAT-10).
+This does not replace UAT on the deployed site: run sections 3–5 there before sign-off.
+
+---
+
 ## 7. If a test fails
 
 1. Screenshot the screen and the DevTools **Console**, and note the time.

@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Form, Typography, Row, Col } from "antd";
+import { Card, Form, Typography, Row, Col, Input } from "antd";
 import angry from "../../assets/angry.gif";
 import disagree from "../../assets/disagree.gif";
 import neutral from "../../assets/neutral.gif";
@@ -10,6 +10,12 @@ import "./stylessqdtable.css";
 import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
+
+// Registers a rating with the form without rendering a control. The value is
+// normalised to "" so the input stays controlled from the first render —
+// passing `undefined` first and a rating later made React warn about an
+// uncontrolled input becoming controlled.
+const HiddenValue = ({ value }) => <input type="hidden" value={value ?? ""} readOnly />;
 
 function SQDTable({
   group = [],
@@ -61,7 +67,7 @@ function SQDTable({
         return (
           <Row key={question._id} className="sqd-question-row">
             <Col span={24}>
-              <span className="sqd-question-text">
+              <span className="sqd-question-text" id={`sqd-q-${question._id}`}>
                 {`${questionNumber}. ${t(
                   `questions.${question.questionCode}.text`,
                   {
@@ -71,25 +77,27 @@ function SQDTable({
               </span>
 
               <Form.Item name={fieldName} noStyle>
-                <input type="hidden" />
+                <HiddenValue />
               </Form.Item>
 
-              <div className="rating-group">
+              <div
+                className="rating-group"
+                role="group"
+                aria-labelledby={`sqd-q-${question._id}`}
+              >
                 {ratingOptions.map((opt) => (
-                  <div
+                  <button
+                    type="button"
                     key={opt.value}
                     className={`rating-box ${
                       selected === opt.value ? "selected" : ""
                     }`}
+                    aria-pressed={selected === opt.value}
                     onClick={() => handleRatingClick(fieldName, opt.value)}
                   >
-                    <img
-                      src={opt.icon}
-                      alt={opt.label}
-                      className="rating-icon"
-                    />
-                    <div className="rating-label">{opt.label}</div>
-                  </div>
+                    <img src={opt.icon} alt="" className="rating-icon" />
+                    <span className="rating-label">{opt.label}</span>
+                  </button>
                 ))}
               </div>
             </Col>
@@ -110,9 +118,11 @@ function SQDTable({
               rules={[{ required: false }]}
               className="sqd-textarea-item"
             >
-              <textarea
+              <Input.TextArea
                 className="sqd-textarea"
-                rows={4}
+                autoSize={{ minRows: 3, maxRows: 8 }}
+                maxLength={1000}
+                showCount
                 placeholder={t(
                   "questions.Q19.placeholder",
                   "Any improvements or suggestions..."

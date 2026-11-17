@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Table, Space, Typography, Input, Button, Tag, Select } from 'antd';
+import { Card, Table, Space, Typography, Input, Button, Tag, Select, message } from 'antd';
 import * as api from '../../../services/api';
 import { exportToExcelFile } from '../../../utils/excelExport';
+import { buildResponseRows } from '../../../utils/responseExport';
 
 const { Title, Text } = Typography;
 
@@ -22,6 +23,8 @@ function ExtractData() {
   const [search, setSearch] = useState('');
   const [personnel, setPersonnel] = useState('');
   const [surveyTypeFilter, setSurveyTypeFilter] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -40,9 +43,12 @@ function ExtractData() {
           const assisted = labeled['Assisted Personnel'] || '';
           const companyOrAgency =
             labeled['Company Name'] ||
+            labeled['Agency Name'] ||
             labeled['Unknown Question (merged_customer_age_gender_question_agencyName)'] ||
             labeled['Agency'] ||
             '—';
+          const analysisType = labeled['Type of Result of Analyses'] || '';
+          const controlNumber = labeled['Analysis Control Number'] || '';
           const customerType = labeled['Customer Type'] || '—';
           const region = labeled['Region'] || '—';
           const submittedAt = entry.submittedAt ? new Date(entry.submittedAt).toLocaleString() : '—';
@@ -52,6 +58,8 @@ function ExtractData() {
             customerType,
             companyOrAgency,
             services,
+            analysisType,
+            controlNumber,
             assisted,
             submittedAt,
             surveyType: inferSurveyType(entry),
@@ -72,7 +80,7 @@ function ExtractData() {
     const q = (search || '').toLowerCase();
     const p = (personnel || '').toLowerCase();
     return rows.filter((r) => {
-      const hay = `${r.region} ${r.customerType} ${r.companyOrAgency} ${(r.services||[]).join(', ')} ${r.assisted}`.toLowerCase();
+      const hay = `${r.region} ${r.customerType} ${r.companyOrAgency} ${(r.services||[]).join(', ')} ${r.analysisType} ${r.controlNumber} ${r.assisted}`.toLowerCase();
       const okQ = q ? hay.includes(q) : true;
       const okP = p ? String(r.assisted||'').toLowerCase().includes(p) : true;
       const okType = surveyTypeFilter ? r.surveyType === surveyTypeFilter : true;
@@ -103,23 +111,44 @@ function ExtractData() {
         </Space>
       )
     },
+    {
+      title: 'Type of Result of Analyses',
+      dataIndex: 'analysisType',
+      key: 'analysisType',
+      render: (v) => <Text>{v || '—'}</Text>,
+    },
+    {
+      title: 'Analysis Control No.',
+      dataIndex: 'controlNumber',
+      key: 'controlNumber',
+      render: (v) => <Text>{v || '—'}</Text>,
+    },
   ];
 
-  const handleExport = () => {
-    const exportRows = filtered.map((r) => ({
-      'Submitted At': r.submittedAt,
-      'Survey Type': r.surveyType === 'internal' ? 'Internal' : 'External',
-      Region: r.region,
-      'Customer Type': r.customerType,
-      'Company/Agency': r.companyOrAgency,
-      'Assisted Personnel': r.assisted || '',
-      'Service Availed': (r.services || []).join('; '),
-    }));
-    exportToExcelFile(`survey-extract-${new Date().toISOString().slice(0,10)}.xlsx`, exportRows, 'Extract');
+  // Export the full response for every filtered row (profile, services,
+  // analysis type, CC, SQD, remarks) using the same column set as the
+  // Measurement Data export.
+  const handleExport = async () => {
+    if (!filtered.length) {
+      messageApi.warning('There are no rows to export.');
+      return;
+    }
+    setExporting(true);
+    try {
+      const rows = buildResponseRows(filtered.map((r) => r.raw));
+      await exportToExcelFile(`survey-extract-${new Date().toISOString().slice(0,10)}.xlsx`, rows, 'Extract');
+      messageApi.success(`Exported ${rows.length} response(s).`);
+    } catch (e) {
+      console.error('Extract export failed:', e);
+      messageApi.error('Export failed. Please try again.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={16}>
+      {contextHolder}
       <Card>
         <Title level={4} style={{ marginBottom: 12 }}>Extract Data</Title>
         <Space wrap>
@@ -146,7 +175,9 @@ function ExtractData() {
             ]}
             style={{ width: 160 }}
           />
-          <Button type="primary" onClick={handleExport}>Export to Excel</Button>
+          <Button type="primary" onClick={handleExport} loading={exporting} disabled={!filtered.length}>
+            Export to Excel
+          </Button>
         </Space>
       </Card>
 

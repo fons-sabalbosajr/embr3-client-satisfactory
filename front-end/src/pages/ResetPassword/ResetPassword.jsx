@@ -1,107 +1,100 @@
-// src/pages/ResetPassword.jsx
-import React, { useState } from "react";
+// Reset password (link from the "Forgot password" email).
+import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Form, Input, Button, Card, Typography } from "antd";
-import "./resetpassword.css";
-import Swal from "sweetalert2";
-import { resetPassword } from "../../services/api"; // Adjust the import path as necessary}
-import { getCachedConfig } from "../../utils/config";
+import { Alert, Button, Form, Input } from "antd";
+import { KeyOutlined, LockOutlined, CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
+import AuthLayout from "../../components/AuthLayout/AuthLayout";
+import { describeError } from "../../components/StatusUI/describeError";
+import { resetPassword } from "../../services/api";
 
-const ResetPassword = () => {
+const ResetPassword = ({ colorScheme, toggleColorScheme }) => {
   const [params] = useSearchParams();
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [done, setDone] = useState(false);
 
   const token = params.get("token");
   const email = params.get("email");
 
-  const onFinish = async ({ password, confirmPassword }) => {
+  const onFinish = async ({ password }) => {
+    setLoading(true);
+    setError(null);
     try {
-      if (password !== confirmPassword) {
-        return Swal.fire({
-          icon: "warning",
-          title: "Passwords do not match",
-          text: "Please re-enter your new password and confirmation.",
-        });
-      }
-      setLoading(true);
-      const res = await resetPassword({ email, token, newPassword: password });
-
-      Swal.fire({
-        icon: "success",
-        title: "Password Reset",
-        text: res.data.message || "Your password has been reset successfully.",
-      });
-
-  // Redirect to admin (ignore any legacy base path like /ocsm)
-  navigate("/admin", { replace: true });
+      await resetPassword({ email, token, newPassword: password });
+      setDone(true);
     } catch (err) {
       console.error("Reset password failed:", err);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text:
-          err.response?.data?.message ||
-          "Something went wrong while resetting your password.",
-      });
+      setError(describeError(err).message || "Something went wrong while resetting your password.");
     } finally {
       setLoading(false);
     }
   };
 
+  const layout = { colorScheme, toggleColorScheme, icon: <KeyOutlined /> };
+
   if (!token || !email) {
-    return <Typography.Text type="danger">Invalid reset link.</Typography.Text>;
+    return (
+      <AuthLayout {...layout} title="This link isn't valid" subtitle="The reset link is incomplete or has been used.">
+        <div className="auth-status">
+          <span className="auth-status-icon is-bad"><CloseCircleFilled /></span>
+          <p>Request a new reset link from the sign-in page. Links expire after a short time for your security.</p>
+          <Button type="primary" block className="auth-submit" onClick={() => navigate("/admin")}>
+            Go to sign in
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (done) {
+    return (
+      <AuthLayout {...layout} title="Password updated" subtitle="You can now sign in with your new password.">
+        <div className="auth-status">
+          <span className="auth-status-icon is-ok"><CheckCircleFilled /></span>
+          <p>For your security, other signed-in sessions may need to sign in again.</p>
+          <Button type="primary" block className="auth-submit" onClick={() => navigate("/admin", { replace: true })}>
+            Go to sign in
+          </Button>
+        </div>
+      </AuthLayout>
+    );
   }
 
   return (
-    <div className="reset-container">
-      <Card
-        title="Reset Your Password"
-        style={{ maxWidth: 400, margin: "auto", marginTop: 100 }}
-      >
-        <Form layout="vertical" onFinish={onFinish}>
-          <Form.Item
-            label="New Password"
-            name="password"
-            rules={[
-              { required: true, message: "Please enter your new password" },
-              { min: 8, message: "Password must be at least 8 characters" },
-            ]}
-          >
-            <Input.Password />
-          </Form.Item>
-
-          <Form.Item
-            label="Confirm New Password"
-            name="confirmPassword"
-            dependencies={["password"]}
-            rules={[
-              { required: true, message: "Please confirm your new password" },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue("password") === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error("Passwords do not match"));
-                },
-              }),
-            ]}
-          >
-            <Input.Password />
-          </Form.Item>
-
-          <Typography.Paragraph type="secondary" style={{ marginTop: -8 }}>
-            Use at least 8 characters. We recommend a mix of letters, numbers, and symbols.
-          </Typography.Paragraph>
-
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={loading} block>
-              Reset Password
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
-    </div>
+    <AuthLayout {...layout} title="Choose a new password" subtitle={`For ${email}`}>
+      {error && <Alert type="error" showIcon message="Couldn't reset the password" description={error} closable onClose={() => setError(null)} />}
+      <Form layout="vertical" onFinish={onFinish} disabled={loading} requiredMark={false}>
+        <Form.Item
+          label="New password"
+          name="password"
+          rules={[{ required: true, message: "Enter a new password" }, { min: 8, message: "Use at least 8 characters" }]}
+        >
+          <Input.Password prefix={<LockOutlined />} placeholder="At least 8 characters" autoComplete="new-password" autoFocus />
+        </Form.Item>
+        <Form.Item
+          label="Confirm new password"
+          name="confirmPassword"
+          dependencies={["password"]}
+          rules={[
+            { required: true, message: "Re-enter the new password" },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                return !value || getFieldValue("password") === value
+                  ? Promise.resolve()
+                  : Promise.reject(new Error("The passwords don't match"));
+              },
+            }),
+          ]}
+        >
+          <Input.Password prefix={<LockOutlined />} placeholder="Type it again" autoComplete="new-password" />
+        </Form.Item>
+        <p className="auth-hint">Use at least 8 characters. A mix of letters, numbers and symbols is stronger.</p>
+        <Button type="primary" htmlType="submit" loading={loading} block className="auth-submit">
+          {loading ? "Saving…" : "Save new password"}
+        </Button>
+      </Form>
+    </AuthLayout>
   );
 };
 

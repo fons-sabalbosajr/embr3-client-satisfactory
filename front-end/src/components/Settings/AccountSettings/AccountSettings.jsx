@@ -1,161 +1,145 @@
-import React, { useState } from "react";
-import { Form, Input, Button, Alert, Typography, message } from "antd";
+// My Account — the signed-in user's profile and appearance. Every staff
+// member can open it; it only ever edits the user's own account.
+import React, { useEffect, useState } from "react";
+import { Form, Input, Button, Alert, Tag, message } from "antd";
+import { useLocation, useNavigate } from "react-router-dom";
 import { updateUser } from "../../../services/api";
-import {
-  setOpaqueItem,
-  setEncryptedItem,
-  removeOpaqueItem,
-} from "../../../utils/encryptedStorage";
-import { useNavigate } from "react-router-dom";
-
-const { Title } = Typography;
+import { setEncryptedItem, removeOpaqueItem } from "../../../utils/encryptedStorage";
+import { isDeveloperUser } from "../../../utils/session";
+import Appearance from "../Appearance/Appearance";
+import "./accountsettings.css";
 
 export default function AccountSettings({ currentUser }) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const [messageApi, contextHolder] = message.useMessage();
+  const isDeveloper = isDeveloperUser(currentUser);
+  const role = isDeveloper
+    ? "Developer"
+    : currentUser?.permissions?.canManageUsers || currentUser?.privilege === "admin"
+      ? "Administrator"
+      : "Staff";
+
+  // Opened from the header's "Appearance" item → scroll to that section.
+  useEffect(() => {
+    if (location.hash === "#appearance") {
+      setTimeout(() => document.getElementById("appearance")?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+    }
+  }, [location.hash]);
 
   const handleSubmit = async (values) => {
     setLoading(true);
     setError("");
-    setSuccess(false);
-
-    // Build payload (only include password when provided)
-    const payload = {
-      fullname: values.fullname,
-      username: values.username,
-    };
-    if (values.position !== undefined) payload.position = values.position;
+    // The server accepts name, username and password for your own account;
+    // position and permissions are managed by a developer.
+    const payload = { fullname: values.fullname.trim(), username: values.username.trim() };
     if (values.password) payload.password = values.password;
 
     try {
-      // Call API to update user
       const userId = currentUser?._id || currentUser?.id;
       await updateUser(userId, payload);
 
-      // If password was changed, for security force logout and redirect to login
       if (values.password) {
         try {
           removeOpaqueItem("token");
           removeOpaqueItem("user");
-        } catch (_) {}
-        messageApi.success(
-          "Password updated. For security you have been signed out — please sign in using your new password."
-        );
-        // Redirect to login/admin page
+        } catch {
+          /* ignore */
+        }
+        messageApi.success("Password updated. For security you have been signed out — please sign in with your new password.");
         setTimeout(() => {
           navigate("/admin");
           window.location.reload();
-        }, 700);
+        }, 900);
         return;
       }
 
-      // No password change: update stored user object (best-effort)
       try {
-        const updatedLocalUser = { ...(currentUser || {}), ...payload };
-        setEncryptedItem("user", JSON.stringify(updatedLocalUser));
-      } catch (_) {
-        // ignore storage update failures
+        setEncryptedItem("user", JSON.stringify({ ...(currentUser || {}), ...payload }));
+      } catch {
+        /* ignore */
       }
-
-      setSuccess(true);
-      messageApi.success("Account updated successfully.");
+      form.setFieldsValue({ password: "", confirm: "" });
+      messageApi.success("Profile updated.");
     } catch (e) {
       console.error("Failed to update account:", e);
-      setError("Failed to update account. Please try again.");
-      messageApi.error("Failed to update account. Please try again.");
+      const msg = e?.response?.data?.message || "Failed to update your account. Please try again.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "0 auto" }}>
+    <div className="acct">
       {contextHolder}
-      <Title level={3}>Account Settings</Title>
-      <Alert
-        message="Warning: Changing your username, password, or position will affect your login credentials and access. Make sure to remember your new information."
-        type="warning"
-        showIcon
-        style={{ marginBottom: 16 }}
-      />
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{
-          fullname: currentUser?.fullname || "",
-          username: currentUser?.username || "",
-          position: currentUser?.position || "",
-        }}
-        onFinish={handleSubmit}
-      >
-        <Form.Item
-          label="Full Name"
-          name="fullname"
-          rules={[{ required: true }]}
+      <section className="acct-card" aria-labelledby="profile-title">
+        <header className="acct-head">
+          <div>
+            <h3 id="profile-title" className="acct-title">Profile</h3>
+            <p className="acct-desc">Your name and sign-in details.</p>
+          </div>
+          <div className="acct-role">
+            <Tag color={isDeveloper ? "red" : "blue"}>{role}</Tag>
+            {currentUser?.email && <span className="acct-email">{currentUser.email}</span>}
+          </div>
+        </header>
+
+        <Form
+          form={form}
+          layout="vertical"
+          requiredMark={false}
+          initialValues={{ fullname: currentUser?.fullname || "", username: currentUser?.username || "" }}
+          onFinish={handleSubmit}
+          className="acct-form"
         >
-          <Input />
-        </Form.Item>
-        <Form.Item
-          label="Username"
-          name="username"
-          rules={[{ required: true }]}
-        >
-          <Input />
-        </Form.Item>
-        {currentUser?.position === "Developer" && (
-          <Form.Item
-            label="Position"
-            name="position"
-            rules={[{ required: true }]}
-          >
-            <Input />
-          </Form.Item>
-        )}
-        <Form.Item label="New Password" name="password" rules={[{ min: 6 }]}>
-          <Input.Password />
-        </Form.Item>
-        <Form.Item
-          label="Confirm Password"
-          name="confirm"
-          dependencies={["password"]}
-          rules={[
-            { required: false },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue("password") === value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(new Error("Passwords do not match!"));
-              },
-            }),
-          ]}
-        >
-          <Input.Password />
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            Update Account
-          </Button>
-        </Form.Item>
-        {success && (
-          <Form.Item style={{ marginTop: 8 }}>
-            <Alert
-              message="Account updated successfully!"
-              type="success"
-              showIcon
-            />
-          </Form.Item>
-        )}
-        {error && (
-          <Form.Item style={{ marginTop: 8 }}>
-            <Alert message={error} type="error" showIcon />
-          </Form.Item>
-        )}
-      </Form>
+          <div className="acct-grid">
+            <Form.Item label="Full name" name="fullname" rules={[{ required: true, whitespace: true, message: "Enter your full name" }]}>
+              <Input autoComplete="name" />
+            </Form.Item>
+            <Form.Item label="Username" name="username" rules={[{ required: true, whitespace: true, message: "Enter a username" }]}>
+              <Input autoComplete="username" />
+            </Form.Item>
+          </div>
+
+          <div className="acct-sub">Change password</div>
+          <p className="acct-note">Leave blank to keep your current password. Changing it signs you out.</p>
+          <div className="acct-grid">
+            <Form.Item label="New password" name="password" rules={[{ min: 8, message: "Use at least 8 characters" }]}>
+              <Input.Password autoComplete="new-password" />
+            </Form.Item>
+            <Form.Item
+              label="Confirm new password"
+              name="confirm"
+              dependencies={["password"]}
+              rules={[
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    const pw = getFieldValue("password");
+                    if (!pw && !value) return Promise.resolve();
+                    return pw === value ? Promise.resolve() : Promise.reject(new Error("The passwords don't match"));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password autoComplete="new-password" />
+            </Form.Item>
+          </div>
+
+          {error && <Alert type="error" showIcon message={error} className="acct-alert" />}
+
+          <div className="acct-actions">
+            <Button type="primary" htmlType="submit" loading={loading}>
+              Save profile
+            </Button>
+          </div>
+        </Form>
+      </section>
+
+      <Appearance />
     </div>
   );
 }

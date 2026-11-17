@@ -1,19 +1,83 @@
-/* Corporate Admin Menu Styles */
+/* Admin sidebar menu. Colours come from the Menu tokens and --adm-sider-*
+   variables set by AdminPage (adminTheme.js), so custom themes apply. */
+
+.custom-admin-menu.ant-menu {
+  background: transparent !important;
+  border-inline-end: 0 !important;
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+}
+
 .custom-admin-menu .ant-menu-item,
 .custom-admin-menu .ant-menu-submenu-title {
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  font-family: "Inter", "Plus Jakarta Sans", "Poppins", sans-serif;
-  letter-spacing: 0.2px;
-  /* padding: 0px 12px !important; */
-  /* color: rgb(255, 255, 255) !important; */
+  position: relative;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
 }
 
+.custom-admin-menu .ant-menu-item .ant-menu-item-icon,
+.custom-admin-menu .ant-menu-submenu-title .ant-menu-item-icon {
+  font-size: 16px;
+}
+
+/* Selected page: bold, with the ARTA-yellow indicator on the left edge. */
 .custom-admin-menu .ant-menu-item-selected {
-  font-weight: 600 !important;
+  font-weight: 700;
 }
 
-.custom-admin-menu .ant-menu-submenu-title .ant-menu-item-icon,
-.custom-admin-menu .ant-menu-item .ant-menu-item-icon {
-  font-size: 15px !important;
+.custom-admin-menu .ant-menu-item-selected::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--adm-sider-indicator, #fcd116);
+}
+
+/* The parent of the selected sub-page reads as active too. */
+.custom-admin-menu .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  color: var(--adm-sider-strong, #fff);
+  font-weight: 600;
+}
+
+.custom-admin-menu .ant-menu-sub.ant-menu-inline {
+  background: transparent !important;
+}
+
+/* Group titles */
+.custom-admin-menu .ant-menu-item-group-title {
+  padding: 18px 22px 6px !important;
+}
+
+.admin-menu-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--adm-sider-muted);
+}
+
+.admin-menu-group__badge {
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--adm-sider-indicator, #fcd116) 55%, transparent);
+  color: var(--adm-sider-indicator, #fcd116);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+}
+
+.custom-admin-menu .ant-menu-item-divider {
+  margin: 10px 18px !important;
+  border-color: var(--adm-sider-border) !important;
+}
+
+/* Collapsed rail: centred icons, indicator still shown. */
+.custom-admin-menu.ant-menu-inline-collapsed > .ant-menu-item,
+.custom-admin-menu.ant-menu-inline-collapsed > .ant-menu-submenu > .ant-menu-submenu-title {
+  padding-inline: calc(50% - 9px) !important;
 }

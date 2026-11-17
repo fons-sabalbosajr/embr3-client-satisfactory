@@ -26,9 +26,7 @@ import {
   DeploymentUnitOutlined,
   DownOutlined,
 } from "@ant-design/icons";
-import { getOpaqueItem } from "../../../utils/encryptedStorage";
 import * as api from "../../../services/api";
-import axios from "axios";
 import "./backup.css";
 
 const { Title, Text } = Typography;
@@ -48,11 +46,6 @@ export default function Backup() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
   const [exportingKey, setExportingKey] = useState(null);
-
-  const authHeader = () => {
-    const token = getOpaqueItem("token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
@@ -80,12 +73,10 @@ export default function Backup() {
     if (!collection) return;
     setExportingKey(`${collection}:${format}`);
     try {
-      const res = await axios.get(
-        `/api/admin/db/export?collection=${encodeURIComponent(
-          collection
-        )}&format=${encodeURIComponent(format)}`,
-        { headers: { ...authHeader() }, responseType: "blob" }
-      );
+      // Shared API client: adds the /ocsm prefix and the auth token. The old
+      // hard-coded "/api/..." URL skipped the prefix and, behind the shared
+      // nginx in production, reached the HRPMS backend instead.
+      const res = await api.exportCollection(collection, format);
       const disposition = res.headers["content-disposition"] || "";
       let filename = `${collection}.${format}`;
       const m = disposition.match(/filename="?([^";]+)"?/);

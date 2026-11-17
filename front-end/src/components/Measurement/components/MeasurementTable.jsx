@@ -21,7 +21,7 @@ import { deleteFeedback, updateFeedback, getPreferences, updatePreferences } fro
 import "./measurementtable.css";
 import socket from "../../../utils/socket";
 
-function MeasurementTable({ data, onEdit, onDataRefresh }) {
+function MeasurementTable({ data, loading = false, onEdit, onDataRefresh }) {
   // Infer survey type for records that don't have surveyType stored
   const inferSurveyType = (record) => {
     if (record.surveyType) return record.surveyType;
@@ -106,11 +106,13 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
       setActiveClients(clients);
     });
 
-    socket.on("feedbackAdded", (newEntry) => {
-      setTableData((prev) => [{ ...newEntry, _new: true }, ...prev]);
+    // The parent page owns the data and inserts new responses (marked _new);
+    // here we only show the alert.
+    const onFeedbackAdded = () => {
       setNewFeedbackAlert(true);
       setTimeout(() => setNewFeedbackAlert(false), 3000);
-    });
+    };
+    socket.on("feedbackAdded", onFeedbackAdded);
 
     socket.on("feedbackUpdated", (updatedFeedback) => {
       setTableData((prevData) =>
@@ -127,7 +129,7 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
 
     return () => {
       socket.off("active-feedbacks");
-      socket.off("feedbackAdded");
+      socket.off("feedbackAdded", onFeedbackAdded);
       socket.off("feedbackUpdated");
       clearInterval(pollInterval);
     };
@@ -242,8 +244,28 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
         };
 
         if (!services.length) return <span style={{ color: "#bbb" }}>—</span>;
+        const analysisType = record.answersLabeled?.["Type of Result of Analyses"];
+        const controlNumber = record.answersLabeled?.["Analysis Control Number"];
         return (
           <div className="service-tags-container">
+            {analysisType && (
+              <div
+                className="measurement-analysis-type"
+                title={`Type of Result of Analyses: ${analysisType}`}
+                style={{ order: 99, width: "100%", fontSize: 12, color: "#888" }}
+              >
+                Result type: {analysisType}
+              </div>
+            )}
+            {controlNumber && (
+              <div
+                className="measurement-analysis-type"
+                title={`Analysis Control Number: ${controlNumber}`}
+                style={{ order: 100, width: "100%", fontSize: 12, color: "#888" }}
+              >
+                Control no.: {controlNumber}
+              </div>
+            )}
             {services.map((service) => (
               <Tag
                 key={service}
@@ -374,6 +396,8 @@ function MeasurementTable({ data, onEdit, onDataRefresh }) {
       <Table
         rowKey="_id"
         dataSource={tableData}
+        loading={loading ? { tip: "Loading responses…" } : false}
+        locale={loading ? { emptyText: " " } : undefined}
         columns={columns}
         rowClassName={(record) => (record._new ? "new-row-highlight" : "")}
         size="small"

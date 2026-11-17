@@ -1,0 +1,353 @@
+/* Developer Settings (tabs: Accounts, Maintenance, System & Config).
+   Uses the admin shell's --adm-* variables, so it follows light/dark and
+   each user's Appearance colours. */
+
+.dev-settings {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.dev-head {
+  margin-bottom: 4px;
+}
+
+.dev-title {
+  margin: 0;
+  color: var(--adm-text);
+  font-family: "Sora", "Plus Jakarta Sans", system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.dev-desc {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  color: var(--adm-muted);
+  font-size: 13px;
+}
+
+.dev-tabs > .ant-tabs-nav {
+  margin-bottom: 18px;
+}
+
+.dev-tabs .ant-tabs-tab .anticon {
+  margin-right: 6px;
+}
+
+.dev-tab-tag.ant-tag {
+  margin: 0 0 0 4px;
+  font-size: 10.5px;
+  line-height: 16px;
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+
+.dev-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dev-card {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px;
+  border: 1px solid var(--adm-border-soft);
+  border-radius: 16px;
+  background: var(--adm-surface);
+}
+
+.dev-card h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  color: var(--adm-text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.dev-card h4 .anticon {
+  color: var(--adm-primary);
+}
+
+.dev-card__desc,
+.dev-card__hint {
+  margin: 0 0 12px;
+  color: var(--adm-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.dev-card__hint {
+  margin: 8px 0 0;
+}
+
+.dev-card__hint code,
+.dev-confirm code {
+  padding: 0 5px;
+  border-radius: 5px;
+  background: var(--adm-primary-soft);
+  font-size: 11.5px;
+}
+
+.dev-card__sub {
+  margin-top: 18px !important;
+}
+
+.dev-card__foot {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.dev-err {
+  color: #cf1322;
+}
+
+.dev-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.dev-field label {
+  color: var(--adm-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dev-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--adm-border-soft);
+  font-size: 13px;
+}
+
+.dev-kv span {
+  color: var(--adm-muted);
+}
+
+.dev-kv strong {
+  color: var(--adm-text);
+  font-weight: 600;
+  text-align: right;
+}
+
+.dev-kv .ant-tag {
+  margin: 0;
+}
+
+/* ── Maintenance ───────────────────────────────────────────────────────── */
+
+.dev-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid;
+}
+
+.dev-status.is-live {
+  border-color: rgba(82, 196, 26, 0.4);
+  background: rgba(82, 196, 26, 0.08);
+}
+
+.dev-status.is-maint {
+  border-color: rgba(250, 173, 20, 0.55);
+  background: rgba(250, 173, 20, 0.12);
+}
+
+.dev-status__icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  font-size: 22px;
+}
+
+.is-live .dev-status__icon {
+  background: rgba(82, 196, 26, 0.16);
+  color: #389e0d;
+}
+
+.is-maint .dev-status__icon {
+  background: rgba(250, 173, 20, 0.2);
+  color: #d48806;
+}
+
+.dev-status__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dev-status__text strong {
+  color: var(--adm-text);
+  font-size: 16px;
+}
+
+.dev-status__text span {
+  color: var(--adm-muted);
+  font-size: 13px;
+}
+
+.dev-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 18px;
+  border: 1px dashed var(--adm-border);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.dev-preview__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(250, 173, 20, 0.16);
+  color: #d48806;
+  font-size: 18px;
+}
+
+.dev-preview strong {
+  color: var(--adm-text);
+}
+
+.dev-preview p {
+  margin: 0;
+  max-width: 340px;
+  color: var(--adm-muted);
+  font-size: 12.5px;
+}
+
+.dev-preview__btns {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.dev-preview__btns i {
+  padding: 2px 10px;
+  border: 1px solid var(--adm-border);
+  border-radius: 999px;
+  color: var(--adm-muted);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.dev-devlist {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dev-devlist li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  color: var(--adm-text);
+  font-size: 13px;
+}
+
+.dev-devlist .anticon {
+  color: #ce1126;
+}
+
+.dev-devlist .ant-tag {
+  margin: 0;
+}
+
+.dev-confirm ul {
+  margin: 6px 0 0;
+  padding-inline-start: 18px;
+}
+
+.dev-confirm p {
+  margin: 0;
+}
+
+/* ── System & Config ───────────────────────────────────────────────────── */
+
+.dev-quota {
+  margin-top: 12px;
+}
+
+.dev-quota__head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--adm-muted);
+}
+
+.dev-quota__head strong {
+  color: var(--adm-text);
+}
+
+.dev-tools {
+  margin-top: 14px;
+}
+
+.dev-tool {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--adm-border-soft);
+}
+
+.dev-tool:first-of-type {
+  margin-top: 8px;
+}
+
+.dev-tool div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dev-tool strong {
+  color: var(--adm-text);
+  font-size: 13.5px;
+}
+
+.dev-tool span {
+  color: var(--adm-muted);
+  font-size: 12.5px;
+}
+
+.dev-tool.is-danger strong {
+  color: #cf1322;
+}
+
+@media (max-width: 900px) {
+  .dev-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dev-status {
+    flex-wrap: wrap;
+  }
+  .dev-tool {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

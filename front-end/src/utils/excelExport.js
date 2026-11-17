@@ -46,6 +46,12 @@ function addSheet(workbook, sheetName, rows) {
     fgColor: { argb: "FFE6F4FF" },
   };
   worksheet.views = [{ state: "frozen", ySplit: 1 }];
+  if (keys.length) {
+    worksheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: keys.length },
+    };
+  }
 
   // Add data rows
   rows.forEach((row) => {
@@ -101,6 +107,7 @@ export async function exportToExcelFile(filename, rows, sheetName = "Sheet1") {
   const workbook = new ExcelJS.Workbook();
   addSheet(workbook, sheetName, rows);
   await download(workbook, filename);
+  return true;
 }
 
 /**
@@ -118,4 +125,5 @@ export async function exportWorkbook(filename, sheets) {
   const workbook = new ExcelJS.Workbook();
   usable.forEach((s) => addSheet(workbook, s.name || "Sheet", s.rows));
   await download(workbook, filename);
+  return true;
 }

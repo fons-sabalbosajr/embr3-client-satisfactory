@@ -29,9 +29,13 @@
 }
 
 .rating-box {
+  appearance: none;
+  font: inherit;
+  color: inherit;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   cursor: pointer;
   padding: 10px 10px;
   border-radius: 14px;
@@ -52,8 +56,14 @@
 }
 
 .rating-box.selected {
-  border-color: rgba(14, 165, 233, 0.55);
-  background-color: rgba(14, 165, 233, 0.1);
+  border-color: rgba(0, 56, 168, 0.85);
+  background-color: rgba(0, 56, 168, 0.12);
+  box-shadow: 0 0 0 3px rgba(0, 56, 168, 0.18);
+}
+
+.rating-box:focus-visible {
+  outline: 3px solid rgba(0, 56, 168, 0.55);
+  outline-offset: 2px;
 }
 
 body[data-mantine-color-scheme="dark"] .rating-box {
@@ -68,8 +78,8 @@ body[data-mantine-color-scheme="dark"] .rating-box:hover {
 }
 
 body[data-mantine-color-scheme="dark"] .rating-box.selected {
-  border-color: rgba(56, 189, 248, 0.6);
-  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(125, 162, 255, 0.6);
+  background: rgba(125, 162, 255, 0.18);
 }
 
 .rating-icon {
@@ -115,11 +125,11 @@ body[data-mantine-color-scheme="dark"] .sqd-textarea::placeholder {
 
 .sqd-textarea {
   width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #d9d9d9;
   resize: vertical;
-  font-size: 16px;
+}
+
+.sqd-textarea-item .ant-input-data-count {
+  font-size: 12px;
 }
 
 @media screen and (min-width: 768px) and (max-width: 1080px) {
@@ -184,10 +194,6 @@ body[data-mantine-color-scheme="dark"] .sqd-textarea::placeholder {
     margin-top: 6px;
   }
 
-  .sqd-textarea {
-    font-size: 14px;
-    padding: 8px;
-  }
 }
 
 /* Extra-small phones */
@@ -228,10 +234,6 @@ body[data-mantine-color-scheme="dark"] .sqd-textarea::placeholder {
   .rating-label {
     font-size: 11px;
   }
-
-  .sqd-textarea {
-    font-size: 15px;
-  }
 }
 
 /* Large desktops (1440px+) */
@@ -263,26 +265,22 @@ body[data-mantine-color-scheme="dark"] .sqd-textarea::placeholder {
     font-size: 13px;
   }
 
-  .sqd-textarea {
-    font-size: 17px;
-    padding: 14px;
+}
+
+/* NOTE: these phone-only sizes used to sit outside any media query, which
+   forced 32px icons, 8px labels and 13px text on every screen size. */
+@media screen and (max-width: 440px) {
+  .rating-icon {
+    width: 34px;
+    height: 34px;
   }
-}
 
-.rating-icon {
-  width: 32px;
-  height: 32px;
-}
+  .rating-label {
+    font-size: 10px;
+    margin-top: 3px;
+  }
 
-.rating-label {
-  font-size: 8px;
-  margin-top: 3px;
-}
-
-.sqd-question-text {
-  font-size: 13px;
-}
-
-.sqd-textarea {
-  font-size: 13px;
+  .sqd-question-text {
+    font-size: 14px;
+  }
 }

@@ -1,88 +1,61 @@
 // components/AdminMenu/AdminMenu.jsx
-import React, { useState, useEffect, useMemo } from "react"; // Add useState and useEffect
+// The sidebar menu. Groups come from menuItems.jsx; the Developer group is
+// only built for Developer accounts. Collapsed, group titles become dividers
+// so the icon rail stays tidy.
+import React, { useState, useEffect, useMemo } from "react";
 import { Menu } from "antd";
-import rawMenuItems from "./menuItems";
-import { getDecryptedItem } from "../../utils/encryptedStorage";
+import { MENU_GROUPS } from "./menuItems";
+import { getSessionUser, isDeveloperUser } from "../../utils/session";
 import "./adminMenu.css";
 
-function AdminMenu({ selectedKey, onMenuClick, menuTheme = "light" }) {
-  const user = (() => {
-    try {
-      return JSON.parse(getDecryptedItem("user") || "{}");
-    } catch {
-      return {};
+const parentOf = (key) => {
+  for (const g of MENU_GROUPS) {
+    for (const it of g.items) {
+      if (it.children?.some((c) => c.key === key)) return it.key;
     }
-  })();
-  const perms = user?.permissions || {};
+  }
+  return null;
+};
 
-  const menuItems = useMemo(() => {
-    // Filter menu items based on privilege/permissions
-    const canManageUsers = !!perms.canManageUsers;
-    const isDeveloper = (user?.position || "").toLowerCase() === "developer";
-    return rawMenuItems
-      .map((item) => {
-        if (item.key === "settings") {
-          const children = (item.children || []).filter((ch) => {
-            if (ch.key === "developer-settings") return isDeveloper;
-            if (ch.key === "account-settings") return true; // self settings allowed
-            if (ch.key === "backup-data") return canManageUsers || isDeveloper;
-            if (ch.key === "vera-settings") return canManageUsers || isDeveloper;
-            if (ch.key === "data-configuration") return !!perms.canEdit || canManageUsers || isDeveloper;
-            return true;
-          });
-          return { ...item, children };
-        }
-        if (item.key === "announcements") {
-          // Show to all, but creation/edit is enforced server-side; could hide if no permission
-          return item;
-        }
-        return item;
-      })
-      .filter((it) => {
-        // App Logs is restricted to admins / developers
-        if (it.key === "app-logs") return canManageUsers || isDeveloper;
-        return true;
-      })
-      .filter((it) => !(it.key === "settings" && (!it.children || it.children.length === 0)));
-  }, [perms, user]);
-  const defaultOpenKeys = useMemo(() => {
-    if (["generate-report", "extract-data"].includes(selectedKey))
-      return ["reports"];
-    if (
-      ["data-configuration", "account-settings", "developer-settings", "backup-data", "vera-settings"].includes(
-        selectedKey
-      )
-    )
-      return ["settings"];
-    return [];
-  }, [selectedKey]);
+function AdminMenu({ selectedKey, onMenuClick, collapsed = false, isDeveloper: isDeveloperProp }) {
+  const isDeveloper = isDeveloperProp ?? isDeveloperUser(getSessionUser());
 
-  // Use local state to manage currently open keys based on user interaction
-  const [currentOpenKeys, setCurrentOpenKeys] = useState(defaultOpenKeys);
+  const items = useMemo(() => {
+    const groups = MENU_GROUPS.filter((g) => !g.developerOnly || isDeveloper);
+    if (collapsed) {
+      return groups.flatMap((g, i) => (i === 0 ? g.items : [{ type: "divider", key: `div-${g.key}` }, ...g.items]));
+    }
+    return groups.map((g) => ({
+      type: "group",
+      key: g.key,
+      label: g.developerOnly ? (
+        <span className="admin-menu-group admin-menu-group--dev">
+          {g.label}
+          <span className="admin-menu-group__badge">Restricted</span>
+        </span>
+      ) : (
+        <span className="admin-menu-group">{g.label}</span>
+      ),
+      children: g.items,
+    }));
+  }, [collapsed, isDeveloper]);
+
+  const parent = parentOf(selectedKey);
+  const [openKeys, setOpenKeys] = useState(parent ? [parent] : []);
   useEffect(() => {
-    setCurrentOpenKeys(defaultOpenKeys);
-  }, [selectedKey, defaultOpenKeys]);
-
-  // This handler will be called when a submenu's open state changes (user clicks it)
-  const handleOpenChange = (keys) => {
-    const latestOpenKey = keys.find((key) => !currentOpenKeys.includes(key)); // Find the key that was just opened
-    if (latestOpenKey) {
-      setCurrentOpenKeys([latestOpenKey]);
-    } else {
-      // If an existing key was closed
-      setCurrentOpenKeys(keys);
-    }
-  };
+    if (parent) setOpenKeys((keys) => (keys.includes(parent) ? keys : [parent]));
+  }, [parent]);
 
   return (
     <Menu
       mode="inline"
-      theme={menuTheme}
+      theme="light"
+      inlineCollapsed={collapsed}
       selectedKeys={[selectedKey]}
-      openKeys={currentOpenKeys} // Control open state using local state
-  items={menuItems}
+      openKeys={collapsed ? undefined : openKeys}
+      onOpenChange={(keys) => setOpenKeys(keys.slice(-1))}
+      items={items}
       onClick={onMenuClick}
-      onOpenChange={handleOpenChange} // Handle user opening/closing submenus
       className="custom-admin-menu"
     />
   );

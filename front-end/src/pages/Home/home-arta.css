@@ -1,0 +1,259 @@
+/* home-arta.css — ARTA theme + layout pass for the /client page.
+ * Imported after home.css so it wins.
+ * Palette: blue #0038a8 · red #ce1126 · yellow #fcd116
+ */
+
+.client-home-container {
+  --brand-primary: #0038a8;
+  --brand-primary-2: #1d5be0;
+  /* The shared header is in the normal flow now, so no top offset is needed. */
+  --client-header-space: 0px;
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+body[data-mantine-color-scheme="light"] .client-home-container {
+  background: linear-gradient(-45deg, #dbe6ff, #fff7d1, #ffe4e8, #e8efff);
+  background-size: 400% 400%;
+}
+
+body[data-mantine-color-scheme="dark"] .client-home-container {
+  background: linear-gradient(-45deg, #061a4d, #0a2a78, #2b0a14, #0b1630);
+  background-size: 400% 400%;
+}
+
+.client-home-container .hero-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: center;
+  padding-top: clamp(16px, 3vh, 36px);
+  padding-bottom: clamp(16px, 3vh, 36px);
+}
+
+.client-home-container .hero-card {
+  border-top: 4px solid #0038a8;
+  padding: clamp(18px, 2.4vw, 32px);
+  background:
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    linear-gradient(135deg, rgba(0, 56, 168, 0.5), rgba(206, 17, 38, 0.35), rgba(252, 209, 22, 0.55)) border-box;
+}
+
+/* Kicker now sits above the slogan */
+.client-home-container .hero-kicker {
+  margin: 0 auto 12px;
+  background: rgba(0, 56, 168, 0.1);
+  color: #0038a8;
+}
+
+body[data-mantine-color-scheme="dark"] .client-home-container .hero-kicker {
+  background: rgba(125, 162, 255, 0.2);
+  color: #cfdcff;
+}
+
+.client-home-container .hero-slogan-row {
+  gap: clamp(14px, 3vw, 32px);
+  margin-bottom: clamp(10px, 2vh, 20px);
+}
+
+.client-home-container .hero-big-slogan {
+  font-size: clamp(2.1rem, 6vw, 4.6rem);
+  background: linear-gradient(90deg, #0038a8, #1d5be0, #ce1126, #e0a800, #0038a8);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body[data-mantine-color-scheme="dark"] .client-home-container .hero-big-slogan {
+  background: linear-gradient(90deg, #7da2ff, #a9c1ff, #ff8493, #fcd116, #7da2ff);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.client-home-container .hero-pill svg {
+  color: #0038a8;
+}
+
+body[data-mantine-color-scheme="dark"] .client-home-container .hero-pill svg {
+  color: #a9c1ff;
+}
+
+.client-home-container .hero-button.ant-btn-primary {
+  background: linear-gradient(135deg, #0038a8 0%, #1d5be0 100%);
+}
+
+.client-home-container .hero-qr-section {
+  border-color: rgba(0, 56, 168, 0.22);
+  border-top: 4px solid #fcd116;
+  background: #fff;
+}
+
+body[data-mantine-color-scheme="dark"] .client-home-container .hero-qr-section {
+  background: rgba(16, 29, 61, 0.9);
+}
+
+.client-home-container .hero-subtitle {
+  text-wrap: pretty;
+}
+
+@media screen and (min-width: 900px) {
+  .client-home-container .hero-kicker {
+    margin-left: 0;
+  }
+
+  .client-home-container .hero-big-slogan {
+    text-align: left;
+  }
+}
+
+/* Tablet: keep the artwork from pushing the call to action off-screen */
+@media screen and (max-width: 899px) {
+  .client-home-container .hero-card-visual {
+    min-height: 0;
+  }
+
+  .client-home-container .hero-image-in-card {
+    width: min(220px, 60%);
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .client-home-container .hero-cta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .client-home-container .hero-cta-row .hero-button,
+  .client-home-container .hero-cta-row .language-select-wrapper,
+  .client-home-container .hero-cta-row .hero-language-select {
+    width: 100%;
+  }
+
+  .client-home-container .hero-image-in-card {
+    width: min(170px, 55%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .client-home-container,
+  .client-home-container .hero-big-slogan,
+  .client-home-container .hero-button.ant-btn-primary {
+    animation: none !important;
+  }
+}
+
+/* ── Spacing for the "Help us improve" card ───────────────────────────────
+ * Slightly loose: enough air between headline, copy, pills and CTA for the
+ * card to read calmly, while the CTA still sits above the fold on laptops. */
+.client-home-container .hero-section {
+  padding-top: clamp(18px, 3.5vh, 40px);
+  padding-bottom: clamp(18px, 3.5vh, 40px);
+}
+
+.client-home-container .hero-card {
+  padding: clamp(20px, 2.6vw, 34px) clamp(18px, 2.8vw, 36px) 18px;
+}
+
+.client-home-container .hero-kicker {
+  margin-bottom: 12px;
+  padding: 5px 14px;
+}
+
+.client-home-container .hero-slogan-row {
+  gap: clamp(16px, 2.6vw, 32px);
+  margin-bottom: 12px;
+}
+
+.client-home-container .hero-big-slogan {
+  font-size: clamp(2rem, 5.2vw, 4rem);
+  line-height: 1.05;
+}
+
+.client-home-container .hero-qr-section {
+  gap: 6px;
+  padding: 12px 14px 10px;
+}
+
+.client-home-container .hero-card-grid {
+  gap: 0 24px;
+}
+
+.client-home-container .hero-card .hero-slogan.ant-typography {
+  margin-bottom: 8px;
+}
+
+.client-home-container .hero-subtitle {
+  margin-bottom: 0;
+  line-height: 1.65;
+}
+
+.client-home-container .hero-pills {
+  margin: 18px 0 20px;
+  gap: 10px;
+}
+
+.client-home-container .hero-pill {
+  padding: 7px 13px;
+}
+
+.client-home-container .hero-social-proof {
+  margin-top: 14px;
+}
+
+.client-home-container .hero-card-visual {
+  min-height: 0;
+}
+
+.client-home-container .hero-image-in-card {
+  width: min(260px, 88%);
+}
+
+.client-home-container .client-cover-footer {
+  margin-top: 18px;
+  padding-top: 12px;
+}
+
+@media screen and (max-width: 899px) {
+  .client-home-container .hero-image-in-card { width: min(170px, 50%); }
+}
+
+@media screen and (max-width: 600px) {
+  .client-home-container .hero-card { padding: 18px 16px 14px; }
+  .client-home-container .hero-pills { margin: 14px 0 16px; gap: 8px; }
+  .client-home-container .hero-image-in-card { width: min(140px, 45%); }
+}
+
+/* Desktop: QR code above the illustration in the right column, so the tall
+   QR no longer opens a gap under the headline. */
+@media screen and (min-width: 900px) {
+  .client-home-container .hero-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+    grid-template-areas:
+      "kicker  qr"
+      "slogan  qr"
+      "content qr"
+      "content visual"
+      "footer  footer";
+    grid-template-rows: auto auto auto 1fr auto;
+    column-gap: clamp(28px, 3.6vw, 48px);
+    align-items: start;
+  }
+  .client-home-container .hero-slogan-row,
+  .client-home-container .hero-card-grid { display: contents; }
+  .client-home-container .hero-kicker { grid-area: kicker; }
+  .client-home-container .hero-big-slogan { grid-area: slogan; margin-bottom: 16px; }
+  .client-home-container .hero-qr-section { grid-area: qr; justify-self: center; }
+  .client-home-container .hero-card-content { grid-area: content; }
+  .client-home-container .hero-card-visual { grid-area: visual; align-self: end; margin-top: 16px; }
+  .client-home-container .hero-image-in-card { width: min(210px, 100%); }
+  .client-home-container .client-cover-footer { grid-area: footer; }
+}
+
+/* Tablet and phone: card sits near the top instead of floating mid-page */
+@media screen and (max-width: 899px) {
+  .client-home-container .hero-section { align-items: flex-start; }
+}

@@ -7,8 +7,9 @@ import {
   updateQuestion,
   deleteQuestion,
 } from '../controllers/questionController.js'; // Adjust path if needed
-import { requirePermission } from '../middleware/permission.js';
+import { requireDeveloper } from '../middleware/permission.js';
 import authMiddleware from '../middleware/auth.js';
+import { parseServiceList } from '../utils/parseServiceList.js';
 
 // Export a function that returns the router, accepting the io instance
 export default (io) => {
@@ -16,20 +17,16 @@ export default (io) => {
 
   // Pass io to controller functions where emissions are needed
   // Protect write operations with auth + permission checks
-  router.post('/', authMiddleware, requirePermission('canCreate'), (req, res) => createQuestion(req, res, io));
+  router.post('/', authMiddleware, requireDeveloper, (req, res) => createQuestion(req, res, io));
   router.get('/', getQuestions); // No need to emit for GET
   router.get('/:id', getQuestionById); // No need to emit for GET
-  router.put('/:id', authMiddleware, requirePermission('canEdit'), (req, res) => updateQuestion(req, res, io));
-  router.delete('/:id', authMiddleware, requirePermission('canDelete'), (req, res) => deleteQuestion(req, res, io));
+  router.put('/:id', authMiddleware, requireDeveloper, (req, res) => updateQuestion(req, res, io));
+  router.delete('/:id', authMiddleware, requireDeveloper, (req, res) => deleteQuestion(req, res, io));
 
   // Admin utility: sync Q5 Service Availed options from .env EXTERNAL/INTERNAL lists
-  router.post('/sync-services-from-env', authMiddleware, requirePermission('canManageUsers'), async (req, res) => {
+  router.post('/sync-services-from-env', authMiddleware, requireDeveloper, async (req, res) => {
     try {
-      const parseList = (s) =>
-        (s || '')
-          .split(',')
-          .map((x) => x.trim())
-          .filter(Boolean);
+      const parseList = parseServiceList;
       const external = parseList(process.env.EXTERNAL_SERVICES);
       const internal = parseList(process.env.INTERNAL_SERVICES);
       const combined = Array.from(new Set([...external, ...internal]));
