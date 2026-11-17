@@ -432,21 +432,34 @@ curl -I http://yourdomain.com/ocsm/
 
 ## 11. Updating / Redeploying
 
+For the day-to-day release routine, see [VPS_QUICK_DEPLOY.md](VPS_QUICK_DEPLOY.md). It covers:
+- versions and tags
+- editing `.env`
+- what to do when a deploy fails
+
 ### Using the redeploy script
 
+Run it as root, on one line:
+
 ```bash
-# Upload new files to /opt/embr3-csm, then:
-cd /opt/embr3-csm
-sudo -u embapp ./deploy/redeploy.sh
+sudo -iu embapp bash -c 'cd /opt/embr3-csm && ./deploy/redeploy.sh'
 ```
+
+The script does the following:
+1. Fetches `main` and the release tags, then fast-forwards.
+2. Runs `npm ci` for the server and the front end.
+3. Builds the front end and restarts `embr3-server`.
+4. Waits for `/api/health`.
+5. Prints the version it deployed, e.g. `now running v1.0.0`.
 
 ### Manual update
 
 ```bash
 cd /opt/embr3-csm
 
-# Pull latest code (if using git)
-sudo -u embapp git pull --ff-only
+# Pull latest code and tags
+sudo -u embapp git fetch --tags origin
+sudo -u embapp git pull --ff-only origin main
 
 # Rebuild backend
 cd server && sudo -u embapp npm ci --omit=dev
@@ -457,6 +470,12 @@ cd ../front-end && sudo -u embapp npm ci && sudo -u embapp npm run build
 # Restart backend
 sudo systemctl restart embr3-server
 ```
+
+### Rules that keep redeploys working
+- **Run git and npm as `embapp`, never as root.** Root-owned files in `.git`, `node_modules` or `dist` block the next pull. To fix it: `chown -R embapp:embapp /opt/embr3-csm && chmod 600 /opt/embr3-csm/server/.env`.
+- **Don't edit tracked files on the VPS, and never run `npm audit fix` there.** Both leave local changes that stop `git pull`. Make changes on your PC and release them.
+- **Set `core.fileMode false` once.** Run `sudo -iu embapp git -C /opt/embr3-csm config core.fileMode false` so permission-only differences don't count as changes.
+- **Deploy the server and front end together.** The front end calls server routes, and the two must be from the same release.
 
 ### Zero-downtime considerations
 The systemd service has `Restart=always` and `RestartSec=5`. During restart there will be ~2-3 seconds of downtime for API calls. Frontend static files remain available throughout.

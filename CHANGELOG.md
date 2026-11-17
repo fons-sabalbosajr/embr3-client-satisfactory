@@ -37,3 +37,7 @@ First versioned release.
 ### Deploy notes
 - Deploy the server and front end together.
 - New optional server variables: `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL` (see `deploy/.env.production.example`).
+- Deployed to production on 2026-11-17. During the deploy:
+  - Earlier VPS-local edits had to be stashed: file-mode changes, plus an `npm audit fix` downgrade of `exceljs`.
+  - Root-owned files had to be handed back to `embapp`.
+  - The fixes are now in [docs/VPS_QUICK_DEPLOY.md](docs/VPS_QUICK_DEPLOY.md#when-a-deploy-fails).

@@ -79,27 +79,69 @@ git checkout -f main
 
 ## Deploy Steps (Run on VPS Terminal)
 
-Open the **Hostinger VPS Terminal** (hPanel → VPS → Terminal) or SSH in.
+Open the **Hostinger VPS Terminal** (hPanel → VPS → Terminal) or SSH in. The
+terminal logs you in as `root`.
 
-### Quick Deploy (one-liner)
+> **Ground rules (each one has broken a deploy before):**
+> - **Run git and npm as `embapp`, never as root.** Root-owned files in
+>   `.git`, `node_modules` or `dist` make the next pull fail with
+>   `insufficient permission for adding an object to repository database`.
+> - **Keep `sudo -iu embapp bash -c '…'` commands on one line.** A command
+>   split with `\` line breaks fails with `cd: too many arguments`, because
+>   `sudo -i` re-escapes the text.
+> - **Never run `npm audit fix` / `npm audit fix --force` on the VPS.** It
+>   rewrites `package.json` (it once downgraded `exceljs` 4 → 3, which breaks
+>   the exports) and blocks the next pull. Fix audit warnings on your PC, test,
+>   and release.
+> - **Don't edit tracked files on the VPS.** Change them locally and push.
+>   Only `server/.env` and `front-end/.env.production` live on the VPS.
+
+### Quick Deploy (one-liner, run as root)
 
 ```bash
 sudo -iu embapp bash -c 'cd /opt/embr3-csm && ./deploy/redeploy.sh'
 ```
 
+`redeploy.sh` does all of this:
+1. Fetches `main` and the release tags, then fast-forwards.
+2. Runs `npm ci` for the server and the front end.
+3. Builds the front end and restarts `embr3-server`.
+4. Waits for `/api/health`.
+
+It ends with:
+
+```
+✅ Redeployment complete — now running v1.0.0
+```
+
+If the API doesn't come up, it prints a warning and exits with an error.
+
+### After deploying
+
+```bash
+curl -s http://127.0.0.1:5001/api/health; echo           # {"status":"ok"}
+curl -s http://127.0.0.1:5001/api/system/status; echo    # "enabled":false unless maintenance is on
+sudo -iu embapp git -C /opt/embr3-csm describe --tags     # e.g. v1.0.0
+```
+
+Then in the browser:
+1. Hard-refresh (Ctrl+Shift+R).
+2. Check the version at the bottom of the admin sidebar.
+
 ### Step-by-Step Deploy
 
 ```bash
-# 1. Switch to app user
+# 1. Switch to app user (from root)
 sudo -iu embapp
 cd /opt/embr3-csm
 
-# 2. Pull latest code from GitHub
-git pull origin main
+# 2. Pull latest code and tags from GitHub
+git fetch --tags origin
+git pull --ff-only origin main
 
 # 3. Install/update server dependencies
 cd server
-npm ci --production
+npm ci --omit=dev
 
 # 4. Install frontend dependencies & build
 cd ../front-end
@@ -111,31 +153,85 @@ sudo systemctl restart embr3-server
 
 # 6. Verify everything is running
 sudo systemctl status embr3-server          # should say "active (running)"
-curl -s http://localhost:5001/api/health     # should return {"status":"ok"}
-ls dist/assets/ | grep 'index-.*\.js$'      # shows the new bundle filename
+curl -s http://127.0.0.1:5001/api/health     # should return {"status":"ok"}
+git describe --tags                          # the version now running
 ```
 
-### Frontend-Only Deploy (no backend changes)
+### Frontend-Only or Backend-Only Deploy
+
+Most releases change both sides, and the server and front end must match: a
+new front end calls API routes that an old server doesn't have. Use the full
+deploy unless you're sure only one side changed.
 
 ```bash
-sudo -iu embapp
-cd /opt/embr3-csm/front-end
-git pull origin main
-npm ci
-npm run build
-# No restart needed — Nginx serves static files directly
+# Frontend only — no restart needed, Nginx serves dist/ directly
+sudo -iu embapp bash -c 'cd /opt/embr3-csm && git pull --ff-only origin main && cd front-end && npm ci && npm run build'
+
+# Backend only
+sudo -iu embapp bash -c 'cd /opt/embr3-csm && git pull --ff-only origin main && cd server && npm ci --omit=dev && sudo systemctl restart embr3-server'
 ```
 
-### Backend-Only Deploy (no frontend changes)
+---
+
+## When a Deploy Fails
+
+### `Your local changes … would be overwritten by merge`
+
+Someone edited tracked files on the VPS. Look first:
 
 ```bash
-sudo -iu embapp
-cd /opt/embr3-csm
-git pull origin main
-cd server
-npm ci --production
-sudo systemctl restart embr3-server
+sudo -iu embapp bash -c 'cd /opt/embr3-csm && git status --short && git diff --stat'
 ```
+
+- **`0` lines changed** (only the file mode differs): set
+  `core.fileMode false` (see below).
+- **Changes to `package.json` or `package-lock.json`**: almost always left
+  by `npm install` or `npm audit fix`. Don't keep them.
+
+Set them aside (recoverable) and deploy:
+
+```bash
+sudo -iu embapp bash -c 'cd /opt/embr3-csm && git stash push -m vps-local-$(date +%Y%m%d) && git pull --ff-only origin main && chmod +x deploy/*.sh && ./deploy/redeploy.sh'
+```
+
+`git stash list` shows what was set aside. Once the site checks out:
+
+```bash
+sudo -iu embapp git -C /opt/embr3-csm stash drop
+```
+
+### `insufficient permission for adding an object to repository database`
+
+A git or npm command was run as root. Check what's affected, then give the
+folder back to `embapp`:
+
+```bash
+find /opt/embr3-csm -not -user embapp -printf '%u %p\n' 2>/dev/null | grep -v '/node_modules/' | head -20
+chown -R embapp:embapp /opt/embr3-csm
+chmod 600 /opt/embr3-csm/server/.env
+```
+
+Then run the Quick Deploy again.
+
+### `cd: too many arguments`
+
+The `sudo -iu embapp bash -c '…'` command was split over several lines.
+Paste it as a single line.
+
+### Permission-only changes on every pull
+
+Make git ignore file-mode differences on the VPS (once):
+
+```bash
+sudo -iu embapp git -C /opt/embr3-csm config core.fileMode false
+```
+
+### Deploy finished but the site looks old
+
+1. Hard-refresh the browser.
+2. Check that `git describe --tags` shows the new version.
+3. Check that `ls /opt/embr3-csm/front-end/dist/assets | grep '^index-.*\.js$'`
+   changed.
 
 ---
 
@@ -144,14 +240,52 @@ sudo systemctl restart embr3-server
 ### The `.env` file is NOT in git
 
 The server's `.env` file (`/opt/embr3-csm/server/.env`) contains secrets and is **never** pushed to GitHub.
-If you need to edit it:
+It must stay owned by `embapp` with mode `600`.
 
-```bash
-sudo -iu embapp
-nano /opt/embr3-csm/server/.env
-# After editing, restart the backend:
-sudo systemctl restart embr3-server
-```
+1. Back up the file (`-p` keeps owner and mode; `.gitignore` already ignores the backup):
+
+   ```bash
+   cp -p /opt/embr3-csm/server/.env /opt/embr3-csm/server/.env.bak-$(date +%Y%m%d)
+   ```
+
+2. Edit it, either by hand or with commands.
+
+   By hand (as `embapp`):
+
+   ```bash
+   sudo -u embapp nano /opt/embr3-csm/server/.env
+   ```
+
+   Or set variables without opening an editor. This replaces existing values
+   and adds missing ones:
+
+   ```bash
+   ENV=/opt/embr3-csm/server/.env
+   sudo -u embapp sed -i -e '$a\' "$ENV"
+   for kv in GEMINI_MODEL=gemini-3.5-flash GEMINI_FALLBACK_MODEL=gemini-3.5-flash-lite; do
+     k=${kv%%=*}
+     if grep -q "^$k=" "$ENV"; then sudo -u embapp sed -i "s|^$k=.*|$kv|" "$ENV"
+     else echo "$kv" | sudo -u embapp tee -a "$ENV" >/dev/null; fi
+   done
+   ```
+
+3. Check the result without printing secrets:
+
+   ```bash
+   grep -E '^GEMINI_(MODEL|FALLBACK_MODEL)=' "$ENV"
+   grep -q '^GEMINI_API_KEY=..' "$ENV" && echo "Gemini key: set" || echo "Gemini key: not in .env"
+   ls -l "$ENV"      # -rw------- embapp embapp
+   ```
+
+4. Restart so the new values load. `redeploy.sh` also does this.
+
+   ```bash
+   sudo systemctl restart embr3-server
+   ```
+
+The VERA Gemini key may live in the database instead of the `.env`, since it
+can be saved encrypted in Settings → VERA Assistant. If "not in .env" shows
+above, check that page. The model picked there also overrides `GEMINI_MODEL`.
 
 Key settings in `server/.env`:
 ```
@@ -182,16 +316,21 @@ To release:
    git tag -a v1.0.1 -m "v1.0.1"
    git push origin main --follow-tags
    ```
-4. On the VPS, run `./deploy/redeploy.sh`. It ends with the version it deployed.
+4. On the VPS, run the Quick Deploy. It ends with the version it deployed.
 
-To check what the VPS is running: `cd /opt/embr3-csm && git describe --tags`. The admin sidebar footer shows the same version.
+To check what the VPS is running: `sudo -iu embapp git -C /opt/embr3-csm describe --tags`. The admin sidebar footer shows the same version.
 
-To roll back to an earlier release (front end and server together):
+| Release | Date | Notes |
+|---------|------|-------|
+| v1.0.0 | 2026-11-17 | First versioned release, deployed to production |
+
+To roll back to an earlier release (front end and server together, as `embapp`):
 ```bash
+sudo -iu embapp
 cd /opt/embr3-csm && git checkout v1.0.0
 cd server && npm ci --omit=dev && cd ../front-end && npm ci && npm run build
 sudo systemctl restart embr3-server
-# Afterwards, return to the latest: git checkout main && ./deploy/redeploy.sh
+# Afterwards, return to the latest: cd /opt/embr3-csm && git checkout main && ./deploy/redeploy.sh
 ```
 
 ### Nginx Configuration
@@ -274,15 +413,19 @@ free -h
 Local Machine                    GitHub                     VPS
 ─────────────                    ──────                     ───
 1. Edit code
-2. Test locally
-3. git commit
-4. git push origin main  ──────▷  repo updated
-                                                    5. Open Hostinger Terminal
-                                                    6. sudo -iu embapp
-                                                    7. cd /opt/embr3-csm
-                                                    8. git pull origin main
-                                                    9. npm ci (server & frontend)
-                                                   10. npm run build (frontend)
-                                                   11. sudo systemctl restart embr3-server
-                                                   12. Verify with curl & browser
+2. Test locally (npm run build)
+3. Bump versions + CHANGELOG
+4. git commit
+5. git tag -a vX.Y.Z
+6. git push origin main
+   --follow-tags         ──────▷  repo + tag updated
+                                                    7. Open Hostinger Terminal (root)
+                                                    8. (only if .env changes) back up + edit server/.env
+                                                    9. sudo -iu embapp bash -c 'cd /opt/embr3-csm && ./deploy/redeploy.sh'
+                                                       → pull, npm ci, build, restart, health check
+                                                   10. curl /api/health + /api/system/status
+                                                   11. Browser: hard-refresh, check sidebar version
 ```
+
+There is no GitHub Actions pipeline. "CI/CD" here means: push to GitHub, then
+run `redeploy.sh` on the VPS.
